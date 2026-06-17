@@ -36,9 +36,9 @@ export const useClaudeAccountStore = createProviderAccountStore<ClaudeAccount>(
     },
   },
   {
-    platformId: 'claude',
+    platformId: 'claude_manager',
     currentAccountIdKey: CLAUDE_CURRENT_ACCOUNT_ID_KEY,
-    resolveCurrentAccountId: () => getProviderCurrentAccountId('claude'),
+    resolveCurrentAccountId: () => getProviderCurrentAccountId('claude_desktop_account'),
     preserveSourceQuota: true,
   },
 );

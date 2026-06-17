@@ -27,7 +27,6 @@ export type PlatformOverviewTab = 'overview' | 'wakeup' | 'instances' | 'session
 export type PlatformOverviewHeaderId =
   | 'codex'
   | 'claude'
-  | 'claude_cli'
   | 'zed'
   | 'github-copilot'
   | 'windsurf'
@@ -65,10 +64,6 @@ const CONFIGS: Record<PlatformOverviewHeaderId, PlatformOverviewConfig> = {
   },
   claude: {
     platformLabel: 'Claude',
-    overviewIcon: <ClaudeIcon className="tab-icon" />,
-  },
-  claude_cli: {
-    platformLabel: 'Claude CLI',
     overviewIcon: <ClaudeIcon className="tab-icon" />,
   },
   zed: {

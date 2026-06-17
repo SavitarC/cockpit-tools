@@ -169,7 +169,7 @@ export interface CodexSessionVisibilityRepairItem {
   running: boolean;
 }
 
-export type CodexSessionVisibilityRepairMode = 'quick';
+export type CodexSessionVisibilityRepairMode = 'quick' | 'deep';
 export type CodexSessionVisibilityAutoRepairMode =
   | 'legacy_before_4eb75d96'
   | 'legacy_4eb75d96'
@@ -203,6 +203,7 @@ export interface CodexSessionVisibilityRepairInstanceList {
 }
 
 export interface CodexSessionVisibilityRepairRequestOptions {
+  mode?: CodexSessionVisibilityRepairMode;
   targetProvider?: string | null;
   targetInstanceId?: string | null;
   repairInstanceIds?: string[] | null;

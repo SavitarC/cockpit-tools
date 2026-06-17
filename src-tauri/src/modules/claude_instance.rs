@@ -153,7 +153,7 @@ pub fn get_default_instances_root_dir() -> Result<PathBuf, String> {
     }
 
     #[allow(unreachable_code)]
-    Err("Claude Desktop 多开实例仅支持 macOS、Windows 和 Linux".to_string())
+    Err("Claude 多开实例仅支持 macOS、Windows 和 Linux".to_string())
 }
 
 pub fn get_instance_defaults() -> Result<InstanceDefaults, String> {
@@ -853,7 +853,7 @@ Get-AppxPackage -Name Claude |
 
     if !output.status.success() {
         modules::logger::log_warn(&format!(
-            "[Claude Resolve] Get-AppxPackage failed while detecting Claude Desktop: {}",
+            "[Claude Resolve] Get-AppxPackage failed while detecting Claude: {}",
             String::from_utf8_lossy(&output.stderr).trim()
         ));
         return None;
@@ -921,7 +921,7 @@ fn detect_claude_exec_path() -> Option<PathBuf> {
             if is_windows_claude_desktop_exec_path(&candidate) {
                 return Some(candidate);
             } else if candidate.exists() {
-                log_ignored_windows_claude_path(&candidate, "not a Claude Desktop executable");
+                log_ignored_windows_claude_path(&candidate, "not a Claude executable");
             }
         }
         if let Some(path) = detect_windows_claude_desktop_package_path() {
@@ -938,7 +938,7 @@ fn detect_claude_exec_path() -> Option<PathBuf> {
             if is_windows_claude_desktop_exec_path(&path) {
                 Some(path)
             } else {
-                log_ignored_windows_claude_path(&path, "detected path is not Claude Desktop");
+                log_ignored_windows_claude_path(&path, "detected path is not Claude");
                 None
             }
         })
@@ -982,7 +982,7 @@ pub fn detect_and_save_claude_launch_path(force: bool) -> Option<String> {
                 if is_windows_claude_desktop_exec_path(&path) {
                     return Some(current.claude_app_path);
                 }
-                log_ignored_windows_claude_path(&path, "configured path is not Claude Desktop");
+                log_ignored_windows_claude_path(&path, "configured path is not Claude");
             }
             #[cfg(not(target_os = "windows"))]
             {
@@ -1012,7 +1012,7 @@ fn resolve_claude_launch_path() -> Result<PathBuf, String> {
                 if is_windows_claude_desktop_exec_path(&exec) {
                     return Ok(exec);
                 }
-                log_ignored_windows_claude_path(&exec, "configured path is not Claude Desktop");
+                log_ignored_windows_claude_path(&exec, "configured path is not Claude");
             }
             if let Some(detected) = detect_and_save_claude_launch_path(true)
                 .and_then(|value| resolve_macos_exec_path(&value))
@@ -1434,7 +1434,7 @@ pub fn start_claude_with_args_with_new_window(
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
         let _ = (target, extra_args, use_new_window);
-        Err("Claude Desktop 多开实例仅支持 macOS、Windows 和 Linux".to_string())
+        Err("Claude 多开实例仅支持 macOS、Windows 和 Linux".to_string())
     }
 }
 
@@ -1459,7 +1459,7 @@ pub fn start_claude_default_with_args_with_new_window(
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
         let _ = (extra_args, use_new_window);
-        Err("Claude Desktop 多开实例仅支持 macOS、Windows 和 Linux".to_string())
+        Err("Claude 多开实例仅支持 macOS、Windows 和 Linux".to_string())
     }
 }
 

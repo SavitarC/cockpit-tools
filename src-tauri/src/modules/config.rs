@@ -103,7 +103,7 @@ pub struct UserConfig {
     /// Gemini 自动刷新间隔（分钟），-1 表示禁用
     #[serde(default = "default_gemini_auto_refresh")]
     pub gemini_auto_refresh_minutes: i32,
-    /// Claude Desktop 自动刷新间隔（分钟），-1 表示禁用
+    /// Claude 自动刷新间隔（分钟），-1 表示禁用
     #[serde(default = "default_claude_auto_refresh")]
     pub claude_auto_refresh_minutes: i32,
     /// Gemini 切号时是否同步覆盖 WSL 配置 (Windows Only)
@@ -385,10 +385,10 @@ pub struct UserConfig {
     /// Gemini 配额预警阈值（百分比）
     #[serde(default = "default_gemini_quota_alert_threshold")]
     pub gemini_quota_alert_threshold: i32,
-    /// 是否启用 Claude Desktop 配额预警通知
+    /// 是否启用 Claude 配额预警通知
     #[serde(default = "default_claude_quota_alert_enabled")]
     pub claude_quota_alert_enabled: bool,
-    /// Claude Desktop 配额预警阈值（百分比）
+    /// Claude 配额预警阈值（百分比）
     #[serde(default = "default_claude_quota_alert_threshold")]
     pub claude_quota_alert_threshold: i32,
     /// 是否启用 CodeBuddy 配额预警通知

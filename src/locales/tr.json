@@ -780,9 +780,9 @@
       "codexAppSpeedLaunch": "Codex'i yeniden başlat",
       "codexAppSpeedSaveFailed": "Codex hızı kaydedilemedi: {{error}}",
       "codexAppSpeedLaunchFailed": "Codex yeniden başlatılamadı: {{error}}",
-      "claudeSettingsTitle": "Claude Desktop Ayarları",
-      "claudeAutoRefresh": "Claude Desktop kota otomatik yenileme",
-      "claudeAutoRefreshDesc": "Claude Desktop hesaplarının kota önbelleğini arka planda otomatik yeniler."
+      "claudeSettingsTitle": "Claude Ayarları",
+      "claudeAutoRefresh": "Claude kota otomatik yenileme",
+      "claudeAutoRefreshDesc": "Claude hesaplarının kota önbelleğini arka planda otomatik yeniler."
     },
     "network": {
       "apiTitle": "Yerçekimine Karşı Kokpit API'si",
@@ -2370,6 +2370,11 @@
         "loadingProviders": "Providerlar yükleniyor...",
         "noProvider": "Provider bulunamadı",
         "providerLoadFailed": "Provider adayları yüklenemedi: {{error}}",
+        "modeTitle": "Onarım modu",
+        "modeQuick": "Hızlı onarım",
+        "modeQuickDesc": "Resmi state DB'yi ve oturum meta verisinin ilk satırını düzeltir. Rutin hesap geçişlerinden sonra uygundur.",
+        "modeDeep": "Derin onarım",
+        "modeDeepDesc": "Hızlı onarım yetmediğinde test için mevcut tam meta veri onarımını korur.",
         "scopeTitle": "Oturum kapsamı",
         "scopeAll": "Tüm oturumlar",
         "scopeAllDesc": "Geçerli listedeki {{count}} oturumu onarır.",
@@ -3307,7 +3312,7 @@
     },
     "claudeRefreshInterval": "Kota otomatik yenileme",
     "claude": {
-      "appPath": "Claude Desktop yolu"
+      "appPath": "Claude yolu"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Claude eklendi",
       "addToCodex": "Codex’e ekle",
       "addToClaude": "Claude CLI’ye ekle",
-      "addToClaudeDesktop": "Claude Desktop’a ekle",
+      "addToClaudeDesktop": "Claude’a ekle",
       "addToClaudeCli": "Claude CLI’ye ekle",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "APIKEY.FUN ayarları dolduruldu. Claude Desktop’a eklemek için onaylayın."
+      "claudeDesktopReady": "APIKEY.FUN ayarları dolduruldu. Claude’a eklemek için onaylayın."
     },
     "copyKey": "Copy Key​",
     "clearKey": "Clear input​"
   },
   "claude": {
     "import": {
-      "localSuccess": "{{count}} yerel Claude Desktop oturumu içe aktarıldı",
-      "localClient": "Geçerli Desktop içe aktar",
+      "localSuccess": "{{count}} yerel Claude oturumu içe aktarıldı",
+      "localClient": "Geçerli Claude içe aktar",
       "jsonLabel": "JSON verisi",
       "jsonPlaceholder": "Dışa aktarılan Claude hesap JSON verisini yapıştırın",
-      "localDesc": "Resmi Claude Desktop uygulamasındaki mevcut oturumu okur ve bu araca yerel hesap anlık görüntüsü olarak kopyalar.",
-      "desktopJsonPlaceholder": "Dışa aktarılan Claude Desktop Gateway hesap JSON’unu yapıştırın",
+      "localDesc": "Resmi Claude uygulamasındaki mevcut oturumu okur ve bu araca yerel hesap anlık görüntüsü olarak kopyalar.",
+      "desktopJsonPlaceholder": "Dışa aktarılan Claude Gateway hesap JSON’unu yapıştırın",
       "cliJsonPlaceholder": "Dışa aktarılan Claude CLI hesap JSON’unu yapıştırın"
     },
     "deleteCurrentDisabled": "Geçerli hesap silinemez",
     "flowNotice": {
       "title": "Claude hesapları",
-      "desc": "Bu araç Claude Desktop oturum durumunu ve Anthropic API Key bilgilerini yönetir. Desktop oturumu bu platformun yetkilendirme penceresinde tamamlanır ve önce yerelde saklanır; resmi Claude Desktop’a yalnızca hesap değiştirirken yazılır.",
-      "permission": "İzin kapsamı: resmi Claude Desktop uygulama veri dizinini okuma/yazma. API Key ve Desktop anlık görüntüleri bu aracın yerel hesap verilerinde saklanır.",
-      "network": "Ağ kapsamı: Desktop giriş penceresi claude.ai açar; hesap yenileme Claude Web uç noktalarına istek atabilir. API Key içe aktarma tek başına ağ kullanmaz.",
-      "desktopDesc": "Bu araç Claude Desktop oturum durumunu yönetir. Oturum önce yerelde kaydedilir ve yalnızca hesap değiştirirken resmi Claude Desktop’a yazılır.",
+      "desc": "Bu araç Claude oturum durumunu ve Anthropic API Key bilgilerini yönetir. Claude oturumu bu platformun yetkilendirme penceresinde tamamlanır ve önce yerelde saklanır; resmi Claude’a yalnızca hesap değiştirirken yazılır.",
+      "permission": "İzin kapsamı: resmi Claude uygulama veri dizinini okuma/yazma. API Key ve Claude anlık görüntüleri bu aracın yerel hesap verilerinde saklanır.",
+      "network": "Ağ kapsamı: Claude giriş penceresi claude.ai açar; hesap yenileme Claude Web uç noktalarına istek atabilir. API Key içe aktarma tek başına ağ kullanmaz.",
+      "desktopDesc": "Bu araç Claude oturum durumunu yönetir. Oturum önce yerelde kaydedilir ve yalnızca hesap değiştirirken resmi Claude’a yazılır.",
       "cliDesc": "Bu araç Claude Code OAuth ve çoklu sağlayıcı API Key hesaplarını yönetir. OAuth geçişi yerel Claude Code yapılandırmasına yazar; API Key, sağlayıcı env değerlerini Claude Code settings.json içine yazar.",
-      "desktopPermission": "İzin kapsamı: resmi Claude Desktop uygulama veri dizinini okuma/yazma. Desktop anlık görüntüleri bu aracın yerel hesap verilerinde saklanır.",
+      "desktopPermission": "İzin kapsamı: resmi Claude uygulama veri dizinini okuma/yazma. Claude anlık görüntüleri bu aracın yerel hesap verilerinde saklanır.",
       "cliPermission": "İzin kapsamı: yerel Claude Code yapılandırmasını ve macOS Keychain içindeki Claude Code kimlik bilgilerini okuma/yazma; API Key hesapları bu araçta yerel olarak saklanır ve geçiş ya da CLI başlatma sırasında settings.json env alanına düz metin olarak yazılır.",
-      "desktopNetwork": "Ağ kapsamı: Desktop oturum penceresi claude.ai açar; hesap yenileme Claude Web endpoint istekleri yapabilir.",
+      "desktopNetwork": "Ağ kapsamı: Claude oturum penceresi claude.ai açar; hesap yenileme Claude Web endpoint istekleri yapabilir.",
       "cliNetwork": "Ağ kapsamı: OAuth, Claude resmi yetkilendirme ve token/profile/usage endpointlerine erişir; API Key içe aktarma çevrimdışıdır, başlatma sonrası Claude CLI seçilen sağlayıcıya bağlanır."
     },
     "search": "Claude hesaplarında ara...",
     "noAccounts": "Claude hesabı yok",
     "addAccount": {
       "title": "Claude hesabı ekle",
-      "desktopTitle": "Claude Desktop Hesabı Ekle",
+      "desktopTitle": "Claude Hesabı Ekle",
       "cliTitle": "Claude CLI Hesabı Ekle"
     },
     "deleteConfirm": "Claude hesabı {{email}} silinsin mi?",
@@ -4667,11 +4672,11 @@
       "success": "Başarıyla değiştirildi"
     },
     "instances": {
-      "unsupportedDescPlatform": "Claude Desktop çoklu örnek yalnızca macOS, Windows ve Linux üzerinde desteklenir.",
+      "unsupportedDescPlatform": "Claude çoklu örnek yalnızca macOS, Windows ve Linux üzerinde desteklenir.",
       "launchDialogTitle": "Örneği başlat",
       "launchCommand": "Başlatma komutu",
       "executeInTerminal": "Terminalde çalıştır",
-      "startSuccess": "Claude Desktop başlatıldı"
+      "startSuccess": "Claude başlatıldı"
     },
     "quota": {
       "title": "Kota",
@@ -4702,23 +4707,23 @@
       "oauth": "OAuth modu",
       "setup_token": "Kurulum tokenı",
       "api_key": "API anahtarı",
-      "desktop_oauth": "Desktop oturumu"
+      "desktop_oauth": "Claude oturumu"
     },
     "apiKey": {
-      "desc": "Claude CLI API Key değerini ayrı kimlik bilgisi olarak kaydeder. Geçiş veya CLI başlatma sırasında sağlayıcı env değerlerini Claude Code settings.json içine yazar, Claude Desktop oturum durumuna yazmaz.",
+      "desc": "Claude CLI API Key değerini ayrı kimlik bilgisi olarak kaydeder. Geçiş veya CLI başlatma sırasında sağlayıcı env değerlerini Claude Code settings.json içine yazar, Claude oturum durumuna yazmaz.",
       "nameLabel": "Hesap adı",
       "namePlaceholder": "İsteğe bağlı, ör. APIKEY.FUN",
       "keyLabel": "API anahtarı",
       "placeholder": "Sağlayıcı API Key yapıştırın",
       "hide": "API Key gizle",
       "show": "API Key göster",
-      "hint": "API Key hesapları yalnızca Claude CLI içindir. Claude Code settings.json içine düz metin env olarak yazılır, Claude Desktop oturumunu etkilemez ve abonelik kota yenilemeyi desteklemez.",
+      "hint": "API Key hesapları yalnızca Claude CLI içindir. Claude Code settings.json içine düz metin env olarak yazılır, Claude oturumunu etkilemez ve abonelik kota yenilemeyi desteklemez.",
       "importAction": "API Key içe aktar",
       "required": "API Key girin",
       "templateRequired": "{{label}} girin",
       "importSuccess": "Claude API Key hesabı içe aktarıldı: {{name}}",
       "quotaUnsupported": "API Key hesapları yenilenmez",
-      "switchDisabled": "API Key hesabı Claude Desktop’a geçirilemez",
+      "switchDisabled": "API Key hesabı Claude’a geçirilemez",
       "cliUnsupported": "API Key hesabı Claude CLI başlatamaz",
       "providerLabel": "Sağlayıcı",
       "customProvider": "Özel",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL geçerli değil"
     },
     "desktopOAuth": {
-      "title": "Claude Desktop oturumu",
+      "title": "Claude oturumu",
       "desc": "Bu araçta Claude girişi; Google, Apple, e-posta ve free destekler.",
       "start": "Girişi aç",
       "preparingRuntime": "Giriş hazırlanıyor...",
-      "hint": "Önce yerelde saklar; Claude Desktop’a geçişte yazar.",
+      "hint": "Önce yerelde saklar; Claude’a geçişte yazar.",
       "runtimeHint": "İlk kullanımda Electron giriş bileşeni yerel uygulama veri klasörüne indirilip doğrulanabilir; yükleyiciye dahil değildir ve sonra önbellekten yeniden kullanılır.",
       "nameLabel": "Hesap adı",
       "namePlaceholder": "İsteğe bağlı, örn. Claude Free",
       "waiting": "Claude penceresinde giriş yapın, burada içe aktarmayı bitirin.",
       "profileDir": "Yalıtılmış profile dizini",
       "complete": "Tamamla",
-      "localTitle": "Geçerli Desktop içe aktar",
-      "localDesc": "Geçerli Claude Desktop oturumunu yerel snapshot olarak kopyalar.",
+      "localTitle": "Geçerli Claude içe aktar",
+      "localDesc": "Geçerli Claude oturumunu yerel snapshot olarak kopyalar.",
       "localAction": "İçe aktar",
-      "localSuccess": "Yerel Claude Desktop oturumu içe aktarıldı: {{name}}",
-      "importSuccess": "Claude Desktop oturumu içe aktarıldı: {{name}}",
-      "switchHint": "Resmi Claude Desktop’a geç",
+      "localSuccess": "Yerel Claude oturumu içe aktarıldı: {{name}}",
+      "importSuccess": "Claude oturumu içe aktarıldı: {{name}}",
+      "switchHint": "Resmi Claude’a geç",
       "planUnknown": "Plan bilinmiyor"
     },
     "oauth": {
       "title": "Claude OAuth Yetkilendirme",
       "desc": "Resmi Claude OAuth yetkilendirme sayfasını açın, ardından hesabı içe aktarmak için geri dönüş bağlantısını veya code değerini yapıştırın.",
       "start": "OAuth yetkilendir",
-      "proRequiredHint": "Claude resmi OAuth genellikle Claude Code yetkilendirmesi için kullanılır. Sayfa yükseltme veya yetki yok ekranında kalırsa Claude Desktop girişi kullanın.",
+      "proRequiredHint": "Claude resmi OAuth genellikle Claude Code yetkilendirmesi için kullanılır. Sayfa yükseltme veya yetki yok ekranında kalırsa Claude girişi kullanın.",
       "openInstruction": "Aşağıdaki düğmeye tıklayın ve Claude OAuth yetkilendirmesini tarayıcıda tamamlayın.",
       "waiting": "Tamamlandıktan sonra son sayfa adresini veya gösterilen code değerini aşağıya yapıştırın.",
       "authUrl": "Yetkilendirme bağlantısı",
@@ -4773,7 +4778,7 @@
       "updateFailed": "Plan rozeti güncellenemedi: {{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "Eski OAuth hesapları Claude Desktop’a geçirilemez",
+      "switchDisabled": "Eski OAuth hesapları Claude’a geçirilemez",
       "quotaUnsupported": "Eski OAuth hesapları artık yenilemeyi desteklemez",
       "cliUnsupported": "Eski OAuth hesapları Claude CLI başlatamaz"
     },
@@ -4812,18 +4817,18 @@
       "desktop": "Claude Masaüstü",
       "cli": "Claude komut satırı"
     },
-    "searchDesktop": "Claude Desktop hesaplarında ara...",
+    "searchDesktop": "Claude hesaplarında ara...",
     "searchCli": "Claude CLI hesaplarında ara...",
-    "noDesktopAccounts": "Henüz Claude Desktop hesabı yok",
+    "noDesktopAccounts": "Henüz Claude hesabı yok",
     "noCliAccounts": "Henüz Claude CLI hesabı yok",
     "desktopGateway": {
       "label": "Geçit",
       "authScheme": "Auth şeması",
       "importAction": "Gateway içe aktar",
-      "importSuccess": "Claude Desktop Gateway hesabı içe aktarıldı: {{name}}",
+      "importSuccess": "Claude Gateway hesabı içe aktarıldı: {{name}}",
       "baseUrlRequired": "Gateway Base URL girin",
       "noQuota": "Gateway hesapları Claude abonelik kotasını göstermez",
-      "desc": "Gateway API Key değerini Claude Desktop 3P yapılandırması olarak kaydeder. Geçişte yönetilen profile yazar ve resmi Claude Desktop’ı başlatır.",
+      "desc": "Gateway API Key değerini Claude 3P yapılandırması olarak kaydeder. Geçişte yönetilen profile yazar ve resmi Claude’ı başlatır.",
       "hint": "Gateway hesapları Claude abonelik ayrıntılarını okumaz. API Key resmi 3P yapılandırmasıyla yönetilen profile yazılır.",
       "modelsLabel": "Model kataloğu",
       "modelsEmpty": "Bu Gateway model döndürmedi.",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "Satır başına bir model ID",
       "modelsLoading": "Model kataloğu yükleniyor...",
       "modelsRequired": "Model kataloğunu girin",
-      "editTitle": "Claude Desktop Gateway düzenle",
+      "editTitle": "Claude Gateway düzenle",
       "updateAction": "Gateway kaydet",
-      "updateSuccess": "Claude Desktop Gateway hesabı güncellendi: {{name}}",
+      "updateSuccess": "Claude Gateway hesabı güncellendi: {{name}}",
       "connectionMode": "Bağlantı",
       "modeDirect": "Doğrudan",
       "modeLocalMapping": "Yerel eşleme",
       "mappingsRequired": "Model eşlemesini yapılandırın",
-      "mappingDesktopModelInvalid": "Solda Claude Desktop tarafından tanınan Claude model adları olmalı",
-      "directModelsInvalid": "Doğrudan mod yalnızca Claude Desktop tarafından tanınan Claude modellerini destekler",
-      "desktopModelPlaceholder": "Claude Desktop modeli",
+      "mappingDesktopModelInvalid": "Solda Claude tarafından tanınan Claude model adları olmalı",
+      "directModelsInvalid": "Doğrudan mod yalnızca Claude tarafından tanınan Claude modellerini destekler",
+      "desktopModelPlaceholder": "Claude modeli",
       "upstreamModelPlaceholder": "Gerçek üst model",
       "addMapping": "Eşleme ekle"
     }

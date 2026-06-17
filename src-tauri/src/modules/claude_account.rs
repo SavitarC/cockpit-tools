@@ -513,7 +513,7 @@ fn merge_desktop_account_fields(base: &ClaudeAccount, incoming: &ClaudeAccount) 
         .organization_name
         .as_deref()
         .and_then(|value| normalize_non_empty(Some(value)))
-        .map(|value| !value.eq_ignore_ascii_case("Claude Desktop"))
+        .map(|value| !value.eq_ignore_ascii_case("Claude"))
         .unwrap_or(false)
     {
         merged.organization_name = incoming.organization_name.clone();
@@ -582,7 +582,7 @@ fn remove_desktop_snapshot_if_unused(snapshot: Option<&str>, keep_snapshot: Opti
     if snapshot_path.exists() {
         if let Err(error) = remove_path_if_exists(&snapshot_path) {
             logger::log_warn(&format!(
-                "[Claude Desktop] 删除重复账号快照失败: path={}, error={}",
+                "[Claude] 删除重复账号快照失败: path={}, error={}",
                 snapshot_path.display(),
                 error
             ));
@@ -595,7 +595,7 @@ fn delete_account_file_silent(account_id: &str) {
         if path.exists() {
             if let Err(error) = fs::remove_file(&path) {
                 logger::log_warn(&format!(
-                    "[Claude Desktop] 删除重复账号文件失败: path={}, error={}",
+                    "[Claude] 删除重复账号文件失败: path={}, error={}",
                     path.display(),
                     error
                 ));
@@ -636,7 +636,8 @@ fn save_desktop_account_with_dedupe(incoming: ClaudeAccount) -> Result<ClaudeAcc
 }
 
 fn dedupe_desktop_accounts(accounts: Vec<ClaudeAccount>) -> Result<Vec<ClaudeAccount>, String> {
-    let current_id = crate::modules::provider_current_state::get_current_account_id("claude")
+    let current_id =
+        crate::modules::provider_current_state::get_current_account_id("claude_desktop_account")
         .ok()
         .flatten();
     let mut kept: Vec<ClaudeAccount> = Vec::with_capacity(accounts.len());
@@ -695,12 +696,12 @@ fn dedupe_desktop_accounts(accounts: Vec<ClaudeAccount>) -> Result<Vec<ClaudeAcc
     save_index(&index)?;
     if let Some(next_current) = rewired_current {
         let _ = crate::modules::provider_current_state::set_current_account_id(
-            "claude",
+            "claude_desktop_account",
             Some(next_current.as_str()),
         );
     }
     logger::log_info(&format!(
-        "[Claude Desktop] 已合并重复账号: removed={}",
+        "[Claude] 已合并重复账号: removed={}",
         removed_ids.join(",")
     ));
     Ok(kept)
@@ -795,26 +796,26 @@ fn to_desktop_login_start_response(
 
 fn get_desktop_profiles_dir() -> Result<PathBuf, String> {
     let dir = get_data_dir()?.join(CLAUDE_DESKTOP_PROFILES_DIR);
-    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude Desktop 账号快照目录失败: {}", e))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude 账号快照目录失败: {}", e))?;
     Ok(dir)
 }
 
 fn get_desktop_gateway_profiles_dir() -> Result<PathBuf, String> {
     let dir = get_data_dir()?.join(CLAUDE_DESKTOP_GATEWAY_PROFILES_DIR);
     fs::create_dir_all(&dir)
-        .map_err(|e| format!("创建 Claude Desktop Gateway profile 目录失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude Gateway profile 目录失败: {}", e))?;
     Ok(dir)
 }
 
 fn get_desktop_login_root_dir() -> Result<PathBuf, String> {
     let dir = get_data_dir()?.join(CLAUDE_DESKTOP_LOGIN_DIR);
-    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude Desktop 登录工作目录失败: {}", e))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude 登录工作目录失败: {}", e))?;
     Ok(dir)
 }
 
 fn get_desktop_backups_dir() -> Result<PathBuf, String> {
     let dir = get_data_dir()?.join(CLAUDE_DESKTOP_BACKUPS_DIR);
-    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude Desktop 切号备份目录失败: {}", e))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("创建 Claude 切号备份目录失败: {}", e))?;
     Ok(dir)
 }
 
@@ -1110,7 +1111,7 @@ fn set_pending_desktop_login(state: Option<PendingClaudeDesktopLoginState>) {
     };
     if let Err(error) = result {
         logger::log_warn(&format!(
-            "[Claude Desktop] 持久化登录 pending 状态失败，已忽略: {}",
+            "[Claude] 持久化登录 pending 状态失败，已忽略: {}",
             error
         ));
     }
@@ -1131,7 +1132,7 @@ fn load_pending_desktop_login_from_disk() -> Option<PendingClaudeDesktopLoginSta
         Ok(None) => None,
         Err(error) => {
             logger::log_warn(&format!(
-                "[Claude Desktop] 读取登录 pending 状态失败，已忽略: {}",
+                "[Claude] 读取登录 pending 状态失败，已忽略: {}",
                 error
             ));
             let _ = crate::modules::oauth_pending_state::clear(CLAUDE_DESKTOP_LOGIN_STATE_FILE);
@@ -1154,16 +1155,16 @@ fn get_pending_desktop_login_for(login_id: &str) -> Result<PendingClaudeDesktopL
         .lock()
         .ok()
         .and_then(|guard| guard.as_ref().cloned())
-        .ok_or_else(|| "Claude Desktop 登录流程不存在，请重新开始".to_string())?;
+        .ok_or_else(|| "Claude 登录流程不存在，请重新开始".to_string())?;
     if state.login_id != login_id {
-        return Err("Claude Desktop 登录会话已变更，请重新开始".to_string());
+        return Err("Claude 登录会话已变更，请重新开始".to_string());
     }
     if state.cancelled {
-        return Err("Claude Desktop 登录已取消".to_string());
+        return Err("Claude 登录已取消".to_string());
     }
     if now_ts() > state.expires_at {
         clear_pending_desktop_login_if_matches(login_id);
-        return Err("Claude Desktop 登录已超时，请重新开始".to_string());
+        return Err("Claude 登录已超时，请重新开始".to_string());
     }
     Ok(state)
 }
@@ -2003,7 +2004,7 @@ fn save_desktop_gateway(
         if mappings.iter().any(|mapping| {
             !crate::modules::claude_desktop_gateway::is_claude_desktop_model(&mapping.desktop_model)
         }) {
-            return Err("映射左侧必须是 Claude Desktop 可识别的 Claude 模型名".to_string());
+            return Err("映射左侧必须是 Claude 可识别的 Claude 模型名".to_string());
         }
         desktop_gateway_models = normalize_model_catalog(Some(
             mappings
@@ -2021,7 +2022,7 @@ fn save_desktop_gateway(
             .any(|model| !crate::modules::claude_desktop_gateway::is_claude_desktop_model(model))
         {
             return Err(
-                "直连模式的模型目录必须使用 Claude Desktop 可识别的 Claude 模型名".to_string(),
+                "直连模式的模型目录必须使用 Claude 可识别的 Claude 模型名".to_string(),
             );
         }
         desktop_gateway_model_mappings = None;
@@ -2044,7 +2045,7 @@ fn save_desktop_gateway(
             .map(|account| account.auth_mode != ClaudeAuthMode::DesktopGateway)
             .unwrap_or(true)
     {
-        return Err("Claude Desktop Gateway 账号不存在".to_string());
+        return Err("Claude Gateway 账号不存在".to_string());
     }
     let config_id = existing_account
         .as_ref()
@@ -2186,7 +2187,7 @@ fn desktop_account_display_name(account_name: Option<&str>) -> String {
         return name;
     }
     format!(
-        "Claude Desktop {}",
+        "Claude {}",
         chrono::Utc::now().format("%Y-%m-%d %H:%M")
     )
 }
@@ -2241,7 +2242,7 @@ fn cookies_db_has_required_desktop_session(cookies_path: &Path) -> Result<bool, 
     let conn = Connection::open_with_flags(cookies_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
         .map_err(|e| {
             format!(
-                "读取 Claude Desktop Cookies 失败: path={}, error={}",
+                "读取 Claude Cookies 失败: path={}, error={}",
                 cookies_path.display(),
                 e
             )
@@ -2255,14 +2256,14 @@ fn cookies_db_has_required_desktop_session(cookies_path: &Path) -> Result<bool, 
             [],
             |row| row.get(0),
         )
-        .map_err(|e| format!("查询 Claude Desktop Cookies 失败: {}", e))?;
+        .map_err(|e| format!("查询 Claude Cookies 失败: {}", e))?;
     Ok(count >= 2)
 }
 
 fn ensure_desktop_profile_logged_in(profile_dir: &Path) -> Result<(), String> {
     if !profile_dir.exists() {
         return Err(format!(
-            "Claude Desktop profile 不存在: {}",
+            "Claude profile 不存在: {}",
             profile_dir.display()
         ));
     }
@@ -2281,7 +2282,7 @@ fn ensure_desktop_profile_logged_in(profile_dir: &Path) -> Result<(), String> {
         return Err(error);
     }
     Err(
-        "未检测到 Claude Desktop 登录态，请在授权窗口或官方 Claude Desktop 完成登录后再导入。"
+        "未检测到 Claude 登录态，请在授权窗口或官方 Claude 完成登录后再导入。"
             .to_string(),
     )
 }
@@ -2347,7 +2348,7 @@ fn desktop_profile_metadata_from_cookies_db(
     let conn = Connection::open_with_flags(&cookies_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
         .map_err(|e| {
             format!(
-                "读取 Claude Desktop Cookies 失败: path={}, error={}",
+                "读取 Claude Cookies 失败: path={}, error={}",
                 cookies_path.display(),
                 e
             )
@@ -2357,7 +2358,7 @@ fn desktop_profile_metadata_from_cookies_db(
             "select name, value, coalesce(length(encrypted_value), 0), expires_utc from cookies \
              where (host_key like '%claude.ai' or host_key like '%claude.com')",
         )
-        .map_err(|e| format!("查询 Claude Desktop Cookies 失败: {}", e))?;
+        .map_err(|e| format!("查询 Claude Cookies 失败: {}", e))?;
     let rows = stmt
         .query_map([], |row| {
             Ok((
@@ -2367,7 +2368,7 @@ fn desktop_profile_metadata_from_cookies_db(
                 row.get::<_, i64>(3)?,
             ))
         })
-        .map_err(|e| format!("读取 Claude Desktop Cookies 失败: {}", e))?;
+        .map_err(|e| format!("读取 Claude Cookies 失败: {}", e))?;
 
     let mut cookie_names = BTreeSet::new();
     let mut has_session_key = false;
@@ -2376,7 +2377,7 @@ fn desktop_profile_metadata_from_cookies_db(
     let mut session_expires_at = None;
     for row in rows {
         let (name, value, encrypted_len, expires_utc) =
-            row.map_err(|e| format!("读取 Claude Desktop Cookie 行失败: {}", e))?;
+            row.map_err(|e| format!("读取 Claude Cookie 行失败: {}", e))?;
         let has_value = !value.is_empty() || encrypted_len > 0;
         if !has_value {
             continue;
@@ -2664,7 +2665,7 @@ fn apply_desktop_local_profile(account: &mut ClaudeAccount, profile_dir: &Path) 
         let should_update = account
             .organization_name
             .as_deref()
-            .map(|value| value.trim().is_empty() || value.eq_ignore_ascii_case("Claude Desktop"))
+            .map(|value| value.trim().is_empty() || value.eq_ignore_ascii_case("Claude"))
             .unwrap_or(true);
         if should_update {
             account.organization_name = Some(organization_name.clone());
@@ -2727,14 +2728,14 @@ fn read_desktop_auth_cookie_export(
     let path = desktop_auth_export_path(profile_dir);
     let content = fs::read_to_string(&path).map_err(|e| {
         format!(
-            "读取 Claude Desktop 授权 cookie 导出失败: path={}, error={}",
+            "读取 Claude 授权 cookie 导出失败: path={}, error={}",
             path.display(),
             e
         )
     })?;
     serde_json::from_str(&content).map_err(|e| {
         format!(
-            "解析 Claude Desktop 授权 cookie 导出失败: path={}, error={}",
+            "解析 Claude 授权 cookie 导出失败: path={}, error={}",
             path.display(),
             e
         )
@@ -2764,7 +2765,7 @@ fn read_claude_safe_storage_password() -> Result<String, String> {
             }
         }
     }
-    Err("未找到 Claude Safe Storage Keychain 密钥，无法解密 Claude Desktop Cookies。".to_string())
+    Err("未找到 Claude Safe Storage Keychain 密钥，无法解密 Claude Cookies。".to_string())
 }
 
 #[cfg(target_os = "macos")]
@@ -2775,7 +2776,7 @@ fn decrypt_chromium_v10_cookie(
 ) -> Result<String, String> {
     const V10_PREFIX: &[u8] = b"v10";
     if !encrypted_value.starts_with(V10_PREFIX) {
-        return Err("Claude Desktop Cookie 使用了暂不支持的加密格式。".to_string());
+        return Err("Claude Cookie 使用了暂不支持的加密格式。".to_string());
     }
     let mut key = [0u8; 16];
     pbkdf2_hmac::<Sha1>(password.as_bytes(), b"saltysalt", 1003, &mut key);
@@ -2785,7 +2786,7 @@ fn decrypt_chromium_v10_cookie(
         .map_err(|e| format!("初始化 Claude Cookie 解密器失败: {}", e))?;
     let mut plaintext = cipher
         .decrypt_padded_mut::<Pkcs7>(&mut buffer)
-        .map_err(|e| format!("解密 Claude Desktop Cookie 失败: {}", e))?
+        .map_err(|e| format!("解密 Claude Cookie 失败: {}", e))?
         .to_vec();
 
     // Chromium DB schema >= 24 prefixes encrypted cookie plaintext with SHA256(host_key).
@@ -2795,9 +2796,9 @@ fn decrypt_chromium_v10_cookie(
     }
 
     if plaintext.iter().any(|byte| !(0x20..=0x7e).contains(byte)) {
-        return Err("解密后的 Claude Desktop Cookie 含有非法字符。".to_string());
+        return Err("解密后的 Claude Cookie 含有非法字符。".to_string());
     }
-    String::from_utf8(plaintext).map_err(|e| format!("解析 Claude Desktop Cookie 失败: {}", e))
+    String::from_utf8(plaintext).map_err(|e| format!("解析 Claude Cookie 失败: {}", e))
 }
 
 #[cfg(target_os = "macos")]
@@ -2807,7 +2808,7 @@ fn read_decrypted_desktop_cookie_export(
     let cookies_path = desktop_cookies_path(profile_dir);
     if !cookies_path.exists() {
         return Err(format!(
-            "Claude Desktop Cookies 不存在: {}",
+            "Claude Cookies 不存在: {}",
             cookies_path.display()
         ));
     }
@@ -2815,7 +2816,7 @@ fn read_decrypted_desktop_cookie_export(
     let conn = Connection::open_with_flags(&cookies_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
         .map_err(|e| {
             format!(
-                "读取 Claude Desktop Cookies 失败: path={}, error={}",
+                "读取 Claude Cookies 失败: path={}, error={}",
                 cookies_path.display(),
                 e
             )
@@ -2827,7 +2828,7 @@ fn read_decrypted_desktop_cookie_export(
              where (host_key like '%claude.ai' or host_key like '%claude.com') \
              and (length(value) > 0 or length(encrypted_value) > 0)",
         )
-        .map_err(|e| format!("查询 Claude Desktop Cookies 失败: {}", e))?;
+        .map_err(|e| format!("查询 Claude Cookies 失败: {}", e))?;
     let rows = stmt
         .query_map([], |row| {
             Ok((
@@ -2841,12 +2842,12 @@ fn read_decrypted_desktop_cookie_export(
                 row.get::<_, i64>(7)?,
             ))
         })
-        .map_err(|e| format!("读取 Claude Desktop Cookies 失败: {}", e))?;
+        .map_err(|e| format!("读取 Claude Cookies 失败: {}", e))?;
 
     let mut cookies = Vec::new();
     for row in rows {
         let (domain, path, name, value, encrypted_value, expires_utc, is_secure, is_httponly) =
-            row.map_err(|e| format!("读取 Claude Desktop Cookie 行失败: {}", e))?;
+            row.map_err(|e| format!("读取 Claude Cookie 行失败: {}", e))?;
         if !is_claude_cookie_domain(&domain) {
             continue;
         }
@@ -2950,7 +2951,7 @@ fn ensure_desktop_auth_export_logged_in(
             && is_claude_cookie_domain(&cookie.domain)
     });
     if !has_session_key || !has_last_active_org {
-        return Err("未检测到 Claude Desktop 登录态，请在授权窗口完成登录后再导入。".to_string());
+        return Err("未检测到 Claude 登录态，请在授权窗口完成登录后再导入。".to_string());
     }
     Ok(())
 }
@@ -2961,7 +2962,7 @@ fn wait_for_desktop_auth_export_logged_in(
     let started_at = Instant::now();
     let timeout = Duration::from_secs(CLAUDE_DESKTOP_AUTH_EXPORT_WAIT_SECONDS);
     let mut last_error =
-        "未检测到 Claude Desktop 登录态，请在授权窗口完成登录后再导入。".to_string();
+        "未检测到 Claude 登录态，请在授权窗口完成登录后再导入。".to_string();
 
     while started_at.elapsed() <= timeout {
         match read_desktop_auth_cookie_export(profile_dir)
@@ -2983,7 +2984,7 @@ fn wait_for_desktop_web_profile_export(
     timeout: Duration,
 ) -> Result<ClaudeDesktopAuthCookieExport, String> {
     let started_at = Instant::now();
-    let mut last_error = "未读取到 Claude Desktop 账号资料".to_string();
+    let mut last_error = "未读取到 Claude 账号资料".to_string();
 
     while started_at.elapsed() <= timeout {
         match read_desktop_auth_cookie_export(profile_dir)
@@ -2991,7 +2992,7 @@ fn wait_for_desktop_web_profile_export(
         {
             Ok(export) if export.web_profile.is_some() => return Ok(export),
             Ok(_) => {
-                last_error = "Claude Desktop 登录态已读取，但资料接口未返回数据".to_string();
+                last_error = "Claude 登录态已读取，但资料接口未返回数据".to_string();
             }
             Err(error) => {
                 last_error = error;
@@ -3016,7 +3017,7 @@ fn write_desktop_cookie_probe_file(
     export: &ClaudeDesktopAuthCookieExport,
 ) -> Result<(), String> {
     let content = serde_json::to_string_pretty(export)
-        .map_err(|e| format!("序列化 Claude Desktop Cookie 探测文件失败: {}", e))?;
+        .map_err(|e| format!("序列化 Claude Cookie 探测文件失败: {}", e))?;
     atomic_write::write_string_atomic(path, &content)?;
     #[cfg(unix)]
     {
@@ -3036,7 +3037,7 @@ fn probe_desktop_web_profile_with_decrypted_cookies(profile_dir: &Path) -> Resul
     let export_file = user_data_dir.join(CLAUDE_DESKTOP_AUTH_EXPORT_FILE);
     let cookie_file = probe_root.join(CLAUDE_DESKTOP_COOKIE_EXPORT_FILE);
     fs::create_dir_all(&user_data_dir)
-        .map_err(|e| format!("创建 Claude Desktop Cookie 探测目录失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude Cookie 探测目录失败: {}", e))?;
     let result = (|| {
         write_desktop_cookie_probe_file(&cookie_file, &cookie_export)?;
         let helper_pid = launch_platform_desktop_auth_helper_with_args(
@@ -3050,7 +3051,7 @@ fn probe_desktop_web_profile_with_decrypted_cookies(profile_dir: &Path) -> Resul
             .and_then(|export| {
                 export
                     .web_profile
-                    .ok_or_else(|| "Claude Desktop 资料接口未返回数据".to_string())
+                    .ok_or_else(|| "Claude 资料接口未返回数据".to_string())
             });
         terminate_desktop_auth_helper(Some(helper_pid));
         result
@@ -3061,7 +3062,7 @@ fn probe_desktop_web_profile_with_decrypted_cookies(profile_dir: &Path) -> Resul
 
 #[cfg(not(target_os = "macos"))]
 fn probe_desktop_web_profile_with_decrypted_cookies(_profile_dir: &Path) -> Result<Value, String> {
-    Err("当前平台不支持解密 Claude Desktop Cookies。".to_string())
+    Err("当前平台不支持解密 Claude Cookies。".to_string())
 }
 
 fn probe_desktop_web_profile(profile_dir: &Path) -> Result<Value, String> {
@@ -3076,7 +3077,7 @@ fn probe_desktop_web_profile(profile_dir: &Path) -> Result<Value, String> {
         .and_then(|export| {
             export
                 .web_profile
-                .ok_or_else(|| "Claude Desktop 资料接口未返回数据".to_string())
+                .ok_or_else(|| "Claude 资料接口未返回数据".to_string())
         });
     terminate_desktop_auth_helper(Some(helper_pid));
     match result {
@@ -3090,7 +3091,7 @@ fn probe_desktop_web_profile(profile_dir: &Path) -> Result<Value, String> {
             Ok(fallback) => Ok(fallback),
             Err(error) => {
                 logger::log_warn(&format!(
-                    "[Claude Desktop] Cookie 页面上下文刷新失败，保留原始资料结果: {}",
+                    "[Claude] Cookie 页面上下文刷新失败，保留原始资料结果: {}",
                     error
                 ));
                 Ok(profile)
@@ -3114,7 +3115,7 @@ fn rewrite_desktop_cookies_with_exported_plaintext(
     let cookies_path = desktop_cookies_path(profile_dir);
     if !cookies_path.exists() {
         return Err(format!(
-            "Claude Desktop Cookies 不存在: {}",
+            "Claude Cookies 不存在: {}",
             cookies_path.display()
         ));
     }
@@ -3125,7 +3126,7 @@ fn rewrite_desktop_cookies_with_exported_plaintext(
     )
     .map_err(|e| {
         format!(
-            "打开 Claude Desktop Cookies 失败: path={}, error={}",
+            "打开 Claude Cookies 失败: path={}, error={}",
             cookies_path.display(),
             e
         )
@@ -3170,7 +3171,7 @@ fn rewrite_desktop_cookies_with_exported_plaintext(
                     cookie_path
                 ],
             )
-            .map_err(|e| format!("写入 Claude Desktop plaintext cookie 失败: {}", e))?;
+            .map_err(|e| format!("写入 Claude plaintext cookie 失败: {}", e))?;
         if updated_count == 0 {
             conn.execute(
                 "insert into cookies (
@@ -3215,7 +3216,7 @@ fn rewrite_desktop_cookies_with_exported_plaintext(
                     source_type
                 ],
             )
-            .map_err(|e| format!("写入 Claude Desktop plaintext cookie 失败: {}", e))?;
+            .map_err(|e| format!("写入 Claude plaintext cookie 失败: {}", e))?;
         }
         if CLAUDE_DESKTOP_REQUIRED_COOKIE_NAMES
             .iter()
@@ -3232,7 +3233,7 @@ fn rewrite_desktop_cookies_with_exported_plaintext(
         .collect::<Vec<_>>();
     if !missing_required_names.is_empty() {
         return Err(format!(
-            "Claude Desktop Cookies 写入不完整，缺少: {}",
+            "Claude Cookies 写入不完整，缺少: {}",
             missing_required_names.join(", ")
         ));
     }
@@ -3293,7 +3294,7 @@ fn copy_path_overwrite(src: &Path, dst: &Path) -> Result<(), String> {
 }
 
 fn copy_desktop_profile_snapshot(src: &Path, dst: &Path) -> Result<(), String> {
-    fs::create_dir_all(dst).map_err(|e| format!("创建 Claude Desktop 快照目录失败: {}", e))?;
+    fs::create_dir_all(dst).map_err(|e| format!("创建 Claude 快照目录失败: {}", e))?;
     for item in CLAUDE_DESKTOP_PROFILE_ITEMS {
         let source = src.join(item);
         if !source.exists() {
@@ -3321,7 +3322,7 @@ fn merge_desktop_config_token(
     }
     let object = target
         .as_object_mut()
-        .ok_or_else(|| "Claude Desktop config.json 结构非法".to_string())?;
+        .ok_or_else(|| "Claude config.json 结构非法".to_string())?;
     object.insert("oauth:tokenCache".to_string(), token_cache);
     write_config_file(target_config_path, &target)
 }
@@ -3329,12 +3330,12 @@ fn merge_desktop_config_token(
 fn restore_desktop_profile_snapshot(snapshot_dir: &Path, target_dir: &Path) -> Result<(), String> {
     if !snapshot_dir.exists() {
         return Err(format!(
-            "Claude Desktop 快照目录不存在: {}",
+            "Claude 快照目录不存在: {}",
             snapshot_dir.display()
         ));
     }
     fs::create_dir_all(target_dir)
-        .map_err(|e| format!("创建 Claude Desktop profile 目录失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude profile 目录失败: {}", e))?;
     for item in CLAUDE_DESKTOP_PROFILE_ITEMS {
         let source = snapshot_dir.join(item);
         if !source.exists() {
@@ -3360,12 +3361,12 @@ fn desktop_gateway_account_profile_dir(account: &ClaudeAccount) -> Result<PathBu
                 .ok()
                 .map(|dir| dir.join(&account.id))
         })
-        .ok_or_else(|| "Claude Desktop Gateway profile 目录不可用".to_string())
+        .ok_or_else(|| "Claude Gateway profile 目录不可用".to_string())
 }
 
 fn build_desktop_gateway_provider_config(account: &ClaudeAccount) -> Result<Value, String> {
     if account.auth_mode != ClaudeAuthMode::DesktopGateway {
-        return Err("账号不是 Claude Desktop Gateway 类型".to_string());
+        return Err("账号不是 Claude Gateway 类型".to_string());
     }
     let connection_mode = crate::modules::claude_desktop_gateway::normalize_connection_mode(
         account.desktop_gateway_connection_mode.as_deref(),
@@ -3378,12 +3379,12 @@ fn build_desktop_gateway_provider_config(account: &ClaudeAccount) -> Result<Valu
             .api_key
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
-            .ok_or_else(|| "Claude Desktop Gateway 账号缺少 API Key".to_string())?;
+            .ok_or_else(|| "Claude Gateway 账号缺少 API Key".to_string())?;
         let base_url = account
             .api_base_url
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
-            .ok_or_else(|| "Claude Desktop Gateway 账号缺少 Base URL".to_string())?;
+            .ok_or_else(|| "Claude Gateway 账号缺少 Base URL".to_string())?;
         let auth_scheme =
             normalize_desktop_gateway_auth_scheme(account.desktop_gateway_auth_scheme.as_deref());
         (
@@ -3472,13 +3473,13 @@ fn config_library_contains_gateway_config(config_library_dir: &Path) -> Result<b
 
     for entry in fs::read_dir(config_library_dir).map_err(|e| {
         format!(
-            "读取 Claude Desktop configLibrary 失败: path={}, error={}",
+            "读取 Claude configLibrary 失败: path={}, error={}",
             config_library_dir.display(),
             e
         )
     })? {
         let entry =
-            entry.map_err(|e| format!("读取 Claude Desktop configLibrary 项失败: {}", e))?;
+            entry.map_err(|e| format!("读取 Claude configLibrary 项失败: {}", e))?;
         let path = entry.path();
         if path.file_name().and_then(|value| value.to_str()) == Some("_meta.json")
             || path.extension().and_then(|value| value.to_str()) != Some("json")
@@ -3524,10 +3525,10 @@ fn write_desktop_gateway_profile(account: &ClaudeAccount, target_dir: &Path) -> 
     };
     let base_url = account.api_base_url.clone().unwrap_or_default();
     fs::create_dir_all(target_dir)
-        .map_err(|e| format!("创建 Claude Desktop Gateway profile 失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude Gateway profile 失败: {}", e))?;
     let config_library_dir = target_dir.join("configLibrary");
     fs::create_dir_all(&config_library_dir)
-        .map_err(|e| format!("创建 Claude Desktop Gateway configLibrary 失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude Gateway configLibrary 失败: {}", e))?;
 
     write_config_file(
         &target_dir.join("claude_desktop_config.json"),
@@ -3562,14 +3563,14 @@ pub fn restore_desktop_account_to_profile(
 ) -> Result<(), String> {
     let account = load_account(account_id).ok_or_else(|| "Claude 账号不存在".to_string())?;
     if account.auth_mode != ClaudeAuthMode::DesktopOAuth {
-        return Err("绑定账号不是 Claude Desktop 登录态，无法写入 Desktop profile。".to_string());
+        return Err("绑定账号不是 Claude 登录态，无法写入 Claude profile。".to_string());
     }
     let snapshot_dir = account
         .desktop_profile_dir
         .as_deref()
         .and_then(|value| normalize_non_empty(Some(value)))
         .map(PathBuf::from)
-        .ok_or_else(|| "Claude Desktop 账号缺少 profile 快照".to_string())?;
+        .ok_or_else(|| "Claude 账号缺少 profile 快照".to_string())?;
 
     if backup_existing {
         let _backup_dir = backup_current_desktop_profile(target_dir)?;
@@ -3591,7 +3592,7 @@ pub fn restore_desktop_gateway_account_to_profile(
 ) -> Result<(), String> {
     let account = load_account(account_id).ok_or_else(|| "Claude 账号不存在".to_string())?;
     if account.auth_mode != ClaudeAuthMode::DesktopGateway {
-        return Err("绑定账号不是 Claude Desktop Gateway 类型。".to_string());
+        return Err("绑定账号不是 Claude Gateway 类型。".to_string());
     }
     if backup_existing {
         let _backup_dir = backup_current_desktop_profile(target_dir)?;
@@ -3650,7 +3651,7 @@ fn find_desktop_auth_helper_script() -> Result<PathBuf, String> {
         .find(|path| path.exists())
         .ok_or_else(|| {
             format!(
-                "未找到 Claude Desktop 授权 helper 脚本，请确认 {} 存在。",
+                "未找到 Claude 授权 helper 脚本，请确认 {} 存在。",
                 CLAUDE_DESKTOP_AUTH_HELPER_SCRIPT
             )
         })
@@ -3783,7 +3784,7 @@ fn verify_cached_electron_zip(asset: &ElectronRuntimeAsset, zip_path: &Path) -> 
         Ok(actual) if actual.eq_ignore_ascii_case(asset.sha256) => true,
         Ok(actual) => {
             logger::log_warn(&format!(
-                "[Claude Desktop Auth] Electron runtime 缓存校验失败，准备重新下载: path={}, expected={}, actual={}",
+                "[Claude Auth] Electron runtime 缓存校验失败，准备重新下载: path={}, expected={}, actual={}",
                 zip_path.display(),
                 asset.sha256,
                 actual
@@ -3793,7 +3794,7 @@ fn verify_cached_electron_zip(asset: &ElectronRuntimeAsset, zip_path: &Path) -> 
         }
         Err(error) => {
             logger::log_warn(&format!(
-                "[Claude Desktop Auth] Electron runtime 缓存读取失败，准备重新下载: path={}, error={}",
+                "[Claude Auth] Electron runtime 缓存读取失败，准备重新下载: path={}, error={}",
                 zip_path.display(),
                 error
             ));
@@ -3818,7 +3819,7 @@ fn download_electron_runtime_zip(
 
     let url = electron_runtime_download_url(asset);
     logger::log_info(&format!(
-        "[Claude Desktop Auth] 开始下载 Electron runtime: url={}, target={}",
+        "[Claude Auth] 开始下载 Electron runtime: url={}, target={}",
         url,
         zip_path.display()
     ));
@@ -3884,7 +3885,7 @@ fn download_electron_runtime_zip(
     fs::rename(&temp_path, zip_path)
         .map_err(|e| format!("保存 Electron runtime 缓存失败: {}", e))?;
     logger::log_info(&format!(
-        "[Claude Desktop Auth] Electron runtime 下载完成: path={}, bytes={}",
+        "[Claude Auth] Electron runtime 下载完成: path={}, bytes={}",
         zip_path.display(),
         downloaded
     ));
@@ -3949,7 +3950,7 @@ fn ensure_downloaded_electron_runtime() -> Result<PathBuf, String> {
     let executable = runtime_dir.join(asset.executable_relative);
     if executable.exists() {
         logger::log_info(&format!(
-            "[Claude Desktop Auth] 使用已缓存 Electron runtime: {}",
+            "[Claude Auth] 使用已缓存 Electron runtime: {}",
             executable.display()
         ));
         return Ok(executable);
@@ -3961,7 +3962,7 @@ fn ensure_downloaded_electron_runtime() -> Result<PathBuf, String> {
     let executable = runtime_dir.join(asset.executable_relative);
     if executable.exists() {
         logger::log_info(&format!(
-            "[Claude Desktop Auth] Electron runtime 已准备: {}",
+            "[Claude Auth] Electron runtime 已准备: {}",
             executable.display()
         ));
         return Ok(executable);
@@ -4010,7 +4011,7 @@ fn find_electron_executable_for_desktop_auth() -> Result<PathBuf, String> {
     for path in candidates {
         if path.exists() {
             logger::log_info(&format!(
-                "[Claude Desktop Auth] 使用 Electron: {}",
+                "[Claude Auth] 使用 Electron: {}",
                 path.display()
             ));
             return Ok(path);
@@ -4176,7 +4177,7 @@ fn launch_platform_desktop_auth_helper_with_args(
     let stderr_log = user_data_dir.join("claude_desktop_auth_helper.stderr.log");
     let mut command = std::process::Command::new(electron);
     logger::log_info(&format!(
-        "[Claude Desktop Auth] 启动 helper: script={}, mode={}, user_data_dir={}, status_file={}, export_file={}",
+        "[Claude Auth] 启动 helper: script={}, mode={}, user_data_dir={}, status_file={}, export_file={}",
         helper_script_arg,
         mode,
         user_data_dir.display(),
@@ -4222,12 +4223,12 @@ fn launch_platform_desktop_auth_helper_with_args(
     }
     let mut child = command
         .spawn()
-        .map_err(|e| format!("启动 Claude Desktop 授权窗口失败: {}", e))?;
+        .map_err(|e| format!("启动 Claude 授权窗口失败: {}", e))?;
     let child_id = child.id();
     std::thread::sleep(Duration::from_millis(300));
     if let Some(status) = child
         .try_wait()
-        .map_err(|e| format!("检查 Claude Desktop 授权窗口进程失败: {}", e))?
+        .map_err(|e| format!("检查 Claude 授权窗口进程失败: {}", e))?
     {
         let stderr = fs::read_to_string(&stderr_log).unwrap_or_default();
         let stdout = fs::read_to_string(&stdout_log).unwrap_or_default();
@@ -4237,7 +4238,7 @@ fn launch_platform_desktop_auth_helper_with_args(
             .collect::<Vec<_>>()
             .join("\n");
         return Err(format!(
-            "Claude Desktop 授权窗口启动后立即退出: {}{}",
+            "Claude 授权窗口启动后立即退出: {}{}",
             status,
             if detail.is_empty() {
                 "".to_string()
@@ -4247,7 +4248,7 @@ fn launch_platform_desktop_auth_helper_with_args(
         ));
     }
     logger::log_info(&format!(
-        "[Claude Desktop Auth] helper 已启动: pid={}, stdout={}, stderr={}",
+        "[Claude Auth] helper 已启动: pid={}, stdout={}, stderr={}",
         child_id,
         stdout_log.display(),
         stderr_log.display()
@@ -4326,7 +4327,7 @@ fn force_kill_claude_desktop_main_processes() {
         return;
     }
     logger::log_warn(&format!(
-        "[Claude Desktop] force killing main processes before profile write: {}",
+        "[Claude] force killing main processes before profile write: {}",
         crate::modules::process::summarize_pid_list_for_log(&pids)
     ));
     for pid in pids {
@@ -4362,7 +4363,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
     if !is_claude_desktop_running() {
         return Ok(());
     }
-    logger::log_info("[Claude Desktop] closing Claude before profile write");
+    logger::log_info("[Claude] closing Claude before profile write");
     let _ = std::process::Command::new("osascript")
         .args([
             "-e",
@@ -4384,7 +4385,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
         let target_dir = target_dir.to_string_lossy().to_string();
         if let Err(error) = crate::modules::claude_instance::close_claude(&[target_dir], 8) {
             logger::log_warn(&format!(
-                "[Claude Desktop] managed close before profile write failed: {}",
+                "[Claude] managed close before profile write failed: {}",
                 error
             ));
         }
@@ -4406,7 +4407,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
         std::thread::sleep(std::time::Duration::from_millis(250));
     }
 
-    Err("Claude Desktop 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
+    Err("Claude 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
 }
 
 #[cfg(target_os = "windows")]
@@ -4418,7 +4419,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-    logger::log_info("[Claude Desktop] closing claude.exe before profile write");
+    logger::log_info("[Claude] closing claude.exe before profile write");
     let graceful = std::process::Command::new("taskkill")
         .args(["/IM", "claude.exe", "/T"])
         .creation_flags(CREATE_NO_WINDOW)
@@ -4428,7 +4429,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
         .output();
     if let Err(error) = graceful {
         logger::log_warn(&format!(
-            "[Claude Desktop] graceful taskkill failed: {}",
+            "[Claude] graceful taskkill failed: {}",
             error
         ));
     }
@@ -4442,7 +4443,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
     }
 
     logger::log_warn(
-        "[Claude Desktop] claude.exe still running; forcing close before profile write",
+        "[Claude] claude.exe still running; forcing close before profile write",
     );
     let force = std::process::Command::new("taskkill")
         .args(["/IM", "claude.exe", "/T", "/F"])
@@ -4451,10 +4452,10 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .output()
-        .map_err(|e| format!("退出 Claude Desktop 失败: {}", e))?;
+        .map_err(|e| format!("退出 Claude 失败: {}", e))?;
     if !force.status.success() && is_claude_desktop_running() {
         return Err(
-            "Claude Desktop 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string(),
+            "Claude 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string(),
         );
     }
 
@@ -4466,7 +4467,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
         std::thread::sleep(std::time::Duration::from_millis(250));
     }
 
-    Err("Claude Desktop 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
+    Err("Claude 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
 }
 
 #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
@@ -4474,7 +4475,7 @@ fn quit_claude_desktop_for_profile_write() -> Result<(), String> {
     if !is_claude_desktop_running() {
         return Ok(());
     }
-    Err("Claude Desktop 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
+    Err("Claude 仍在运行，无法安全写入登录态。请先退出 Claude 后重试。".to_string())
 }
 
 #[cfg(target_os = "macos")]
@@ -4506,7 +4507,7 @@ fn find_windows_claude_start_app_id() -> Option<String> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         logger::log_warn(&format!(
-            "[Claude Desktop] Get-StartApps failed while resolving Windows launch id: {}",
+            "[Claude] Get-StartApps failed while resolving Windows launch id: {}",
             stderr.trim()
         ));
         return None;
@@ -4526,7 +4527,7 @@ fn launch_default_claude_desktop() {
 
     let Some(app_id) = find_windows_claude_start_app_id() else {
         logger::log_warn(
-            "[Claude Desktop] Windows Start Apps entry not found; Claude was not relaunched",
+            "[Claude] Windows Start Apps entry not found; Claude was not relaunched",
         );
         return;
     };
@@ -4541,12 +4542,12 @@ fn launch_default_claude_desktop() {
         .spawn()
     {
         Ok(child) => logger::log_info(&format!(
-            "[Claude Desktop] launched Windows app id {} via explorer.exe pid={}",
+            "[Claude] launched Windows app id {} via explorer.exe pid={}",
             app_id,
             child.id()
         )),
         Err(error) => logger::log_warn(&format!(
-            "[Claude Desktop] failed to launch Windows app id {}: {}",
+            "[Claude] failed to launch Windows app id {}: {}",
             app_id, error
         )),
     }
@@ -4629,10 +4630,10 @@ fn import_desktop_profile_snapshot(
                 Ok(profile) => Some(profile),
                 Err(error) => {
                     logger::log_warn(&format!(
-                        "[Claude Desktop] 导入后自动刷新账号资料失败，已保留本地快照: {}",
+                        "[Claude] 导入后自动刷新账号资料失败，已保留本地快照: {}",
                         error
                     ));
-                    profile_error = Some(format!("Claude Desktop 资料刷新失败: {}", error));
+                    profile_error = Some(format!("Claude 资料刷新失败: {}", error));
                     None
                 }
             });
@@ -4645,7 +4646,7 @@ fn import_desktop_profile_snapshot(
                     None
                 } else {
                     desktop_web_profile_error_message(web_profile).or_else(|| {
-                        Some("Claude Desktop 资料接口未返回邮箱、头像或套餐字段。".to_string())
+                        Some("Claude 资料接口未返回邮箱、头像或套餐字段。".to_string())
                     })
                 };
         }
@@ -4733,7 +4734,7 @@ pub fn start_desktop_login() -> Result<ClaudeDesktopLoginStartResponse, String> 
     let export_file = user_data_dir.join(CLAUDE_DESKTOP_AUTH_EXPORT_FILE);
     remove_path_if_exists(&user_data_dir)?;
     fs::create_dir_all(&user_data_dir)
-        .map_err(|e| format!("创建 Claude Desktop 登录 profile 失败: {}", e))?;
+        .map_err(|e| format!("创建 Claude 登录 profile 失败: {}", e))?;
     let helper_pid =
         launch_platform_desktop_auth_helper(&user_data_dir, &status_file, &export_file, "auth")?;
     let pending = PendingClaudeDesktopLoginState {
@@ -4795,7 +4796,7 @@ pub fn cancel_desktop_login(login_id: Option<&str>) -> Result<(), String> {
 fn parse_import_item(value: &Value) -> Result<ClaudeAccount, String> {
     if is_desktop_oauth_json_import(value) {
         return Err(
-            "Claude Desktop 普通登录态依赖本机 profile 快照，不支持 JSON 导入，请重新登录 Desktop 或改用 Desktop Gateway。"
+            "Claude 普通登录态依赖本机 profile 快照，不支持 JSON 导入，请重新登录 Desktop 或改用 Claude Gateway。"
                 .to_string(),
         );
     }
@@ -6538,7 +6539,7 @@ fn desktop_web_usage_error_message(profile: &Value) -> Option<String> {
         .and_then(|errors| errors.get("organizationUsage"))
         .and_then(|value| normalize_non_empty(value.as_str()))?;
     if error.contains("missing lastActiveOrg") {
-        return Some("Claude Desktop 账号缺少组织信息，暂时无法刷新额度。".to_string());
+        return Some("Claude 账号缺少组织信息，暂时无法刷新额度。".to_string());
     }
     if error.contains("HTTP 403")
         || error.contains("Just a moment")
@@ -6550,7 +6551,7 @@ fn desktop_web_usage_error_message(profile: &Value) -> Option<String> {
         );
     }
     Some(format!(
-        "Claude Desktop 额度刷新失败: {}",
+        "Claude 额度刷新失败: {}",
         shorten_profile_error(&error)
     ))
 }
@@ -6567,13 +6568,13 @@ fn desktop_account_has_real_profile_data(account: &ClaudeAccount) -> bool {
             .plan_type
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
-            .map(|value| !value.eq_ignore_ascii_case("Claude Desktop"))
+            .map(|value| !value.eq_ignore_ascii_case("Claude"))
             .unwrap_or(false)
         || account
             .organization_name
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
-            .map(|value| !value.eq_ignore_ascii_case("Claude Desktop"))
+            .map(|value| !value.eq_ignore_ascii_case("Claude"))
             .unwrap_or(false)
 }
 
@@ -6603,7 +6604,7 @@ fn apply_desktop_web_profile(account: &mut ClaudeAccount, profile: &Value) -> bo
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
         logger::log_warn(&format!(
-            "[Claude Desktop] organizationUsage 未识别: account_id={}, usage_present={}, usage_keys={:?}, usage_error={:?}",
+            "[Claude] organizationUsage 未识别: account_id={}, usage_present={}, usage_keys={:?}, usage_error={:?}",
             account.id,
             usage_node.is_some(),
             usage_keys,
@@ -7137,7 +7138,7 @@ pub fn inject_to_claude_config(account_id: &str, config_dir: Option<&Path>) -> R
     if account.auth_mode == ClaudeAuthMode::DesktopOAuth {
         if config_dir.is_some() {
             return Err(
-                "Claude Desktop 登录态不能写入旧配置目录，请使用 Claude Desktop 实例。".to_string(),
+                "Claude 登录态不能写入旧配置目录，请使用 Claude 实例。".to_string(),
             );
         }
         let snapshot_dir = account
@@ -7145,7 +7146,7 @@ pub fn inject_to_claude_config(account_id: &str, config_dir: Option<&Path>) -> R
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
             .map(PathBuf::from)
-            .ok_or_else(|| "Claude Desktop 账号缺少 profile 快照".to_string())?;
+            .ok_or_else(|| "Claude 账号缺少 profile 快照".to_string())?;
         let target_dir = get_default_claude_desktop_user_data_dir()?;
         quit_claude_desktop_for_profile_write()?;
         let _backup_dir = backup_current_desktop_profile(&target_dir)?;
@@ -7217,7 +7218,7 @@ pub fn remove_accounts(account_ids: &[String]) -> Result<(), String> {
                     if snapshot_path.exists() {
                         fs::remove_dir_all(&snapshot_path).map_err(|e| {
                             format!(
-                                "删除 Claude Desktop 快照失败: path={}, error={}",
+                                "删除 Claude 快照失败: path={}, error={}",
                                 snapshot_path.display(),
                                 e
                             )
@@ -7235,7 +7236,7 @@ pub fn remove_accounts(account_ids: &[String]) -> Result<(), String> {
                     if profile_path.exists() {
                         fs::remove_dir_all(&profile_path).map_err(|e| {
                             format!(
-                                "删除 Claude Desktop Gateway profile 失败: path={}, error={}",
+                                "删除 Claude Gateway profile 失败: path={}, error={}",
                                 profile_path.display(),
                                 e
                             )
@@ -7255,7 +7256,7 @@ pub fn remove_accounts(account_ids: &[String]) -> Result<(), String> {
         .accounts
         .retain(|item| !account_ids.iter().any(|id| id == &item.id));
     save_index(&index)?;
-    for platform in ["claude", "claude_cli"] {
+    for platform in ["claude_desktop_account", "claude_code_account"] {
         let _ = crate::modules::provider_current_state::resolve_existing_current_account_id(
             platform,
             index.accounts.iter().map(|item| item.id.as_str()),
@@ -7467,7 +7468,7 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<ClaudeAccount, St
         account.quota_error = Some(ClaudeQuotaErrorInfo {
             code: Some("unsupported_auth_mode".to_string()),
             message: if account.auth_mode == ClaudeAuthMode::DesktopGateway {
-                "Claude Desktop Gateway 账号不支持 Claude 订阅配额刷新，请在供应商后台查看用量。"
+                "Claude Gateway 账号不支持 Claude 订阅配额刷新，请在供应商后台查看用量。"
                     .to_string()
             } else {
                 "Claude API Key 账号不支持 Claude 订阅配额刷新，请在 Anthropic Console 查看用量。"
@@ -7484,7 +7485,7 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<ClaudeAccount, St
             .as_deref()
             .and_then(|value| normalize_non_empty(Some(value)))
             .map(PathBuf::from)
-            .ok_or_else(|| "Claude Desktop 账号缺少 profile 快照".to_string())?;
+            .ok_or_else(|| "Claude 账号缺少 profile 快照".to_string())?;
         let local_profile_applied = apply_desktop_local_profile(&mut account, &snapshot_dir);
         match probe_desktop_web_profile(&snapshot_dir) {
             Ok(web_profile) => {
@@ -7511,7 +7512,7 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<ClaudeAccount, St
                 } else {
                     let message =
                         desktop_web_profile_error_message(&web_profile).unwrap_or_else(|| {
-                            "Claude Desktop 资料接口未返回邮箱、头像或套餐字段。".to_string()
+                            "Claude 资料接口未返回邮箱、头像或套餐字段。".to_string()
                         });
                     account.quota_error = Some(ClaudeQuotaErrorInfo {
                         code: Some("desktop_profile_failed".to_string()),
@@ -7523,10 +7524,10 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<ClaudeAccount, St
             }
             Err(error) => {
                 logger::log_warn(&format!(
-                    "[Claude Desktop] 刷新账号资料失败: account_id={}, error={}",
+                    "[Claude] 刷新账号资料失败: account_id={}, error={}",
                     account_id, error
                 ));
-                let message = format!("Claude Desktop 资料刷新失败: {}", error);
+                let message = format!("Claude 资料刷新失败: {}", error);
                 if local_profile_applied || desktop_account_has_real_profile_data(&account) {
                     account.quota_error = Some(ClaudeQuotaErrorInfo {
                         code: Some("desktop_usage_refresh_failed".to_string()),
@@ -8009,14 +8010,14 @@ mod tests {
     fn merges_same_desktop_identity_without_touching_non_desktop_accounts() {
         let mut base = test_desktop_account(
             "claude_desktop_old",
-            "Claude Desktop",
+            "Claude",
             Some("B55DE31D-DA47-4433-9A73-BBBA05AFFEEB"),
             Some("/tmp/old-snapshot"),
             10,
             20,
         );
         base.tags = Some(vec!["work".to_string()]);
-        base.plan_type = Some("Claude Desktop".to_string());
+        base.plan_type = Some("Claude".to_string());
 
         let mut incoming = test_desktop_account(
             "claude_desktop_new",

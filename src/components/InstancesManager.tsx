@@ -284,6 +284,8 @@ const resolveFloatingCardPlatformId = (
   switch (appType) {
     case "vscode":
       return "github-copilot";
+    case "claude":
+      return "claude_manager";
     default:
       return appType;
   }

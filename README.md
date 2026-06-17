@@ -426,7 +426,7 @@ QQ 交流群、微信群或新建的 Telegram 畅聊群都可以加入。
 - Codex API 服务协议兼容方向参考：[codex-proxy](https://github.com/icebear0828/codex-proxy)
 - Codex 与 Claude CLI 第三方供应商预设参考：[CC Switch](https://github.com/farion1231/cc-switch)
 - Codex 模型目录与前端模型显示思路参考：[CodexPlusPlus](https://github.com/BigPizzaV3/CodexPlusPlus)
-- Claude Desktop 可选登录 helper 运行时基于：[Electron](https://github.com/electron/electron)
+- Claude 可选登录 helper 运行时基于：[Electron](https://github.com/electron/electron)
 
 感谢项目作者的开源贡献！如果这些项目对你有帮助，也请给他们点个 ⭐ Star 支持一下！
 

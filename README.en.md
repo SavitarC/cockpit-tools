@@ -423,7 +423,7 @@ Every bit of support helps sustain open-source development. Thank you!
 - Codex API service protocol compatibility direction references: [codex-proxy](https://github.com/icebear0828/codex-proxy)
 - Codex and Claude CLI third-party provider presets reference: [CC Switch](https://github.com/farion1231/cc-switch)
 - Codex model catalog and frontend model display ideas reference: [CodexPlusPlus](https://github.com/BigPizzaV3/CodexPlusPlus)
-- Claude Desktop optional sign-in helper runtime is based on: [Electron](https://github.com/electron/electron)
+- Claude optional sign-in helper runtime is based on: [Electron](https://github.com/electron/electron)
 
 Thanks to the project author for their open-source contributions! If these projects have helped you, please give them a ⭐ Star to show your support!
 

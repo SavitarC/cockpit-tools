@@ -81,7 +81,7 @@ pub struct GeneralConfig {
     pub cursor_auto_refresh_minutes: i32,
     /// Gemini 自动刷新间隔（分钟），-1 表示禁用
     pub gemini_auto_refresh_minutes: i32,
-    /// Claude Desktop 自动刷新间隔（分钟），-1 表示禁用
+    /// Claude 自动刷新间隔（分钟），-1 表示禁用
     pub claude_auto_refresh_minutes: i32,
     /// Gemini 切号时是否同步覆盖 WSL 配置 (Windows Only)
     pub gemini_sync_wsl: bool,
@@ -233,9 +233,9 @@ pub struct GeneralConfig {
     pub gemini_quota_alert_enabled: bool,
     /// Gemini 配额预警阈值（百分比）
     pub gemini_quota_alert_threshold: i32,
-    /// 是否启用 Claude Desktop 配额预警通知
+    /// 是否启用 Claude 配额预警通知
     pub claude_quota_alert_enabled: bool,
-    /// Claude Desktop 配额预警阈值（百分比）
+    /// Claude 配额预警阈值（百分比）
     pub claude_quota_alert_threshold: i32,
     /// 是否启用 CodeBuddy 配额预警通知
     pub codebuddy_quota_alert_enabled: bool,

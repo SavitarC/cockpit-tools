@@ -163,7 +163,6 @@ pub(crate) enum PlatformId {
     Antigravity,
     Codex,
     Claude,
-    ClaudeCli,
     Zed,
     GitHubCopilot,
     Windsurf,
@@ -178,12 +177,11 @@ pub(crate) enum PlatformId {
 }
 
 impl PlatformId {
-    pub(crate) fn default_order() -> [Self; 15] {
+    pub(crate) fn default_order() -> [Self; 14] {
         [
-            Self::Antigravity,
-            Self::Codex,
             Self::Claude,
-            Self::ClaudeCli,
+            Self::Codex,
+            Self::Antigravity,
             Self::Zed,
             Self::GitHubCopilot,
             Self::Windsurf,
@@ -202,8 +200,7 @@ impl PlatformId {
         match value {
             crate::modules::tray_layout::PLATFORM_ANTIGRAVITY => Some(Self::Antigravity),
             crate::modules::tray_layout::PLATFORM_CODEX => Some(Self::Codex),
-            crate::modules::tray_layout::PLATFORM_CLAUDE => Some(Self::Claude),
-            crate::modules::tray_layout::PLATFORM_CLAUDE_CLI => Some(Self::ClaudeCli),
+            crate::modules::tray_layout::PLATFORM_CLAUDE_MANAGER => Some(Self::Claude),
             crate::modules::tray_layout::PLATFORM_ZED => Some(Self::Zed),
             crate::modules::tray_layout::PLATFORM_GITHUB_COPILOT => Some(Self::GitHubCopilot),
             crate::modules::tray_layout::PLATFORM_WINDSURF => Some(Self::Windsurf),
@@ -223,8 +220,7 @@ impl PlatformId {
         match self {
             Self::Antigravity => crate::modules::tray_layout::PLATFORM_ANTIGRAVITY,
             Self::Codex => crate::modules::tray_layout::PLATFORM_CODEX,
-            Self::Claude => crate::modules::tray_layout::PLATFORM_CLAUDE,
-            Self::ClaudeCli => crate::modules::tray_layout::PLATFORM_CLAUDE_CLI,
+            Self::Claude => crate::modules::tray_layout::PLATFORM_CLAUDE_MANAGER,
             Self::Zed => crate::modules::tray_layout::PLATFORM_ZED,
             Self::GitHubCopilot => crate::modules::tray_layout::PLATFORM_GITHUB_COPILOT,
             Self::Windsurf => crate::modules::tray_layout::PLATFORM_WINDSURF,
@@ -243,8 +239,7 @@ impl PlatformId {
         match self {
             Self::Antigravity => "Antigravity IDE",
             Self::Codex => "Codex",
-            Self::Claude => "Claude Desktop",
-            Self::ClaudeCli => "Claude CLI",
+            Self::Claude => "Claude",
             Self::Zed => "Zed",
             Self::GitHubCopilot => "GitHub Copilot",
             Self::Windsurf => "Windsurf",
@@ -264,7 +259,6 @@ impl PlatformId {
             Self::Antigravity => "overview",
             Self::Codex => "codex",
             Self::Claude => "claude",
-            Self::ClaudeCli => "claude-cli",
             Self::Zed => "zed",
             Self::GitHubCopilot => "github-copilot",
             Self::Windsurf => "windsurf",
@@ -789,7 +783,6 @@ fn get_account_display_info(platform: PlatformId, lang: &str) -> AccountDisplayI
         PlatformId::Antigravity => build_antigravity_display_info(lang),
         PlatformId::Codex => build_codex_display_info(lang),
         PlatformId::Claude => build_claude_display_info(lang, true),
-        PlatformId::ClaudeCli => build_claude_display_info(lang, false),
         PlatformId::Zed => build_zed_display_info(lang),
         PlatformId::GitHubCopilot => build_github_copilot_display_info(lang),
         PlatformId::Windsurf => build_windsurf_display_info(lang),
@@ -1044,7 +1037,11 @@ fn build_claude_display_info(lang: &str, desktop: bool) -> AccountDisplayInfo {
         .into_iter()
         .filter(|account| is_claude_desktop_account(account) == desktop)
         .collect::<Vec<_>>();
-    let current_platform = if desktop { "claude" } else { "claude_cli" };
+    let current_platform = if desktop {
+        "claude_desktop_account"
+    } else {
+        "claude_code_account"
+    };
     let Some(account) = crate::modules::claude_account::resolve_current_account_for_platform(
         current_platform,
         &accounts,

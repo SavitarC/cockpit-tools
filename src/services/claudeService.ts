@@ -38,7 +38,7 @@ function normalizeClaudeDesktopLoginStartResponse(
   const intervalSeconds = Number(raw.intervalSeconds ?? raw.interval_seconds ?? 0);
 
   if (!loginId || !userDataDir) {
-    throw new Error('Claude Desktop login start 响应缺少关键字段');
+    throw new Error('Claude login start 响应缺少关键字段');
   }
 
   return {

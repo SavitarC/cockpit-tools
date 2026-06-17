@@ -780,9 +780,9 @@
       "codexAppSpeedLaunch": "Reiniciar Codex",
       "codexAppSpeedSaveFailed": "No se pudo guardar la velocidad de Codex: {{error}}",
       "codexAppSpeedLaunchFailed": "No se pudo reiniciar Codex: {{error}}",
-      "claudeSettingsTitle": "Ajustes de Claude Desktop",
-      "claudeAutoRefresh": "Actualización automática de cuota de Claude Desktop",
-      "claudeAutoRefreshDesc": "Actualiza automáticamente en segundo plano la caché de cuota de las cuentas de Claude Desktop."
+      "claudeSettingsTitle": "Ajustes de Claude",
+      "claudeAutoRefresh": "Actualización automática de cuota de Claude",
+      "claudeAutoRefreshDesc": "Actualiza automáticamente en segundo plano la caché de cuota de las cuentas de Claude."
     },
     "network": {
       "apiTitle": "API de cabina antigravedad",
@@ -2370,6 +2370,11 @@
         "loadingProviders": "Cargando providers...",
         "noProvider": "No se encontró provider",
         "providerLoadFailed": "No se pudieron cargar providers: {{error}}",
+        "modeTitle": "Modo de reparación",
+        "modeQuick": "Reparación rápida",
+        "modeQuickDesc": "Corrige la state DB oficial y la primera línea de metadatos de la sesión. Ideal tras cambios habituales de cuenta.",
+        "modeDeep": "Reparación profunda",
+        "modeDeepDesc": "Mantiene la reparación completa actual de metadatos para probar cuando la rápida no basta.",
         "scopeTitle": "Alcance de sesiones",
         "scopeAll": "Todas las sesiones",
         "scopeAllDesc": "Repara {{count}} sesión(es) de la lista actual.",
@@ -3307,7 +3312,7 @@
     },
     "claudeRefreshInterval": "Actualización automática de cuota",
     "claude": {
-      "appPath": "Ruta de Claude Desktop"
+      "appPath": "Ruta de Claude"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Claude añadido",
       "addToCodex": "Añadir a Codex",
       "addToClaude": "Añadir a Claude CLI",
-      "addToClaudeDesktop": "Añadir a Claude Desktop",
+      "addToClaudeDesktop": "Añadir a Claude",
       "addToClaudeCli": "Añadir a Claude CLI",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "La configuración de APIKEY.FUN está rellenada. Confirma para añadirla a Claude Desktop."
+      "claudeDesktopReady": "La configuración de APIKEY.FUN está rellenada. Confirma para añadirla a Claude."
     },
     "copyKey": "Copy Key​",
     "clearKey": "Clear input​"
   },
   "claude": {
     "import": {
-      "localSuccess": "Se importaron {{count}} sesión(es) local(es) de Claude Desktop",
-      "localClient": "Importar Desktop actual",
+      "localSuccess": "Se importaron {{count}} sesión(es) local(es) de Claude",
+      "localClient": "Importar Claude actual",
       "jsonLabel": "Datos JSON",
       "jsonPlaceholder": "Pega el JSON de cuenta Claude exportado",
-      "localDesc": "Lee la sesión actual de la app oficial Claude Desktop y la copia en esta herramienta como instantánea de cuenta local.",
-      "desktopJsonPlaceholder": "Pega el JSON exportado de la cuenta Claude Desktop Gateway",
+      "localDesc": "Lee la sesión actual de la app oficial Claude y la copia en esta herramienta como instantánea de cuenta local.",
+      "desktopJsonPlaceholder": "Pega el JSON exportado de la cuenta Claude Gateway",
       "cliJsonPlaceholder": "Pega el JSON exportado de la cuenta Claude CLI"
     },
     "deleteCurrentDisabled": "La cuenta actual no se puede eliminar",
     "flowNotice": {
       "title": "Cuentas Claude",
-      "desc": "Esta herramienta gestiona el estado de inicio de sesión de Claude Desktop y Anthropic API Keys. El inicio Desktop se completa en la ventana de autorización de esta plataforma y se guarda primero en local; solo se escribe en Claude Desktop oficial al cambiar de cuenta.",
-      "permission": "Permisos: lectura/escritura del directorio de datos de la app oficial Claude Desktop. Las API Keys y las instantáneas Desktop se guardan en los datos locales de esta herramienta.",
-      "network": "Red: la ventana de inicio Desktop abre claude.ai; la actualización de cuenta puede solicitar endpoints de Claude Web. Importar API Key no usa red por sí mismo.",
-      "desktopDesc": "Esta herramienta administra el inicio de sesión de Claude Desktop. El inicio se guarda primero en local y solo se escribe en Claude Desktop oficial al cambiar de cuenta.",
+      "desc": "Esta herramienta gestiona el estado de inicio de sesión de Claude y Anthropic API Keys. El inicio Claude se completa en la ventana de autorización de esta plataforma y se guarda primero en local; solo se escribe en Claude oficial al cambiar de cuenta.",
+      "permission": "Permisos: lectura/escritura del directorio de datos de la app oficial Claude. Las API Keys y las instantáneas Claude se guardan en los datos locales de esta herramienta.",
+      "network": "Red: la ventana de inicio Claude abre claude.ai; la actualización de cuenta puede solicitar endpoints de Claude Web. Importar API Key no usa red por sí mismo.",
+      "desktopDesc": "Esta herramienta administra el inicio de sesión de Claude. El inicio se guarda primero en local y solo se escribe en Claude oficial al cambiar de cuenta.",
       "cliDesc": "Esta herramienta gestiona OAuth de Claude Code y API Keys de varios proveedores. El cambio OAuth escribe en la configuración local de Claude Code; las API Keys escriben valores env del proveedor en Claude Code settings.json.",
-      "desktopPermission": "Permisos: leer/escribir el directorio de datos de la app oficial Claude Desktop. Las instantáneas Desktop se guardan en los datos locales de cuentas de esta herramienta.",
+      "desktopPermission": "Permisos: leer/escribir el directorio de datos de la app oficial Claude. Las instantáneas Claude se guardan en los datos locales de cuentas de esta herramienta.",
       "cliPermission": "Alcance de permisos: leer/escribir la configuración local de Claude Code y las credenciales de Claude Code en macOS Keychain; las cuentas API Key se guardan localmente en esta herramienta y se escriben como env en texto claro en settings.json al cambiar o iniciar la CLI.",
-      "desktopNetwork": "Red: la ventana de inicio Desktop abre claude.ai; la actualización de cuentas puede solicitar endpoints de Claude Web.",
+      "desktopNetwork": "Red: la ventana de inicio Claude abre claude.ai; la actualización de cuentas puede solicitar endpoints de Claude Web.",
       "cliNetwork": "Red: OAuth usa la autorización oficial de Claude y endpoints token/profile/usage; importar API Key no usa red, y tras iniciar Claude CLI contacta al proveedor elegido."
     },
     "search": "Buscar cuentas Claude...",
     "noAccounts": "Sin cuentas Claude",
     "addAccount": {
       "title": "Añadir cuenta Claude",
-      "desktopTitle": "Añadir cuenta Claude Desktop",
+      "desktopTitle": "Añadir cuenta Claude",
       "cliTitle": "Añadir cuenta Claude CLI"
     },
     "deleteConfirm": "¿Eliminar cuenta Claude {{email}}?",
@@ -4667,11 +4672,11 @@
       "success": "Cambio correcto"
     },
     "instances": {
-      "unsupportedDescPlatform": "Las instancias múltiples de Claude Desktop solo son compatibles con macOS, Windows y Linux.",
+      "unsupportedDescPlatform": "Las instancias múltiples de Claude solo son compatibles con macOS, Windows y Linux.",
       "launchDialogTitle": "Iniciar instancia",
       "launchCommand": "Comando de inicio",
       "executeInTerminal": "Ejecutar en terminal",
-      "startSuccess": "Claude Desktop iniciado"
+      "startSuccess": "Claude iniciado"
     },
     "quota": {
       "title": "Cuota",
@@ -4702,23 +4707,23 @@
       "oauth": "Modo OAuth",
       "setup_token": "Token de configuración",
       "api_key": "Clave API",
-      "desktop_oauth": "Inicio Desktop"
+      "desktop_oauth": "Inicio Claude"
     },
     "apiKey": {
-      "desc": "Guarda una API Key de Claude CLI como credencial independiente. Al cambiar o iniciar la CLI se escriben valores env del proveedor en Claude Code settings.json, sin escribir el estado de inicio de sesión de Claude Desktop.",
+      "desc": "Guarda una API Key de Claude CLI como credencial independiente. Al cambiar o iniciar la CLI se escriben valores env del proveedor en Claude Code settings.json, sin escribir el estado de inicio de sesión de Claude.",
       "nameLabel": "Nombre de cuenta",
       "namePlaceholder": "Opcional, p. ej. APIKEY.FUN",
       "keyLabel": "Clave API",
       "placeholder": "Pega la API Key del proveedor",
       "hide": "Ocultar API Key",
       "show": "Mostrar API Key",
-      "hint": "Las cuentas API Key solo son para Claude CLI. Se escriben como env en texto claro en Claude Code settings.json, no afectan a Claude Desktop y no admiten actualización de cuota de suscripción.",
+      "hint": "Las cuentas API Key solo son para Claude CLI. Se escriben como env en texto claro en Claude Code settings.json, no afectan a Claude y no admiten actualización de cuota de suscripción.",
       "importAction": "Importar API Key",
       "required": "Introduce una API Key",
       "templateRequired": "Introduce {{label}}",
       "importSuccess": "Cuenta Claude API Key importada: {{name}}",
       "quotaUnsupported": "Las cuentas API Key no admiten actualización",
-      "switchDisabled": "Una cuenta API Key no puede cambiar a Claude Desktop",
+      "switchDisabled": "Una cuenta API Key no puede cambiar a Claude",
       "cliUnsupported": "Una cuenta API Key no puede iniciar Claude CLI",
       "providerLabel": "Proveedor",
       "customProvider": "Personalizado",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL no es una URL válida"
     },
     "desktopOAuth": {
-      "title": "Inicio Claude Desktop",
+      "title": "Inicio Claude",
       "desc": "Inicio Claude dentro de esta herramienta; admite Google, Apple, correo y free.",
       "start": "Abrir inicio",
       "preparingRuntime": "Preparando...",
-      "hint": "Se guarda localmente; se escribe en Claude Desktop al cambiar.",
+      "hint": "Se guarda localmente; se escribe en Claude al cambiar.",
       "runtimeHint": "En el primer uso puede descargarse y verificarse el componente de inicio Electron en la carpeta local de datos de la app; no va incluido en el instalador y después se reutiliza.",
       "nameLabel": "Nombre de cuenta",
       "namePlaceholder": "Opcional, ej. Claude Free",
       "waiting": "Inicia sesión en la ventana Claude y termina aquí.",
       "profileDir": "Directorio profile aislado",
       "complete": "Finalizar",
-      "localTitle": "Importar Desktop actual",
-      "localDesc": "Copia la sesión actual de Claude Desktop como snapshot local.",
+      "localTitle": "Importar Claude actual",
+      "localDesc": "Copia la sesión actual de Claude como snapshot local.",
       "localAction": "Importar",
-      "localSuccess": "Sesión local de Claude Desktop importada: {{name}}",
-      "importSuccess": "Sesión Claude Desktop importada: {{name}}",
-      "switchHint": "Cambiar a Claude Desktop oficial",
+      "localSuccess": "Sesión local de Claude importada: {{name}}",
+      "importSuccess": "Sesión Claude importada: {{name}}",
+      "switchHint": "Cambiar a Claude oficial",
       "planUnknown": "Plan desconocido"
     },
     "oauth": {
       "title": "Autorización OAuth de Claude",
       "desc": "Abre la página oficial de autorización OAuth de Claude y luego pega el enlace de retorno o el código para importar la cuenta.",
       "start": "Autorizar OAuth",
-      "proRequiredHint": "El OAuth oficial de Claude suele usarse para Claude Code. Si la página se queda en actualización o sin permisos, usa el inicio de sesión de Claude Desktop.",
+      "proRequiredHint": "El OAuth oficial de Claude suele usarse para Claude Code. Si la página se queda en actualización o sin permisos, usa el inicio de sesión de Claude.",
       "openInstruction": "Haz clic en el botón de abajo y completa la autorización OAuth de Claude en el navegador.",
       "waiting": "Cuando termines, pega abajo la URL final o el código mostrado.",
       "authUrl": "Enlace de autorización",
@@ -4773,7 +4778,7 @@
       "updateFailed": "No se pudo actualizar la insignia de plan: {{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "Las cuentas OAuth antiguas no pueden cambiar a Claude Desktop",
+      "switchDisabled": "Las cuentas OAuth antiguas no pueden cambiar a Claude",
       "quotaUnsupported": "Las cuentas OAuth antiguas ya no admiten actualización",
       "cliUnsupported": "Las cuentas OAuth antiguas no pueden iniciar Claude CLI"
     },
@@ -4812,18 +4817,18 @@
       "desktop": "Claude Escritorio",
       "cli": "Claude línea de comandos"
     },
-    "searchDesktop": "Buscar cuentas Claude Desktop...",
+    "searchDesktop": "Buscar cuentas Claude...",
     "searchCli": "Buscar cuentas Claude CLI...",
-    "noDesktopAccounts": "Aún no hay cuentas Claude Desktop",
+    "noDesktopAccounts": "Aún no hay cuentas Claude",
     "noCliAccounts": "Aún no hay cuentas Claude CLI",
     "desktopGateway": {
       "label": "Pasarela",
       "authScheme": "Esquema auth",
       "importAction": "Importar Gateway",
-      "importSuccess": "Cuenta Claude Desktop Gateway importada: {{name}}",
+      "importSuccess": "Cuenta Claude Gateway importada: {{name}}",
       "baseUrlRequired": "Introduce Gateway Base URL",
       "noQuota": "Las cuentas Gateway no muestran cuota de suscripción Claude",
-      "desc": "Guarda una API Key de Gateway como configuración 3P de Claude Desktop. Al cambiar, se escribe en un perfil gestionado y abre Claude Desktop oficial.",
+      "desc": "Guarda una API Key de Gateway como configuración 3P de Claude. Al cambiar, se escribe en un perfil gestionado y abre Claude oficial.",
       "hint": "Las cuentas Gateway no leen detalles de suscripción Claude. La API Key se escribe en un perfil gestionado con la configuración 3P oficial.",
       "modelsLabel": "Catálogo de modelos",
       "modelsEmpty": "Este Gateway no devolvió modelos.",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "Un ID de modelo por línea",
       "modelsLoading": "Cargando catálogo de modelos...",
       "modelsRequired": "Introduce el catálogo de modelos",
-      "editTitle": "Editar Claude Desktop Gateway",
+      "editTitle": "Editar Claude Gateway",
       "updateAction": "Guardar Gateway",
-      "updateSuccess": "Cuenta de Claude Desktop Gateway actualizada: {{name}}",
+      "updateSuccess": "Cuenta de Claude Gateway actualizada: {{name}}",
       "connectionMode": "Conexión",
       "modeDirect": "Directa",
       "modeLocalMapping": "Mapeo local",
       "mappingsRequired": "Configura el mapeo de modelos",
-      "mappingDesktopModelInvalid": "A la izquierda debe ir un modelo Claude reconocido por Claude Desktop",
-      "directModelsInvalid": "El modo directo solo admite modelos Claude reconocidos por Claude Desktop",
-      "desktopModelPlaceholder": "Modelo de Claude Desktop",
+      "mappingDesktopModelInvalid": "A la izquierda debe ir un modelo Claude reconocido por Claude",
+      "directModelsInvalid": "El modo directo solo admite modelos Claude reconocidos por Claude",
+      "desktopModelPlaceholder": "Modelo de Claude",
       "upstreamModelPlaceholder": "Modelo real del proveedor",
       "addMapping": "Agregar mapeo"
     }

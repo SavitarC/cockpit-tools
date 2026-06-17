@@ -5,8 +5,6 @@ export type PlatformId =
   | 'antigravity_ide'
   | 'codex'
   | 'claude_manager'
-  | 'claude'
-  | 'claude_cli'
   | 'zed'
   | 'github-copilot'
   | 'windsurf'
@@ -20,10 +18,10 @@ export type PlatformId =
   | 'workbuddy';
 
 export const ALL_PLATFORM_IDS: PlatformId[] = [
+  'claude_manager',
+  'codex',
   'antigravity',
   'antigravity_ide',
-  'codex',
-  'claude_manager',
   'zed',
   'github-copilot',
   'windsurf',
@@ -52,8 +50,6 @@ export const PLATFORM_PAGE_MAP: Record<PlatformId, Page> = {
   antigravity_ide: 'overview',
   codex: 'codex',
   claude_manager: 'claude',
-  claude: 'claude',
-  claude_cli: 'claude-cli',
   zed: 'zed',
   'github-copilot': 'github-copilot',
   windsurf: 'windsurf',

@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
+import { CLASSIC_SIDEBAR_ENTRY_LIMIT } from './useSideNavLayoutStore';
 
 const PLATFORM_LAYOUT_STORAGE_KEY = 'agtools.platform_layout.v1';
 const LEGACY_TRAY_CORE_IDS: PlatformId[] = ['antigravity', 'codex', 'github-copilot', 'windsurf'];
 const TRAY_MIGRATED_PLATFORM_IDS: PlatformId[] = [
   'antigravity_ide',
-  'claude',
+  'claude_manager',
   'zed',
   'kiro',
   'cursor',
@@ -58,7 +59,6 @@ type PersistedPlatformLayout = {
   hiddenEntryIds?: PlatformLayoutEntryId[];
   sidebarEntryIds?: PlatformLayoutEntryId[];
   antigravityGroupFirstMigrated?: boolean;
-  claudeManagerDefaultVisibleMigrated?: boolean;
   apiRelaySidebarVisible?: boolean;
   apiRelayDashboardVisible?: boolean;
   apiRelayEntryOrder?: number;
@@ -76,7 +76,6 @@ interface PlatformLayoutState {
   hiddenEntryIds: PlatformLayoutEntryId[];
   sidebarEntryIds: PlatformLayoutEntryId[];
   antigravityGroupFirstMigrated: boolean;
-  claudeManagerDefaultVisibleMigrated: boolean;
   apiRelaySidebarVisible: boolean;
   apiRelayDashboardVisible: boolean;
   apiRelayEntryOrder: number;
@@ -119,7 +118,6 @@ interface NormalizedLayoutStateData {
   hiddenEntryIds: PlatformLayoutEntryId[];
   sidebarEntryIds: PlatformLayoutEntryId[];
   antigravityGroupFirstMigrated: boolean;
-  claudeManagerDefaultVisibleMigrated: boolean;
   apiRelaySidebarVisible: boolean;
   apiRelayDashboardVisible: boolean;
   apiRelayEntryOrder: number;
@@ -140,9 +138,6 @@ export function parsePlatformEntryId(entryId: string): PlatformId | null {
     return null;
   }
   const value = entryId.slice(PLATFORM_ENTRY_PREFIX.length);
-  if (value === 'claude' || value === 'claude_cli') {
-    return 'claude_manager';
-  }
   if (!ALL_PLATFORM_IDS.includes(value as PlatformId)) {
     return null;
   }
@@ -291,9 +286,7 @@ function sanitizePlatformIds(list: unknown): PlatformId[] {
   const result: PlatformId[] = [];
   for (const item of list) {
     if (typeof item !== 'string') continue;
-    const id = item === 'claude' || item === 'claude_cli'
-      ? 'claude_manager'
-      : item as PlatformId;
+    const id = item as PlatformId;
     if (!ALL_PLATFORM_IDS.includes(id)) continue;
     if (seen.has(id)) continue;
     seen.add(id);
@@ -313,52 +306,18 @@ function normalizeOrder(order: PlatformId[]): PlatformId[] {
 }
 
 function defaultPlatformOrder(): PlatformId[] {
-  const promoted: PlatformId[] = ['claude_manager'];
-  return [
-    ...promoted,
-    ...ALL_PLATFORM_IDS.filter((platformId) => !promoted.includes(platformId)),
-  ];
+  return [...ALL_PLATFORM_IDS];
 }
 
-function defaultSidebarEntryIds(groups: PlatformLayoutGroup[]): PlatformLayoutEntryId[] {
-  return [
-    resolveEntryIdForPlatform('claude_manager', groups),
-    resolveEntryIdForPlatform('antigravity', groups),
-    resolveEntryIdForPlatform('codex', groups),
-  ];
+function defaultSidebarEntryIds(
+  groups: PlatformLayoutGroup[],
+  orderedEntryIds = buildEntryOrderFromPlatformOrder(defaultPlatformOrder(), groups),
+): PlatformLayoutEntryId[] {
+  return orderedEntryIds.slice(0, CLASSIC_SIDEBAR_ENTRY_LIMIT - 1);
 }
 
-function isClaudeManagerPlatformId(platformId: unknown): boolean {
-  return platformId === 'claude_manager' || platformId === 'claude' || platformId === 'claude_cli';
-}
-
-function isClaudeManagerEntryId(entryId: unknown): boolean {
-  return typeof entryId === 'string' && parsePlatformEntryId(entryId) === 'claude_manager';
-}
-
-function prependClaudeManagerPlatformIds(raw: unknown): PlatformId[] {
-  const source = Array.isArray(raw) ? raw : [];
-  return ['claude_manager', ...source.filter((platformId) => !isClaudeManagerPlatformId(platformId))] as PlatformId[];
-}
-
-function prependClaudeManagerEntryIds(raw: unknown): PlatformLayoutEntryId[] {
-  const source = Array.isArray(raw) ? raw : [];
-  return [
-    makePlatformEntryId('claude_manager'),
-    ...source.filter((entryId) => !isClaudeManagerEntryId(entryId)),
-  ] as PlatformLayoutEntryId[];
-}
-
-function removeClaudeManagerPlatformIds(raw: unknown): PlatformId[] {
-  return Array.isArray(raw)
-    ? raw.filter((platformId) => !isClaudeManagerPlatformId(platformId)) as PlatformId[]
-    : [];
-}
-
-function removeClaudeManagerEntryIds(raw: unknown): PlatformLayoutEntryId[] {
-  return Array.isArray(raw)
-    ? raw.filter((entryId) => !isClaudeManagerEntryId(entryId)) as PlatformLayoutEntryId[]
-    : [];
+function defaultSidebarPlatformIds(): PlatformId[] {
+  return ['claude_manager', 'codex', 'antigravity', 'zed', 'github-copilot'];
 }
 
 function normalizeHidden(hidden: PlatformId[]): PlatformId[] {
@@ -366,8 +325,7 @@ function normalizeHidden(hidden: PlatformId[]): PlatformId[] {
 }
 
 function normalizeSidebar(sidebar: PlatformId[], hidden: PlatformId[]): PlatformId[] {
-  const normalized = sanitizePlatformIds(sidebar).filter((id) => !hidden.includes(id));
-  return normalized;
+  return sanitizePlatformIds(sidebar).filter((id) => !hidden.includes(id));
 }
 
 function normalizeTray(
@@ -441,12 +399,6 @@ function normalizeGroupName(raw: unknown, fallbackPlatform: PlatformId): string 
   if (fallbackPlatform === 'claude_manager') {
     return 'Claude';
   }
-  if (fallbackPlatform === 'claude') {
-    return 'Claude Desktop';
-  }
-  if (fallbackPlatform === 'claude_cli') {
-    return 'Claude CLI';
-  }
   if (fallbackPlatform === 'workbuddy') {
     return 'WorkBuddy';
   }
@@ -484,7 +436,7 @@ function normalizeGroupChildName(raw: unknown, platformId: PlatformId): string |
   if (platformId === 'antigravity_ide' && value === 'Antigravity') {
     return 'Antigravity IDE';
   }
-  if (platformId === 'claude_manager' && (value === 'Claude Desktop' || value === 'Claude CLI')) {
+  if (platformId === 'claude_manager' && (value === 'Claude' || value === 'Claude CLI')) {
     return 'Claude';
   }
   return value;
@@ -556,14 +508,6 @@ function normalizePlatformGroups(raw: unknown, fallbackToDefault: boolean): Plat
     if (usedGroupIds.has(groupId)) {
       groupId = `${groupId}-${index + 1}`;
     }
-    const rawPlatformIds = Array.isArray(record.platformIds) ? record.platformIds : [];
-    const isLegacyClaudeGroup =
-      rawPlatformIds.some((platformId) => platformId === 'claude' || platformId === 'claude_cli')
-      && rawPlatformIds.every((platformId) => platformId === 'claude' || platformId === 'claude_cli');
-    if (isLegacyClaudeGroup) {
-      return;
-    }
-
     const platformIds = sanitizePlatformIds(record.platformIds).filter((platformId) => {
       if (usedPlatformIds.has(platformId)) {
         return false;
@@ -1044,7 +988,6 @@ function normalizeStateData(
     hiddenEntryIds: PlatformLayoutEntryId[];
     sidebarEntryIds: PlatformLayoutEntryId[];
     antigravityGroupFirstMigrated?: boolean;
-    claudeManagerDefaultVisibleMigrated?: boolean;
     apiRelaySidebarVisible?: boolean;
     apiRelayDashboardVisible?: boolean;
     apiRelayEntryOrder?: number;
@@ -1099,7 +1042,6 @@ function normalizeStateData(
     sidebarEntryIds,
     antigravityGroupFirstMigrated:
       raw.antigravityGroupFirstMigrated !== false || options.promoteAntigravityGroupEntry === true,
-    claudeManagerDefaultVisibleMigrated: raw.claudeManagerDefaultVisibleMigrated !== false,
     apiRelaySidebarVisible: raw.apiRelaySidebarVisible !== false,
     apiRelayDashboardVisible: raw.apiRelayDashboardVisible !== false,
     apiRelayEntryOrder: normalizeApiRelayEntryOrder(raw.apiRelayEntryOrder, orderedEntryIds.length),
@@ -1115,7 +1057,7 @@ function loadPersistedState(): NormalizedLayoutStateData {
       const defaults = normalizeStateData({
         orderedPlatformIds: defaultOrder,
         hiddenPlatformIds: [],
-        sidebarPlatformIds: ['claude_manager', 'antigravity', 'codex'],
+        sidebarPlatformIds: defaultSidebarPlatformIds(),
         trayPlatformIds: defaultOrder,
         traySortMode: 'auto',
         platformGroups: defaultGroups,
@@ -1123,7 +1065,6 @@ function loadPersistedState(): NormalizedLayoutStateData {
         hiddenEntryIds: [],
         sidebarEntryIds: defaultSidebarEntryIds(defaultGroups),
         antigravityGroupFirstMigrated: true,
-        claudeManagerDefaultVisibleMigrated: true,
         apiRelaySidebarVisible: true,
         apiRelayDashboardVisible: true,
         apiRelayEntryOrder: 0,
@@ -1133,36 +1074,10 @@ function loadPersistedState(): NormalizedLayoutStateData {
 
     const parsed = JSON.parse(raw) as PersistedPlatformLayout;
     const antigravityGroupFirstMigrated = parsed.antigravityGroupFirstMigrated === true;
-    const shouldApplyClaudeManagerDefaultVisible = parsed.claudeManagerDefaultVisibleMigrated !== true;
-    const shouldPrependClaudeManager = shouldApplyClaudeManagerDefaultVisible;
-
-    const rawOrderedPlatformIds = shouldPrependClaudeManager
-      ? prependClaudeManagerPlatformIds(parsed.orderedPlatformIds)
-      : parsed.orderedPlatformIds;
-    const rawHiddenPlatformIds = shouldPrependClaudeManager
-      ? removeClaudeManagerPlatformIds(parsed.hiddenPlatformIds)
-      : parsed.hiddenPlatformIds;
-    const rawSidebarPlatformIds = shouldPrependClaudeManager
-      ? prependClaudeManagerPlatformIds(parsed.sidebarPlatformIds)
-      : parsed.sidebarPlatformIds;
-    const rawOrderedEntryIds = shouldPrependClaudeManager
-      ? Array.isArray(parsed.orderedEntryIds)
-        ? prependClaudeManagerEntryIds(parsed.orderedEntryIds)
-        : parsed.orderedEntryIds
-      : parsed.orderedEntryIds;
-    const rawHiddenEntryIds = shouldApplyClaudeManagerDefaultVisible
-      ? removeClaudeManagerEntryIds(parsed.hiddenEntryIds)
-      : parsed.hiddenEntryIds;
-    const rawSidebarEntryIds = shouldApplyClaudeManagerDefaultVisible
-      ? Array.isArray(parsed.sidebarEntryIds)
-        ? prependClaudeManagerEntryIds(parsed.sidebarEntryIds)
-        : parsed.sidebarEntryIds
-      : parsed.sidebarEntryIds;
-
-    const orderedPlatformIds = normalizeOrder(rawOrderedPlatformIds ?? defaultPlatformOrder());
-    const hiddenPlatformIds = normalizeHidden(rawHiddenPlatformIds ?? []);
+    const orderedPlatformIds = normalizeOrder(parsed.orderedPlatformIds ?? defaultPlatformOrder());
+    const hiddenPlatformIds = normalizeHidden(parsed.hiddenPlatformIds ?? []);
     const sidebarPlatformIds = normalizeSidebar(
-      rawSidebarPlatformIds ?? ['claude_manager', 'antigravity', 'codex'],
+      parsed.sidebarPlatformIds ?? defaultSidebarPlatformIds(),
       hiddenPlatformIds,
     );
 
@@ -1171,15 +1086,15 @@ function loadPersistedState(): NormalizedLayoutStateData {
       parsed.platformGroups === undefined,
     ).map((group) => sortGroupPlatformsByOrder(group, orderedPlatformIds));
 
-    const orderedEntryIds = normalizeEntryOrder(rawOrderedEntryIds, platformGroups, orderedPlatformIds);
+    const orderedEntryIds = normalizeEntryOrder(parsed.orderedEntryIds, platformGroups, orderedPlatformIds);
     const hiddenEntryIds = normalizeHiddenEntryIds(
-      rawHiddenEntryIds,
+      parsed.hiddenEntryIds,
       orderedEntryIds,
       platformGroups,
       hiddenPlatformIds,
     );
     const sidebarEntryIds = normalizeSidebarEntryIds(
-      rawSidebarEntryIds,
+      parsed.sidebarEntryIds,
       orderedEntryIds,
       hiddenEntryIds,
       platformGroups,
@@ -1201,14 +1116,13 @@ function loadPersistedState(): NormalizedLayoutStateData {
       hiddenEntryIds,
       sidebarEntryIds,
       antigravityGroupFirstMigrated,
-      claudeManagerDefaultVisibleMigrated: true,
       apiRelaySidebarVisible: parsed.apiRelaySidebarVisible,
       apiRelayDashboardVisible: parsed.apiRelayDashboardVisible,
       apiRelayEntryOrder: parsed.apiRelayEntryOrder,
     }, {
       promoteAntigravityGroupEntry: !antigravityGroupFirstMigrated,
     });
-    if (!antigravityGroupFirstMigrated || shouldApplyClaudeManagerDefaultVisible) {
+    if (!antigravityGroupFirstMigrated) {
       persist(normalized);
     }
     return normalized;
@@ -1218,7 +1132,7 @@ function loadPersistedState(): NormalizedLayoutStateData {
     return normalizeStateData({
       orderedPlatformIds: defaultOrder,
       hiddenPlatformIds: [],
-      sidebarPlatformIds: ['claude_manager', 'antigravity', 'codex'],
+      sidebarPlatformIds: defaultSidebarPlatformIds(),
       trayPlatformIds: defaultOrder,
       traySortMode: 'auto',
       platformGroups: defaultGroups,
@@ -1226,7 +1140,6 @@ function loadPersistedState(): NormalizedLayoutStateData {
       hiddenEntryIds: [],
       sidebarEntryIds: defaultSidebarEntryIds(defaultGroups),
       antigravityGroupFirstMigrated: true,
-      claudeManagerDefaultVisibleMigrated: true,
       apiRelaySidebarVisible: true,
       apiRelayDashboardVisible: true,
       apiRelayEntryOrder: 0,
@@ -1247,7 +1160,6 @@ function persist(
     | 'hiddenEntryIds'
     | 'sidebarEntryIds'
     | 'antigravityGroupFirstMigrated'
-    | 'claudeManagerDefaultVisibleMigrated'
     | 'apiRelaySidebarVisible'
     | 'apiRelayDashboardVisible'
     | 'apiRelayEntryOrder'
@@ -1754,7 +1666,7 @@ export const usePlatformLayoutStore = create<PlatformLayoutState>((set, get) => 
     const next = normalizeStateData({
       orderedPlatformIds: defaultOrder,
       hiddenPlatformIds: [],
-      sidebarPlatformIds: ['claude_manager', 'antigravity', 'codex'],
+      sidebarPlatformIds: defaultSidebarPlatformIds(),
       trayPlatformIds: defaultOrder,
       traySortMode: 'auto',
       platformGroups: defaults,

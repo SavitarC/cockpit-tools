@@ -826,9 +826,9 @@
       "codexAppSpeedLaunch": "Mulai ulang Codex",
       "codexAppSpeedSaveFailed": "Gagal menyimpan kecepatan Codex: {{error}}",
       "codexAppSpeedLaunchFailed": "Gagal memulai ulang Codex: {{error}}",
-      "claudeSettingsTitle": "Pengaturan Claude Desktop",
-      "claudeAutoRefresh": "Penyegaran otomatis kuota Claude Desktop",
-      "claudeAutoRefreshDesc": "Menyegarkan cache kuota akun Claude Desktop secara otomatis di latar belakang."
+      "claudeSettingsTitle": "Pengaturan Claude",
+      "claudeAutoRefresh": "Penyegaran otomatis kuota Claude",
+      "claudeAutoRefreshDesc": "Menyegarkan cache kuota akun Claude secara otomatis di latar belakang."
     },
     "network": {
       "apiTitle": "API Antigravity Cockpit",
@@ -2527,6 +2527,11 @@
         "loadingProviders": "Memuat provider...",
         "noProvider": "Provider tidak ditemukan",
         "providerLoadFailed": "Gagal memuat kandidat provider: {{error}}",
+        "modeTitle": "Mode perbaikan",
+        "modeQuick": "Perbaikan cepat",
+        "modeQuickDesc": "Memperbaiki state DB resmi dan baris metadata sesi pertama. Cocok setelah pergantian akun rutin.",
+        "modeDeep": "Perbaikan mendalam",
+        "modeDeepDesc": "Mempertahankan perbaikan metadata penuh saat ini untuk pengujian saat perbaikan cepat belum cukup.",
         "scopeTitle": "Cakupan sesi",
         "scopeAll": "Semua sesi",
         "scopeAllDesc": "Perbaiki {{count}} sesi di daftar saat ini.",
@@ -3453,7 +3458,7 @@
     },
     "claudeRefreshInterval": "Muat ulang kuota otomatis",
     "claude": {
-      "appPath": "Jalur Claude Desktop"
+      "appPath": "Jalur Claude"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Claude ditambahkan",
       "addToCodex": "Tambah ke Codex",
       "addToClaude": "Tambah ke Claude CLI",
-      "addToClaudeDesktop": "Tambah ke Claude Desktop",
+      "addToClaudeDesktop": "Tambah ke Claude",
       "addToClaudeCli": "Tambah ke Claude CLI",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "Konfigurasi APIKEY.FUN sudah terisi. Konfirmasi untuk menambahkannya ke Claude Desktop."
+      "claudeDesktopReady": "Konfigurasi APIKEY.FUN sudah terisi. Konfirmasi untuk menambahkannya ke Claude."
     },
     "copyKey": "Copy Key​",
     "clearKey": "Clear input​"
   },
   "claude": {
     "import": {
-      "localSuccess": "Mengimpor {{count}} sesi masuk Claude Desktop lokal",
-      "localClient": "Impor Desktop saat ini",
+      "localSuccess": "Mengimpor {{count}} sesi masuk Claude lokal",
+      "localClient": "Impor Claude saat ini",
       "jsonLabel": "Data JSON",
       "jsonPlaceholder": "Tempel JSON akun Claude yang diekspor",
-      "localDesc": "Membaca status masuk Claude Desktop resmi saat ini dan menyalinnya sebagai snapshot akun lokal di alat ini.",
-      "desktopJsonPlaceholder": "Tempel JSON akun Claude Desktop Gateway yang diekspor",
+      "localDesc": "Membaca status masuk Claude resmi saat ini dan menyalinnya sebagai snapshot akun lokal di alat ini.",
+      "desktopJsonPlaceholder": "Tempel JSON akun Claude Gateway yang diekspor",
       "cliJsonPlaceholder": "Tempel JSON akun Claude CLI yang diekspor"
     },
     "deleteCurrentDisabled": "Akun saat ini tidak dapat dihapus",
     "flowNotice": {
       "title": "Catatan akun Claude",
-      "desc": "Alat ini mengelola status masuk Claude Desktop dan Anthropic API Key. Masuk Desktop selesai di jendela otorisasi platform ini dan disimpan lokal terlebih dahulu; baru ditulis ke Claude Desktop resmi saat mengganti akun.",
-      "permission": "Cakupan izin: baca/tulis direktori data aplikasi Claude Desktop resmi. API Key dan snapshot Desktop disimpan dalam data akun lokal alat ini.",
-      "network": "Cakupan jaringan: jendela masuk Desktop membuka claude.ai; penyegaran akun dapat meminta endpoint Claude Web. Impor API Key sendiri tidak memakai jaringan.",
-      "desktopDesc": "Alat ini mengelola status masuk Claude Desktop. Status masuk disimpan lokal lebih dulu dan baru ditulis ke Claude Desktop resmi saat beralih akun.",
+      "desc": "Alat ini mengelola status masuk Claude dan Anthropic API Key. Masuk Claude selesai di jendela otorisasi platform ini dan disimpan lokal terlebih dahulu; baru ditulis ke Claude resmi saat mengganti akun.",
+      "permission": "Cakupan izin: baca/tulis direktori data aplikasi Claude resmi. API Key dan snapshot Claude disimpan dalam data akun lokal alat ini.",
+      "network": "Cakupan jaringan: jendela masuk Claude membuka claude.ai; penyegaran akun dapat meminta endpoint Claude Web. Impor API Key sendiri tidak memakai jaringan.",
+      "desktopDesc": "Alat ini mengelola status masuk Claude. Status masuk disimpan lokal lebih dulu dan baru ditulis ke Claude resmi saat beralih akun.",
       "cliDesc": "Alat ini mengelola Claude Code OAuth dan API Key dari beberapa penyedia. Peralihan OAuth menulis ke konfigurasi Claude Code lokal; API Key menulis nilai env penyedia ke Claude Code settings.json.",
-      "desktopPermission": "Cakupan izin: baca/tulis direktori data aplikasi Claude Desktop resmi. Snapshot Desktop disimpan di data akun lokal alat ini.",
+      "desktopPermission": "Cakupan izin: baca/tulis direktori data aplikasi Claude resmi. Snapshot Claude disimpan di data akun lokal alat ini.",
       "cliPermission": "Cakupan izin: membaca/menulis konfigurasi Claude Code lokal dan kredensial Claude Code di macOS Keychain; akun API Key disimpan lokal oleh alat ini dan ditulis sebagai env teks biasa di settings.json saat beralih atau menjalankan CLI.",
-      "desktopNetwork": "Cakupan jaringan: jendela masuk Desktop membuka claude.ai; penyegaran akun dapat meminta endpoint Claude Web.",
+      "desktopNetwork": "Cakupan jaringan: jendela masuk Claude membuka claude.ai; penyegaran akun dapat meminta endpoint Claude Web.",
       "cliNetwork": "Cakupan jaringan: OAuth mengakses otorisasi resmi Claude dan endpoint token/profile/usage; impor API Key tidak memakai jaringan, lalu Claude CLI mengakses provider yang dipilih setelah diluncurkan."
     },
     "search": "Cari akun Claude...",
     "noAccounts": "Belum ada akun Claude",
     "addAccount": {
       "title": "Tambah akun Claude",
-      "desktopTitle": "Tambah Akun Claude Desktop",
+      "desktopTitle": "Tambah Akun Claude",
       "cliTitle": "Tambah Akun Claude CLI"
     },
     "deleteConfirm": "Hapus akun Claude {{email}}?",
@@ -4667,11 +4672,11 @@
       "success": "Berhasil beralih"
     },
     "instances": {
-      "unsupportedDescPlatform": "Multi-instance Claude Desktop hanya didukung di macOS, Windows, dan Linux.",
+      "unsupportedDescPlatform": "Multi-instance Claude hanya didukung di macOS, Windows, dan Linux.",
       "launchDialogTitle": "Jalankan Instance",
       "launchCommand": "Perintah peluncuran",
       "executeInTerminal": "Jalankan di terminal",
-      "startSuccess": "Claude Desktop dimulai"
+      "startSuccess": "Claude dimulai"
     },
     "quota": {
       "title": "Kuota",
@@ -4692,7 +4697,7 @@
       "notUpdatedShort": "Belum diperbarui"
     },
     "addTabs": {
-      "desktop": "Desktop lokal",
+      "desktop": "Claude lokal",
       "oauth": "OAuth",
       "apiKey": "Kunci API",
       "import": "Lokal/JSON",
@@ -4702,23 +4707,23 @@
       "oauth": "Mode OAuth",
       "setup_token": "Token penyiapan",
       "api_key": "Kunci API",
-      "desktop_oauth": "Login Desktop"
+      "desktop_oauth": "Login Claude"
     },
     "apiKey": {
-      "desc": "Simpan API Key Claude CLI sebagai kredensial terpisah. Saat beralih atau menjalankan CLI, nilai env penyedia ditulis ke Claude Code settings.json tanpa menulis status masuk Claude Desktop.",
+      "desc": "Simpan API Key Claude CLI sebagai kredensial terpisah. Saat beralih atau menjalankan CLI, nilai env penyedia ditulis ke Claude Code settings.json tanpa menulis status masuk Claude.",
       "nameLabel": "Nama akun",
       "namePlaceholder": "Opsional, mis. APIKEY.FUN",
       "keyLabel": "Kunci API",
       "placeholder": "Tempel API Key provider",
       "hide": "Sembunyikan API Key",
       "show": "Tampilkan API Key",
-      "hint": "Akun API Key hanya untuk Claude CLI. Nilainya ditulis sebagai env teks biasa di Claude Code settings.json, tidak memengaruhi Claude Desktop, dan tidak mendukung penyegaran kuota langganan.",
+      "hint": "Akun API Key hanya untuk Claude CLI. Nilainya ditulis sebagai env teks biasa di Claude Code settings.json, tidak memengaruhi Claude, dan tidak mendukung penyegaran kuota langganan.",
       "importAction": "Impor API Key",
       "required": "Masukkan API Key",
       "templateRequired": "Masukkan {{label}}",
       "importSuccess": "Akun Claude API Key diimpor: {{name}}",
       "quotaUnsupported": "Akun API Key tidak mendukung refresh",
-      "switchDisabled": "Akun API Key tidak bisa beralih ke Claude Desktop",
+      "switchDisabled": "Akun API Key tidak bisa beralih ke Claude",
       "cliUnsupported": "Akun API Key tidak bisa membuka Claude CLI",
       "providerLabel": "Penyedia",
       "customProvider": "Kustom",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL bukan URL valid"
     },
     "desktopOAuth": {
-      "title": "Login Claude Desktop",
+      "title": "Login Claude",
       "desc": "Login Claude di alat ini; mendukung Google, Apple, email, dan free.",
       "start": "Buka login",
       "preparingRuntime": "Menyiapkan login...",
-      "hint": "Simpan lokal dulu; tulis ke Claude Desktop saat ganti akun.",
+      "hint": "Simpan lokal dulu; tulis ke Claude saat ganti akun.",
       "runtimeHint": "Pada penggunaan pertama, komponen login Electron dapat diunduh dan diverifikasi ke folder data aplikasi lokal; komponen ini tidak disertakan dalam installer dan akan dipakai ulang setelahnya.",
       "nameLabel": "Nama akun",
       "namePlaceholder": "Opsional, misalnya Claude Free",
       "waiting": "Login di jendela Claude lalu selesaikan impor di sini.",
       "profileDir": "Direktori profile terisolasi",
       "complete": "Selesai",
-      "localTitle": "Impor Desktop saat ini",
-      "localDesc": "Menyalin sesi Claude Desktop saat ini sebagai snapshot lokal.",
+      "localTitle": "Impor Claude saat ini",
+      "localDesc": "Menyalin sesi Claude saat ini sebagai snapshot lokal.",
       "localAction": "Impor",
-      "localSuccess": "Login Claude Desktop lokal diimpor: {{name}}",
-      "importSuccess": "Login Claude Desktop diimpor: {{name}}",
-      "switchHint": "Beralih ke Claude Desktop resmi",
+      "localSuccess": "Login Claude lokal diimpor: {{name}}",
+      "importSuccess": "Login Claude diimpor: {{name}}",
+      "switchHint": "Beralih ke Claude resmi",
       "planUnknown": "Paket tidak dikenal"
     },
     "oauth": {
       "title": "Otorisasi Claude OAuth",
       "desc": "Buka halaman otorisasi OAuth resmi Claude, lalu tempel tautan callback atau code untuk mengimpor akun.",
       "start": "Otorisasi OAuth",
-      "proRequiredHint": "OAuth resmi Claude biasanya dipakai untuk otorisasi Claude Code. Jika halaman berhenti di upgrade atau tanpa izin, gunakan masuk Claude Desktop.",
+      "proRequiredHint": "OAuth resmi Claude biasanya dipakai untuk otorisasi Claude Code. Jika halaman berhenti di upgrade atau tanpa izin, gunakan masuk Claude.",
       "openInstruction": "Klik tombol di bawah dan selesaikan otorisasi Claude OAuth di browser.",
       "waiting": "Setelah selesai, tempel URL halaman akhir atau code yang ditampilkan di bawah.",
       "authUrl": "Tautan otorisasi",
@@ -4773,7 +4778,7 @@
       "updateFailed": "Gagal memperbarui label paket: {{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "Akun OAuth lama tidak dapat dialihkan ke Claude Desktop",
+      "switchDisabled": "Akun OAuth lama tidak dapat dialihkan ke Claude",
       "quotaUnsupported": "Akun OAuth lama tidak lagi mendukung penyegaran",
       "cliUnsupported": "Akun OAuth lama tidak dapat membuka Claude CLI"
     },
@@ -4809,21 +4814,21 @@
     "deleteSelectedLabel": "{{count}} akun",
     "subPlatform": {
       "label": "Subplatform Claude",
-      "desktop": "Claude Desktop lokal",
+      "desktop": "Claude lokal",
       "cli": "Claude baris perintah"
     },
-    "searchDesktop": "Cari akun Claude Desktop...",
+    "searchDesktop": "Cari akun Claude...",
     "searchCli": "Cari akun Claude CLI...",
-    "noDesktopAccounts": "Belum ada akun Claude Desktop",
+    "noDesktopAccounts": "Belum ada akun Claude",
     "noCliAccounts": "Belum ada akun Claude CLI",
     "desktopGateway": {
       "label": "Gerbang",
       "authScheme": "Skema auth",
       "importAction": "Impor Gateway",
-      "importSuccess": "Akun Claude Desktop Gateway diimpor: {{name}}",
+      "importSuccess": "Akun Claude Gateway diimpor: {{name}}",
       "baseUrlRequired": "Masukkan Gateway Base URL",
       "noQuota": "Akun Gateway tidak menampilkan kuota langganan Claude",
-      "desc": "Simpan API Key Gateway sebagai konfigurasi 3P Claude Desktop. Saat beralih, konfigurasi ditulis ke profil terkelola dan Claude Desktop resmi dijalankan.",
+      "desc": "Simpan API Key Gateway sebagai konfigurasi 3P Claude. Saat beralih, konfigurasi ditulis ke profil terkelola dan Claude resmi dijalankan.",
       "hint": "Akun Gateway tidak membaca detail langganan Claude. API Key ditulis ke profil terkelola memakai konfigurasi 3P resmi.",
       "modelsLabel": "Katalog model",
       "modelsEmpty": "Gateway ini tidak mengembalikan model.",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "Satu ID model per baris",
       "modelsLoading": "Memuat katalog model...",
       "modelsRequired": "Isi katalog model",
-      "editTitle": "Edit Claude Desktop Gateway",
+      "editTitle": "Edit Claude Gateway",
       "updateAction": "Simpan Gateway",
-      "updateSuccess": "Akun Claude Desktop Gateway diperbarui: {{name}}",
+      "updateSuccess": "Akun Claude Gateway diperbarui: {{name}}",
       "connectionMode": "Koneksi",
       "modeDirect": "Langsung",
       "modeLocalMapping": "Pemetaan lokal",
       "mappingsRequired": "Konfigurasikan pemetaan model",
-      "mappingDesktopModelInvalid": "Sisi kiri harus berisi nama model Claude yang dikenali Claude Desktop",
-      "directModelsInvalid": "Mode langsung hanya mendukung nama model Claude yang dikenali Claude Desktop",
-      "desktopModelPlaceholder": "Model Claude Desktop",
+      "mappingDesktopModelInvalid": "Sisi kiri harus berisi nama model Claude yang dikenali Claude",
+      "directModelsInvalid": "Mode langsung hanya mendukung nama model Claude yang dikenali Claude",
+      "desktopModelPlaceholder": "Model Claude",
       "upstreamModelPlaceholder": "Model upstream asli",
       "addMapping": "Tambah pemetaan"
     }

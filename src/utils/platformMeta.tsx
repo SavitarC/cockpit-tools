@@ -26,10 +26,6 @@ export function getPlatformLabel(platformId: PlatformId, _t: TFunction): string 
       return 'Codex';
     case 'claude_manager':
       return 'Claude';
-    case 'claude':
-      return 'Claude Desktop';
-    case 'claude_cli':
-      return 'Claude CLI';
     case 'zed':
       return 'Zed';
     case 'github-copilot':
@@ -66,8 +62,6 @@ export function renderPlatformIcon(platformId: PlatformId, size = 20): ReactNode
     case 'codex':
       return <CodexIcon size={size} />;
     case 'claude_manager':
-    case 'claude':
-    case 'claude_cli':
       return <ClaudeIcon size={size} />;
     case 'zed':
       return <ZedIcon size={size} />;

@@ -324,9 +324,7 @@ fn normalize_platform_id(value: &str) -> Option<String> {
         "antigravity" => Some("antigravity".to_string()),
         "antigravity-ide" => Some("antigravity_ide".to_string()),
         "codex" => Some("codex".to_string()),
-        "claude" | "claude-desktop" | "claude-cli" | "claude-code" | "claude-manager" => {
-            Some("claude_manager".to_string())
-        }
+        "claude-manager" => Some("claude_manager".to_string()),
         "zed" => Some("zed".to_string()),
         "github-copilot" | "githubcopilot" => Some("github-copilot".to_string()),
         "windsurf" => Some("windsurf".to_string()),

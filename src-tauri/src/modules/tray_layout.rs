@@ -10,8 +10,7 @@ const TRAY_LAYOUT_FILE: &str = "tray_layout.json";
 
 pub const PLATFORM_ANTIGRAVITY: &str = "antigravity";
 pub const PLATFORM_CODEX: &str = "codex";
-pub const PLATFORM_CLAUDE: &str = "claude";
-pub const PLATFORM_CLAUDE_CLI: &str = "claude_cli";
+pub const PLATFORM_CLAUDE_MANAGER: &str = "claude_manager";
 pub const PLATFORM_ZED: &str = "zed";
 pub const PLATFORM_GITHUB_COPILOT: &str = "github-copilot";
 pub const PLATFORM_WINDSURF: &str = "windsurf";
@@ -24,11 +23,10 @@ pub const PLATFORM_QODER: &str = "qoder";
 pub const PLATFORM_TRAE: &str = "trae";
 pub const PLATFORM_WORKBUDDY: &str = "workbuddy";
 
-pub const SUPPORTED_PLATFORM_IDS: [&str; 15] = [
-    PLATFORM_ANTIGRAVITY,
+pub const SUPPORTED_PLATFORM_IDS: [&str; 14] = [
+    PLATFORM_CLAUDE_MANAGER,
     PLATFORM_CODEX,
-    PLATFORM_CLAUDE,
-    PLATFORM_CLAUDE_CLI,
+    PLATFORM_ANTIGRAVITY,
     PLATFORM_ZED,
     PLATFORM_GITHUB_COPILOT,
     PLATFORM_WINDSURF,
@@ -46,7 +44,6 @@ pub const SORT_MODE_AUTO: &str = "auto";
 pub const SORT_MODE_MANUAL: &str = "manual";
 
 const DEFAULT_CODEBUDDY_GROUP_ID: &str = "codebuddy-suite";
-const DEFAULT_CLAUDE_GROUP_ID: &str = "claude-suite";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -91,12 +88,6 @@ fn default_tray_platforms() -> Vec<String> {
 fn default_platform_groups() -> Vec<TrayLayoutGroup> {
     vec![
         TrayLayoutGroup {
-            id: DEFAULT_CLAUDE_GROUP_ID.to_string(),
-            name: "Claude".to_string(),
-            platform_ids: vec![PLATFORM_CLAUDE.to_string(), PLATFORM_CLAUDE_CLI.to_string()],
-            default_platform_id: PLATFORM_CLAUDE.to_string(),
-        },
-        TrayLayoutGroup {
             id: DEFAULT_CODEBUDDY_GROUP_ID.to_string(),
             name: "CodeBuddy".to_string(),
             platform_ids: vec![
@@ -129,21 +120,36 @@ fn get_tray_layout_path() -> Result<PathBuf, String> {
     Ok(crate::modules::account::get_data_dir()?.join(TRAY_LAYOUT_FILE))
 }
 
-fn is_supported_platform_id(id: &str) -> bool {
-    SUPPORTED_PLATFORM_IDS.contains(&id)
+fn normalize_platform_id(id: &str) -> Option<&'static str> {
+    match id.trim() {
+        PLATFORM_CLAUDE_MANAGER => Some(PLATFORM_CLAUDE_MANAGER),
+        PLATFORM_ANTIGRAVITY => Some(PLATFORM_ANTIGRAVITY),
+        PLATFORM_CODEX => Some(PLATFORM_CODEX),
+        PLATFORM_ZED => Some(PLATFORM_ZED),
+        PLATFORM_GITHUB_COPILOT => Some(PLATFORM_GITHUB_COPILOT),
+        PLATFORM_WINDSURF => Some(PLATFORM_WINDSURF),
+        PLATFORM_KIRO => Some(PLATFORM_KIRO),
+        PLATFORM_CURSOR => Some(PLATFORM_CURSOR),
+        PLATFORM_GEMINI => Some(PLATFORM_GEMINI),
+        PLATFORM_CODEBUDDY => Some(PLATFORM_CODEBUDDY),
+        PLATFORM_CODEBUDDY_CN => Some(PLATFORM_CODEBUDDY_CN),
+        PLATFORM_QODER => Some(PLATFORM_QODER),
+        PLATFORM_TRAE => Some(PLATFORM_TRAE),
+        PLATFORM_WORKBUDDY => Some(PLATFORM_WORKBUDDY),
+        _ => None,
+    }
 }
 
 fn sanitize_platform_ids(ids: &[String]) -> Vec<String> {
     let mut result = Vec::new();
     for id in ids {
-        let trimmed = id.trim();
-        if trimmed.is_empty() || !is_supported_platform_id(trimmed) {
+        let Some(normalized) = normalize_platform_id(id) else {
+            continue;
+        };
+        if result.iter().any(|existing| existing == normalized) {
             continue;
         }
-        if result.iter().any(|existing| existing == trimmed) {
-            continue;
-        }
-        result.push(trimmed.to_string());
+        result.push(normalized.to_string());
     }
     result
 }
@@ -180,8 +186,6 @@ fn normalize_tray_platforms(
 
     for &new_platform in &[
         PLATFORM_ZED,
-        PLATFORM_CLAUDE,
-        PLATFORM_CLAUDE_CLI,
         PLATFORM_KIRO,
         PLATFORM_CURSOR,
         PLATFORM_GEMINI,
@@ -389,7 +393,6 @@ fn normalize_config(
     let ordered_platform_ids = normalize_order(&config.ordered_platform_ids);
 
     let raw_order_new_platforms: Vec<&str> = [
-        PLATFORM_CLAUDE_CLI,
         PLATFORM_KIRO,
         PLATFORM_CURSOR,
         PLATFORM_GEMINI,

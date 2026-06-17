@@ -255,9 +255,9 @@ export function getClaudeAuthModeLabel(account: ClaudeAccount): string {
       : normalizeClaudeAuthMode(account.auth_mode);
   switch (normalizedMode) {
     case 'desktop_gateway':
-      return 'Claude Desktop Gateway';
+      return 'Claude Gateway';
     case 'desktop_oauth':
-      return 'Claude Desktop';
+      return 'Claude';
     case 'api_key':
       return 'API Key';
     case 'setup_token':

@@ -106,7 +106,7 @@ pub fn ensure_gateway_for_account(
     let config = GatewayConfig::from_account(account)?;
     let mut runtimes = GATEWAY_RUNTIMES
         .lock()
-        .map_err(|_| "Claude Desktop 本地网关锁已损坏".to_string())?;
+        .map_err(|_| "Claude 本地网关锁已损坏".to_string())?;
     if let Some(runtime) = runtimes.get(&config.account_id) {
         if runtime.fingerprint == config.fingerprint {
             return Ok(runtime.endpoint.clone());
@@ -117,11 +117,11 @@ pub fn ensure_gateway_for_account(
     }
 
     let server = Server::http("127.0.0.1:0")
-        .map_err(|e| format!("启动 Claude Desktop 本地网关失败: {}", e))?;
+        .map_err(|e| format!("启动 Claude 本地网关失败: {}", e))?;
     let port = server
         .server_addr()
         .to_ip()
-        .ok_or_else(|| "Claude Desktop 本地网关监听地址不可用".to_string())?
+        .ok_or_else(|| "Claude 本地网关监听地址不可用".to_string())?
         .port();
     let local_api_key = generate_local_api_key();
     let endpoint = ClaudeDesktopLocalGatewayEndpoint {
@@ -133,7 +133,7 @@ pub fn ensure_gateway_for_account(
     let handle = thread::Builder::new()
         .name(format!("claude-desktop-gateway-{}", config.account_id))
         .spawn(move || run_gateway(server, thread_config, local_api_key, stop_rx))
-        .map_err(|e| format!("启动 Claude Desktop 本地网关线程失败: {}", e))?;
+        .map_err(|e| format!("启动 Claude 本地网关线程失败: {}", e))?;
 
     runtimes.insert(
         config.account_id.clone(),
@@ -164,14 +164,14 @@ impl GatewayConfig {
     fn from_account(account: &ClaudeAccount) -> Result<Self, String> {
         let account_id = account.id.trim().to_string();
         if account_id.is_empty() {
-            return Err("Claude Desktop Gateway 账号 ID 为空".to_string());
+            return Err("Claude Gateway 账号 ID 为空".to_string());
         }
         let upstream_base_url = account
             .api_base_url
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .ok_or_else(|| "Claude Desktop Gateway 账号缺少 Base URL".to_string())?
+            .ok_or_else(|| "Claude Gateway 账号缺少 Base URL".to_string())?
             .trim_end_matches('/')
             .to_string();
         let upstream_api_key = account
@@ -179,7 +179,7 @@ impl GatewayConfig {
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .ok_or_else(|| "Claude Desktop Gateway 账号缺少 API Key".to_string())?
+            .ok_or_else(|| "Claude Gateway 账号缺少 API Key".to_string())?
             .to_string();
         let upstream_auth_scheme = account
             .desktop_gateway_auth_scheme
@@ -189,7 +189,7 @@ impl GatewayConfig {
             .unwrap_or("bearer")
             .to_ascii_lowercase();
         let mappings = normalize_model_mappings(account.desktop_gateway_model_mappings.clone())
-            .ok_or_else(|| "Claude Desktop Gateway 映射关系为空".to_string())?;
+            .ok_or_else(|| "Claude Gateway 映射关系为空".to_string())?;
         let desktop_models = mappings
             .iter()
             .map(|mapping| mapping.desktop_model.clone())
@@ -301,7 +301,7 @@ fn handle_request(
         Err(error) => {
             let _ = error.respond(json_response(
                 502,
-                json!({ "error": { "message": "Claude Desktop local gateway upstream request failed" } }),
+                json!({ "error": { "message": "Claude local gateway upstream request failed" } }),
             ));
         }
     }

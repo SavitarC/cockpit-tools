@@ -7,19 +7,15 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
-## [0.26.0] - 2026-06-17
+## [0.26.0] - 2026-06-18
 
 ### Added
-- **Claude platform management is now available**: Cockpit can manage Claude Desktop and Claude CLI accounts in one workspace, including Desktop sign-in, Claude Code OAuth/API Key accounts, Desktop Gateway provider setup, quota and identity cards, APIKEY.FUN prefill, and separate Desktop/CLI instance launch flows.
+- **Claude platform management is now available**: Cockpit can manage Claude and Claude CLI accounts in one workspace and show them as one Claude platform across navigation, dashboard, layout, and floating cards. It supports Claude sign-in, Claude Code OAuth/API Key accounts, Claude Gateway provider setup, quota and identity cards, APIKEY.FUN prefill, and separate Claude/CLI instance launch flows.
 - **Antigravity now distinguishes Desktop and IDE instance management**: Antigravity and Antigravity IDE use separate launch/runtime targets, icons, instance stores, and PID detection so each client can be managed independently.
 
 ### Changed
-- **Platform layout defaults now prioritize the relay and newly added platform entries**: fresh layouts and reset layouts keep APIKEY.FUN at the top when enabled, then show the newest regular platform before the other entries.
 - **Codex session visibility repair keeps switching lightweight**: account/API switches no longer run heavyweight repairs inline, while the manual repair dialog keeps selectable repair depth, progress feedback, and session-level targeting.
 - **Account import/export and modal flows are more consistent**: export dialogs, group pickers, destructive confirmations, and modal error handling use the shared preview/confirmation patterns more consistently across platforms.
-
-### Fixed
-- **New platform account data is safer across local and JSON flows**: account import/export avoids non-portable local snapshots, and local account cards keep cached quota values aligned with the source usage data.
 
 ---
 ## [0.25.7] - 2026-06-15

@@ -385,7 +385,7 @@ export function ApiKeyFunPage() {
     const targetName = target === 'codex'
       ? 'Codex'
       : target === 'claude_desktop'
-        ? 'Claude Desktop'
+        ? 'Claude'
         : 'Claude CLI';
     window.dispatchEvent(new CustomEvent<typeof page>('app-request-navigate', { detail: page }));
     window.setTimeout(() => {
@@ -603,7 +603,7 @@ export function ApiKeyFunPage() {
                         if (currentSavedKey) handlePrefillTarget('claude_desktop', currentSavedKey);
                       }}
                     >
-                      <span>{t('apiKeyFun.keyManager.addToClaudeDesktop', '添加到 Claude Desktop')}</span>
+                      <span>{t('apiKeyFun.keyManager.addToClaudeDesktop', '添加到 Claude')}</span>
                     </button>
                   )}
                   {canAddCurrentKeyToClaude && (

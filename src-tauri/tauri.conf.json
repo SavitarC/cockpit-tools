@@ -67,6 +67,7 @@
     "resources": {
       "../scripts/claude-desktop-auth-helper.cjs": "scripts/claude-desktop-auth-helper.cjs",
       "../src/assets/icons/antigravity-menu.png": "native-menu-icons/antigravity-menu.png",
+      "../src/assets/icons/claude.png": "native-menu-icons/claude.png",
       "../src/assets/icons/codebuddy.png": "native-menu-icons/codebuddy.png",
       "../src/assets/icons/codex.svg": "native-menu-icons/codex.svg",
       "../src/assets/icons/cursor-menu.png": "native-menu-icons/cursor-menu.png",

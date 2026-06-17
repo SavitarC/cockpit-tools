@@ -412,7 +412,6 @@ mod imp {
             PlatformId::Antigravity => "#67c27b",
             PlatformId::Codex => "#1976ff",
             PlatformId::Claude => "#d97745",
-            PlatformId::ClaudeCli => "#d97745",
             PlatformId::Zed => "#8b92a1",
             PlatformId::GitHubCopilot => "#8b92a1",
             PlatformId::Windsurf => "#21c7b7",
@@ -2869,7 +2868,6 @@ mod imp {
             PlatformId::Antigravity => build_antigravity_cards(lang),
             PlatformId::Codex => build_codex_cards(lang),
             PlatformId::Claude => build_claude_cards(lang, true),
-            PlatformId::ClaudeCli => build_claude_cards(lang, false),
             PlatformId::GitHubCopilot => build_ghcp_cards(lang),
             PlatformId::Windsurf => build_windsurf_cards(lang),
             PlatformId::Kiro => build_kiro_cards(lang),
@@ -3048,7 +3046,7 @@ mod imp {
         desktop: bool,
     ) -> (Vec<AccountCard>, Option<String>, Option<String>) {
         let fallback_title = if desktop {
-            "Claude Desktop"
+            "Claude"
         } else {
             "Claude CLI"
         };
@@ -3056,7 +3054,11 @@ mod imp {
             .into_iter()
             .filter(|account| is_claude_desktop_account(account) == desktop)
             .collect::<Vec<_>>();
-        let current_platform = if desktop { "claude" } else { "claude_cli" };
+        let current_platform = if desktop {
+            "claude_desktop_account"
+        } else {
+            "claude_code_account"
+        };
         let current_id = modules::claude_account::resolve_current_account_for_platform(
             current_platform,
             &accounts,
@@ -4403,12 +4405,12 @@ mod imp {
                         .map(|_| 0)
                 }
                 (PlatformId::Codex, None) => refresh_all_codex_usage_for_menu(app.clone()).await,
-                (PlatformId::Claude | PlatformId::ClaudeCli, Some(account_id)) => {
+                (PlatformId::Claude, Some(account_id)) => {
                     commands::claude::refresh_claude_quota(app.clone(), account_id)
                         .await
                         .map(|_| 0)
                 }
-                (PlatformId::Claude | PlatformId::ClaudeCli, None) => {
+                (PlatformId::Claude, None) => {
                     commands::claude::refresh_all_claude_quotas(app.clone()).await
                 }
                 (PlatformId::GitHubCopilot, Some(account_id)) => {
@@ -4529,7 +4531,7 @@ mod imp {
                 PlatformId::Codex => commands::codex::switch_codex_account(app, account_id, None)
                     .await
                     .map(|_| ()),
-                PlatformId::Claude | PlatformId::ClaudeCli => {
+                PlatformId::Claude => {
                     commands::claude::switch_claude_account(app, account_id).map(|_| ())
                 }
                 PlatformId::GitHubCopilot => {

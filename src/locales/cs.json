@@ -780,9 +780,9 @@
       "codexAppSpeedLaunch": "Restartovat Codex",
       "codexAppSpeedSaveFailed": "Nepodařilo se uložit rychlost Codexu: {{error}}",
       "codexAppSpeedLaunchFailed": "Nepodařilo se restartovat Codex: {{error}}",
-      "claudeSettingsTitle": "Nastavení Claude Desktop",
-      "claudeAutoRefresh": "Automatická obnova kvóty Claude Desktop",
-      "claudeAutoRefreshDesc": "Automaticky na pozadí obnovuje mezipaměť kvóty účtů Claude Desktop."
+      "claudeSettingsTitle": "Nastavení Claude",
+      "claudeAutoRefresh": "Automatická obnova kvóty Claude",
+      "claudeAutoRefreshDesc": "Automaticky na pozadí obnovuje mezipaměť kvóty účtů Claude."
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API​",
@@ -2370,6 +2370,11 @@
         "loadingProviders": "Načítám providery...",
         "noProvider": "Nenalezen žádný provider",
         "providerLoadFailed": "Načtení providerů selhalo: {{error}}",
+        "modeTitle": "Režim opravy",
+        "modeQuick": "Rychlá oprava",
+        "modeQuickDesc": "Opraví oficiální state DB a první řádek metadat relace. Vhodné po běžném přepnutí účtu.",
+        "modeDeep": "Hloubková oprava",
+        "modeDeepDesc": "Zachová aktuální úplnou opravu metadat pro testování, když rychlá oprava nestačí.",
         "scopeTitle": "Rozsah relací",
         "scopeAll": "Všechny relace",
         "scopeAllDesc": "Opraví {{count}} relací v aktuálním seznamu.",
@@ -3307,7 +3312,7 @@
     },
     "claudeRefreshInterval": "Automatická obnova kvóty",
     "claude": {
-      "appPath": "Cesta Claude Desktop"
+      "appPath": "Cesta Claude"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Claude přidán",
       "addToCodex": "Přidat do Codex",
       "addToClaude": "Přidat do Claude CLI",
-      "addToClaudeDesktop": "Přidat do Claude Desktop",
+      "addToClaudeDesktop": "Přidat do Claude",
       "addToClaudeCli": "Přidat do Claude CLI",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "Nastavení APIKEY.FUN je vyplněno. Potvrďte přidání do Claude Desktop."
+      "claudeDesktopReady": "Nastavení APIKEY.FUN je vyplněno. Potvrďte přidání do Claude."
     },
     "copyKey": "Copy Key​",
     "clearKey": "Clear input​"
   },
   "claude": {
     "import": {
-      "localSuccess": "Importováno místních přihlášení Claude Desktop: {{count}}",
-      "localClient": "Importovat aktuální Desktop",
+      "localSuccess": "Importováno místních přihlášení Claude: {{count}}",
+      "localClient": "Importovat aktuální Claude",
       "jsonLabel": "Data JSON",
       "jsonPlaceholder": "Vložte exportovaný JSON účtu Claude",
-      "localDesc": "Načte aktuální přihlášení z oficiální aplikace Claude Desktop a zkopíruje ho do tohoto nástroje jako místní snímek účtu.",
-      "desktopJsonPlaceholder": "Vložte exportovaný JSON účtu Claude Desktop Gateway",
+      "localDesc": "Načte aktuální přihlášení z oficiální aplikace Claude a zkopíruje ho do tohoto nástroje jako místní snímek účtu.",
+      "desktopJsonPlaceholder": "Vložte exportovaný JSON účtu Claude Gateway",
       "cliJsonPlaceholder": "Vložte exportovaný JSON účtu Claude CLI"
     },
     "deleteCurrentDisabled": "Aktuální účet nelze odstranit",
     "flowNotice": {
       "title": "Správa účtů Claude",
-      "desc": "Tento nástroj spravuje přihlášení Claude Desktop a Anthropic API Key. Desktop přihlášení proběhne v autorizačním okně této platformy a nejprve se uloží lokálně; do oficiálního Claude Desktop se zapíše až při přepnutí účtu.",
-      "permission": "Rozsah oprávnění: čtení/zápis datové složky oficiální aplikace Claude Desktop. API Key a snímky Desktop se ukládají do místních dat účtů tohoto nástroje.",
-      "network": "Síť: okno Desktop přihlášení otevírá claude.ai; obnovení účtu může volat rozhraní Claude Web. Samotný import API Key síť nepoužívá.",
-      "desktopDesc": "Tento nástroj spravuje přihlášení Claude Desktop. Přihlášení se nejdříve uloží lokálně a do oficiálního Claude Desktop se zapíše až při přepnutí účtu.",
+      "desc": "Tento nástroj spravuje přihlášení Claude a Anthropic API Key. Claude přihlášení proběhne v autorizačním okně této platformy a nejprve se uloží lokálně; do oficiálního Claude se zapíše až při přepnutí účtu.",
+      "permission": "Rozsah oprávnění: čtení/zápis datové složky oficiální aplikace Claude. API Key a snímky Claude se ukládají do místních dat účtů tohoto nástroje.",
+      "network": "Síť: okno Claude přihlášení otevírá claude.ai; obnovení účtu může volat rozhraní Claude Web. Samotný import API Key síť nepoužívá.",
+      "desktopDesc": "Tento nástroj spravuje přihlášení Claude. Přihlášení se nejdříve uloží lokálně a do oficiálního Claude se zapíše až při přepnutí účtu.",
       "cliDesc": "Tento nástroj spravuje Claude Code OAuth a API Key od více poskytovatelů. Přepnutí OAuth zapisuje do místní konfigurace Claude Code; API Key zapisuje env hodnoty poskytovatele do Claude Code settings.json.",
-      "desktopPermission": "Rozsah oprávnění: čtení/zápis datového adresáře oficiální aplikace Claude Desktop. Snímky Desktopu se ukládají do lokálních dat účtů tohoto nástroje.",
+      "desktopPermission": "Rozsah oprávnění: čtení/zápis datového adresáře oficiální aplikace Claude. Snímky Claudeu se ukládají do lokálních dat účtů tohoto nástroje.",
       "cliPermission": "Rozsah oprávnění: čtení/zápis místní konfigurace Claude Code a přihlašovacích údajů Claude Code v macOS Keychain; účty API Key jsou uloženy lokálně v tomto nástroji a při přepnutí nebo spuštění CLI se zapisují jako prostý text do env v settings.json.",
-      "desktopNetwork": "Rozsah sítě: přihlašovací okno Desktop otevírá claude.ai; obnovení účtu může volat koncové body Claude Web.",
+      "desktopNetwork": "Rozsah sítě: přihlašovací okno Claude otevírá claude.ai; obnovení účtu může volat koncové body Claude Web.",
       "cliNetwork": "Síť: OAuth používá oficiální autorizaci Claude a endpointy token/profile/usage; import API Key je offline, po spuštění Claude CLI kontaktuje vybraného poskytovatele."
     },
     "search": "Hledat účty Claude...",
     "noAccounts": "Žádné účty Claude",
     "addAccount": {
       "title": "Přidat účet Claude",
-      "desktopTitle": "Přidat účet Claude Desktop",
+      "desktopTitle": "Přidat účet Claude",
       "cliTitle": "Přidat účet Claude CLI"
     },
     "deleteConfirm": "Smazat účet Claude {{email}}?",
@@ -4667,11 +4672,11 @@
       "success": "Přepnutí proběhlo úspěšně"
     },
     "instances": {
-      "unsupportedDescPlatform": "Více instancí Claude Desktop je podporováno jen na macOS, Windows a Linuxu.",
+      "unsupportedDescPlatform": "Více instancí Claude je podporováno jen na macOS, Windows a Linuxu.",
       "launchDialogTitle": "Spustit instanci",
       "launchCommand": "Spouštěcí příkaz",
       "executeInTerminal": "Spustit v terminálu",
-      "startSuccess": "Claude Desktop spuštěn"
+      "startSuccess": "Claude spuštěn"
     },
     "quota": {
       "title": "Kvóta",
@@ -4702,23 +4707,23 @@
       "oauth": "Režim OAuth",
       "setup_token": "Token nastavení",
       "api_key": "API klíč",
-      "desktop_oauth": "Desktop přihlášení"
+      "desktop_oauth": "Claude přihlášení"
     },
     "apiKey": {
-      "desc": "Uloží Claude CLI API Key jako samostatné přihlašovací údaje. Přepnutí nebo spuštění CLI zapíše env hodnoty poskytovatele do Claude Code settings.json a nezapisuje přihlášení Claude Desktop.",
+      "desc": "Uloží Claude CLI API Key jako samostatné přihlašovací údaje. Přepnutí nebo spuštění CLI zapíše env hodnoty poskytovatele do Claude Code settings.json a nezapisuje přihlášení Claude.",
       "nameLabel": "Název účtu",
       "namePlaceholder": "Volitelné, např. APIKEY.FUN",
       "keyLabel": "Klíč API",
       "placeholder": "Vložte API Key poskytovatele",
       "hide": "Skrýt API Key",
       "show": "Zobrazit API Key",
-      "hint": "Účty API Key jsou pouze pro Claude CLI. Zapisují se jako prostý env text do Claude Code settings.json, neovlivňují Claude Desktop a nepodporují obnovu předplatitelského limitu.",
+      "hint": "Účty API Key jsou pouze pro Claude CLI. Zapisují se jako prostý env text do Claude Code settings.json, neovlivňují Claude a nepodporují obnovu předplatitelského limitu.",
       "importAction": "Importovat API Key",
       "required": "Zadejte API Key",
       "templateRequired": "Zadejte {{label}}",
       "importSuccess": "Účet Claude API Key importován: {{name}}",
       "quotaUnsupported": "Účty API Key nepodporují obnovení",
-      "switchDisabled": "Účet API Key nelze přepnout do Claude Desktop",
+      "switchDisabled": "Účet API Key nelze přepnout do Claude",
       "cliUnsupported": "Účet API Key nespustí Claude CLI",
       "providerLabel": "Poskytovatel",
       "customProvider": "Vlastní",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL není platná URL"
     },
     "desktopOAuth": {
-      "title": "Přihlášení Claude Desktop",
+      "title": "Přihlášení Claude",
       "desc": "Přihlášení Claude v tomto nástroji; Google, Apple, e-mail a free.",
       "start": "Otevřít",
       "preparingRuntime": "Připravuji...",
-      "hint": "Nejdřív lokálně; zápis do Claude Desktop až při přepnutí.",
+      "hint": "Nejdřív lokálně; zápis do Claude až při přepnutí.",
       "runtimeHint": "Při prvním použití se může stáhnout a ověřit přihlašovací komponenta Electron do místní složky dat aplikace; není součástí instalátoru a později se používá z mezipaměti.",
       "nameLabel": "Název účtu",
       "namePlaceholder": "Volitelné, např. Claude Free",
       "waiting": "Přihlaste se v okně Claude a dokončete import zde.",
       "profileDir": "Izolovaný adresář profile",
       "complete": "Dokončit",
-      "localTitle": "Import aktuálního Desktop",
-      "localDesc": "Kopíruje aktuální relaci Claude Desktop jako lokální snímek.",
+      "localTitle": "Import aktuálního Claude",
+      "localDesc": "Kopíruje aktuální relaci Claude jako lokální snímek.",
       "localAction": "Import",
-      "localSuccess": "Lokální přihlášení Claude Desktop importováno: {{name}}",
-      "importSuccess": "Přihlášení Claude Desktop importováno: {{name}}",
-      "switchHint": "Přepnout na oficiální Claude Desktop",
+      "localSuccess": "Lokální přihlášení Claude importováno: {{name}}",
+      "importSuccess": "Přihlášení Claude importováno: {{name}}",
+      "switchHint": "Přepnout na oficiální Claude",
       "planUnknown": "Plán neznámý"
     },
     "oauth": {
       "title": "Autorizace Claude OAuth",
       "desc": "Otevřete oficiální stránku autorizace Claude OAuth a po dokončení vložte zpětný odkaz nebo kód pro import účtu.",
       "start": "Autorizovat OAuth",
-      "proRequiredHint": "Oficiální OAuth Claude se obvykle používá pro Claude Code. Pokud stránka zůstane na upgradu nebo bez oprávnění, použijte přihlášení Claude Desktop.",
+      "proRequiredHint": "Oficiální OAuth Claude se obvykle používá pro Claude Code. Pokud stránka zůstane na upgradu nebo bez oprávnění, použijte přihlášení Claude.",
       "openInstruction": "Klikněte na tlačítko níže a dokončete autorizaci Claude OAuth v prohlížeči.",
       "waiting": "Po dokončení vložte níže finální adresu stránky nebo zobrazený kód.",
       "authUrl": "Autorizační odkaz",
@@ -4773,7 +4778,7 @@
       "updateFailed": "Nepodařilo se aktualizovat štítek tarifu: {{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "Staré účty OAuth nelze přepnout do Claude Desktop",
+      "switchDisabled": "Staré účty OAuth nelze přepnout do Claude",
       "quotaUnsupported": "Staré účty OAuth už nepodporují obnovení",
       "cliUnsupported": "Starší účty OAuth nemohou spustit Claude CLI"
     },
@@ -4809,22 +4814,22 @@
     "deleteSelectedLabel": "{{count}} účtů",
     "subPlatform": {
       "label": "Podplatforma Claude",
-      "desktop": "Claude Desktop aplikace",
+      "desktop": "Claude aplikace",
       "cli": "Claude příkazová řádka"
     },
-    "searchDesktop": "Hledat účty Claude Desktop...",
+    "searchDesktop": "Hledat účty Claude...",
     "searchCli": "Hledat účty Claude CLI...",
-    "noDesktopAccounts": "Zatím žádné účty Claude Desktop",
+    "noDesktopAccounts": "Zatím žádné účty Claude",
     "noCliAccounts": "Zatím žádné účty Claude CLI",
     "desktopGateway": {
       "label": "Brána",
       "authScheme": "Schéma auth",
       "importAction": "Import Gateway",
-      "importSuccess": "Účet Claude Desktop Gateway byl importován: {{name}}",
+      "importSuccess": "Účet Claude Gateway byl importován: {{name}}",
       "baseUrlRequired": "Zadejte Gateway Base URL",
       "noQuota": "Účty Gateway nezobrazují kvótu předplatného Claude",
-      "desc": "Uloží Gateway API key jako konfiguraci Claude Desktop 3P. Při přepnutí se zapíše do spravovaného profilu a spustí oficiální Claude Desktop.",
-      "hint": "Účty Gateway nečtou údaje o předplatném Claude. API key se zapíše do spravovaného profilu podle oficiální konfigurace 3P pro spuštění Claude Desktop.",
+      "desc": "Uloží Gateway API key jako konfiguraci Claude 3P. Při přepnutí se zapíše do spravovaného profilu a spustí oficiální Claude.",
+      "hint": "Účty Gateway nečtou údaje o předplatném Claude. API key se zapíše do spravovaného profilu podle oficiální konfigurace 3P pro spuštění Claude.",
       "modelsLabel": "Katalog modelů",
       "modelsEmpty": "Tento Gateway nevrátil žádné modely.",
       "modelsLoaded": "Načteno {{count}} modelů. Před uložením je můžete upravit.",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "Jedno ID modelu na řádek",
       "modelsLoading": "Načítá se katalog modelů...",
       "modelsRequired": "Zadejte katalog modelů",
-      "editTitle": "Upravit Claude Desktop Gateway",
+      "editTitle": "Upravit Claude Gateway",
       "updateAction": "Uložit Gateway",
-      "updateSuccess": "Účet Claude Desktop Gateway byl aktualizován: {{name}}",
+      "updateSuccess": "Účet Claude Gateway byl aktualizován: {{name}}",
       "connectionMode": "Připojení",
       "modeDirect": "Přímo",
       "modeLocalMapping": "Místní mapování",
       "mappingsRequired": "Nastavte mapování modelů",
-      "mappingDesktopModelInvalid": "Vlevo musí být názvy Claude rozpoznané Claude Desktop",
-      "directModelsInvalid": "Přímý režim podporuje jen názvy Claude rozpoznané Claude Desktop",
-      "desktopModelPlaceholder": "Model Claude Desktop",
+      "mappingDesktopModelInvalid": "Vlevo musí být názvy Claude rozpoznané Claude",
+      "directModelsInvalid": "Přímý režim podporuje jen názvy Claude rozpoznané Claude",
+      "desktopModelPlaceholder": "Model Claude",
       "upstreamModelPlaceholder": "Skutečný upstream model",
       "addMapping": "Přidat mapování"
     }

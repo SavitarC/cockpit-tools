@@ -270,12 +270,12 @@ impl RepairTargetSelection {
 }
 
 impl CodexSessionVisibilityRepairOptions {
-    fn official_state_db_only(_mode: CodexSessionVisibilityRepairMode) -> Self {
+    fn official_state_db_only(mode: CodexSessionVisibilityRepairMode) -> Self {
         Self {
-            mode: CodexSessionVisibilityRepairMode::Quick,
+            mode,
             repair_rollout: false,
             repair_referenced_rollouts: true,
-            rewrite_all_session_meta: false,
+            rewrite_all_session_meta: matches!(mode, CodexSessionVisibilityRepairMode::Deep),
             sqlite_scope: SqliteRepairScope::OfficialStateDbs,
             repair_sqlite_timestamps: false,
             collect_rollout_thread_facts: false,
@@ -1542,14 +1542,18 @@ fn collect_referenced_rollout_provider_changes(
         if !rollout_path.exists() {
             continue;
         }
-        let content = fs::read_to_string(&rollout_path).map_err(|error| {
-            format!(
-                "读取 rollout 文件失败 ({}): {}",
-                rollout_path.display(),
-                error
-            )
-        })?;
-        let rewrite = rewrite_rollout_session_meta_providers(&content, target_provider)?;
+        let rewrite = if options.rewrite_all_session_meta {
+            let content = fs::read_to_string(&rollout_path).map_err(|error| {
+                format!(
+                    "读取 rollout 文件失败 ({}): {}",
+                    rollout_path.display(),
+                    error
+                )
+            })?;
+            rewrite_rollout_session_meta_providers(&content, target_provider)?
+        } else {
+            rewrite_rollout_first_session_meta_provider(&rollout_path, target_provider)?
+        };
         if rewrite.session_meta_count == 0 || !rewrite.rewrite_needed {
             continue;
         }
@@ -3952,8 +3956,10 @@ mod tests {
             .expect("insert thread");
         drop(connection);
 
-        let old_line =
-            "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-1\",\"model_provider\":\"old\"}}\n";
+        let old_line = concat!(
+            "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-1\",\"model_provider\":\"old\"}}\n",
+            "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-1\",\"model_provider\":\"old-later\"}}\n"
+        );
         let unreferenced_line =
             "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-2\",\"model_provider\":\"old\"}}\n";
         fs::write(&referenced_rollout, old_line).expect("write referenced rollout");
@@ -3983,6 +3989,7 @@ mod tests {
         let referenced_content =
             fs::read_to_string(&referenced_rollout).expect("read referenced rollout");
         assert!(referenced_content.contains("\"model_provider\":\"relay\""));
+        assert!(referenced_content.contains("\"model_provider\":\"old-later\""));
         assert_eq!(
             fs::read_to_string(&unreferenced_rollout).expect("read unreferenced rollout"),
             unreferenced_line
@@ -3992,18 +3999,28 @@ mod tests {
     }
 
     #[test]
-    fn deep_mode_is_kept_as_compatibility_for_official_state_db_repair() {
+    fn deep_mode_repairs_official_state_db_and_referenced_rollout_all_session_meta() {
         let data_dir = make_temp_dir("codex-session-deep-compat-official-state-test");
         let sqlite_dir = data_dir.join(SQLITE_DIR_NAME);
         fs::create_dir_all(&sqlite_dir).expect("create sqlite dir");
         let official_db_path = sqlite_dir.join(OFFICIAL_STATE_DB_FILE);
         let unrelated_db_path = sqlite_dir.join(PREFERRED_SQLITE_DB_FILE);
+        let rollout_dir = data_dir.join("sessions").join("2026").join("06").join("17");
+        fs::create_dir_all(&rollout_dir).expect("create rollout dir");
+        let referenced_rollout = rollout_dir.join("rollout-thread-1.jsonl");
+        let referenced_relative = referenced_rollout
+            .strip_prefix(&data_dir)
+            .expect("relative rollout")
+            .to_string_lossy()
+            .replace('\\', "/");
+
         for db_path in [&official_db_path, &unrelated_db_path] {
             let connection = Connection::open(db_path).expect("open sqlite");
             connection
                 .execute(
                     "CREATE TABLE threads (
                         id TEXT PRIMARY KEY,
+                        rollout_path TEXT,
                         model_provider TEXT,
                         has_user_event INTEGER,
                         first_user_message TEXT,
@@ -4014,22 +4031,35 @@ mod tests {
                 .expect("create threads table");
             connection
                 .execute(
-                    "INSERT INTO threads (id, model_provider, has_user_event, first_user_message, thread_source)
-                     VALUES ('thread-1', 'old', 0, 'hello', '')",
-                    [],
+                    "INSERT INTO threads (id, rollout_path, model_provider, has_user_event, first_user_message, thread_source)
+                     VALUES ('thread-1', ?1, 'old', 0, 'hello', '')",
+                    [referenced_relative.as_str()],
                 )
                 .expect("insert row");
         }
+        fs::write(
+            &referenced_rollout,
+            concat!(
+                "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-1\",\"model_provider\":\"old\"}}\n",
+                "{\"type\":\"session_meta\",\"payload\":{\"id\":\"thread-1\",\"model_provider\":\"old-later\"}}\n"
+            ),
+        )
+        .expect("write referenced rollout");
 
         let options = repair_options(CodexSessionVisibilityRepairMode::Deep);
-        assert_eq!(options.mode, CodexSessionVisibilityRepairMode::Quick);
+        assert_eq!(options.mode, CodexSessionVisibilityRepairMode::Deep);
         assert_eq!(options.sqlite_scope, SqliteRepairScope::OfficialStateDbs);
         assert!(!options.repair_rollout);
         assert!(options.repair_referenced_rollouts);
+        assert!(options.rewrite_all_session_meta);
         assert!(!options.repair_session_index);
         assert!(!options.rebuild_metadata);
 
         let selection = RepairTargetSelection::default();
+        let rollout_changes =
+            collect_referenced_rollout_provider_changes(&data_dir, "relay", options, &selection)
+                .expect("collect deep referenced rollout changes");
+        assert_eq!(rollout_changes.len(), 1);
         let scan = count_sqlite_rows_to_update_for_options(&data_dir, "relay", options, &selection)
             .expect("scan compatibility sqlite");
         assert_eq!(scan.rows_to_update, 1);
@@ -4037,7 +4067,7 @@ mod tests {
         let repaired = repair_single_instance(
             &data_dir,
             "relay",
-            &[],
+            &rollout_changes,
             true,
             false,
             false,
@@ -4067,6 +4097,11 @@ mod tests {
             .expect("read unrelated provider");
         assert_eq!(unrelated_provider, "old");
 
+        let referenced_content =
+            fs::read_to_string(&referenced_rollout).expect("read deep repaired rollout");
+        assert!(referenced_content.contains("\"model_provider\":\"relay\""));
+        assert!(!referenced_content.contains("old-later"));
+
         fs::remove_dir_all(&data_dir).expect("cleanup temp dir");
     }
 
@@ -4079,6 +4114,7 @@ mod tests {
         assert_eq!(options.sqlite_scope, SqliteRepairScope::OfficialStateDbs);
         assert!(!options.repair_rollout);
         assert!(options.repair_referenced_rollouts);
+        assert!(!options.rewrite_all_session_meta);
         assert!(!options.repair_session_index);
         assert!(!options.rebuild_metadata);
     }

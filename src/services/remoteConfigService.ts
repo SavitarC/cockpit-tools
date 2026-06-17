@@ -32,9 +32,7 @@ function normalizePlatformIds(value: unknown): PlatformId[] {
   const result: PlatformId[] = [];
   for (const item of value) {
     if (typeof item !== 'string') continue;
-    const platformId = item === 'claude' || item === 'claude_cli' || item === 'claude-desktop' || item === 'claude-code'
-      ? 'claude_manager'
-      : item as PlatformId;
+    const platformId = item as PlatformId;
     if (!ALL_PLATFORM_IDS.includes(platformId)) continue;
     if (seen.has(platformId)) continue;
     seen.add(platformId);

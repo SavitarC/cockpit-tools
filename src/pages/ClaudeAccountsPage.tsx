@@ -558,7 +558,7 @@ function isClaudeOAuthAuthorizeInput(value: string): boolean {
 }
 
 function getClaudeCurrentPlatform(subPlatform: ClaudeSubPlatform): ProviderCurrentPlatform {
-  return subPlatform === 'desktop' ? 'claude' : 'claude_cli';
+  return subPlatform === 'desktop' ? 'claude_desktop_account' : 'claude_code_account';
 }
 
 function isClaudeJsonExportableAccount(account: ClaudeAccount): boolean {
@@ -1158,7 +1158,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
         setDesktopGatewayModelsError(null);
         setDesktopGatewayModelsMessage(t(
           'apiKeyFun.prefill.claudeDesktopReady',
-          '已带入 APIKEY.FUN 配置，请确认后添加到 Claude Desktop。',
+          '已带入 APIKEY.FUN 配置，请确认后添加到 Claude。',
         ));
         desktopGatewayModelsFetchSignatureRef.current = normalizedBaseUrl
           ? `${key}\n${normalizedBaseUrl}\nbearer`
@@ -1269,7 +1269,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
       );
       await store.fetchAccounts();
       setMessage({
-        text: t('claude.desktopOAuth.importSuccess', 'Claude Desktop 登录态已导入：{{name}}', {
+        text: t('claude.desktopOAuth.importSuccess', 'Claude 登录态已导入：{{name}}', {
           name: account.email,
         }),
       });
@@ -1543,7 +1543,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
           return;
         }
         if (desktopGatewayMappings.some((mapping) => !isClaudeDesktopGatewayRouteModel(mapping.desktopModel))) {
-          setAddModalError(t('claude.desktopGateway.mappingDesktopModelInvalid', '映射左侧必须填写 Claude Desktop 可识别的 Claude 模型名'));
+          setAddModalError(t('claude.desktopGateway.mappingDesktopModelInvalid', '映射左侧必须填写 Claude 可识别的 Claude 模型名'));
           return;
         }
       } else {
@@ -1552,7 +1552,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
           return;
         }
         if (desktopGatewayModels.some((model) => !isClaudeDesktopGatewayRouteModel(model))) {
-          setAddModalError(t('claude.desktopGateway.directModelsInvalid', '直连模式只支持 Claude Desktop 可识别的 Claude 模型名'));
+          setAddModalError(t('claude.desktopGateway.directModelsInvalid', '直连模式只支持 Claude 可识别的 Claude 模型名'));
           return;
         }
       }
@@ -1605,8 +1605,8 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
             : 'claude.apiKey.importSuccess',
           addTab === 'desktopGateway'
             ? editingDesktopGatewayAccountId
-              ? 'Claude Desktop Gateway 账号已更新：{{name}}'
-              : 'Claude Desktop Gateway 账号已导入：{{name}}'
+              ? 'Claude Gateway 账号已更新：{{name}}'
+              : 'Claude Gateway 账号已导入：{{name}}'
             : 'Claude API Key 账号已导入：{{name}}',
           {
           name: account.email,
@@ -2186,14 +2186,14 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
           title={
             isCliSubPlatform
               ? isDesktopRuntime
-                  ? t('claude.desktopOAuth.cliUnsupported', 'Claude Desktop 账号不能启动 Claude Code CLI')
+                  ? t('claude.desktopOAuth.cliUnsupported', 'Claude 账号不能启动 Claude Code CLI')
                   : t('claude.cli.quickLaunch', 'CLI 启动')
               : isApiKey
                 ? t('claude.apiKey.switchDisabled', 'API Key 账号不能写入本地登录态')
                 : isClaudeCodeOAuth
                   ? t('claude.oauth.switchHint', '切换到本机 Claude Code')
                 : isDesktopRuntime
-                  ? t('claude.desktopOAuth.switchHint', '切换到官方 Claude Desktop')
+                  ? t('claude.desktopOAuth.switchHint', '切换到官方 Claude')
                   : t('common.shared.switchAccount', '切换账号')
           }
         >
@@ -2401,7 +2401,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
   }> = [
     {
       key: 'desktop',
-      label: t('claude.subPlatform.desktop', 'Claude Desktop'),
+      label: t('claude.subPlatform.desktop', 'Claude'),
       icon: <ClaudeIcon className="tab-icon" />,
     },
     {
@@ -2484,7 +2484,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                   {t(
                     isDesktopSubPlatform ? 'claude.flowNotice.desktopDesc' : 'claude.flowNotice.cliDesc',
                     isDesktopSubPlatform
-                      ? '本工具可管理 Claude Desktop 登录态。登录会先保存到本地账号库；切号时才写入官方 Claude Desktop。'
+                      ? '本工具可管理 Claude 登录态。登录会先保存到本地账号库；切号时才写入官方 Claude。'
                       : '本工具可管理 Claude Code OAuth 与多供应商 API Key。OAuth 切号会写入本机 Claude Code 配置；API Key 会写入 Claude Code settings.json 的 env。',
                   )}
                 </div>
@@ -2493,7 +2493,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                     {t(
                     isDesktopSubPlatform ? 'claude.flowNotice.desktopPermission' : 'claude.flowNotice.cliPermission',
                     isDesktopSubPlatform
-                      ? '权限范围：读取/写入官方 Claude Desktop 应用数据目录；Desktop 快照保存于本工具本地账号数据。'
+                      ? '权限范围：读取/写入官方 Claude 应用数据目录；Claude 快照保存于本工具本地账号数据。'
                         : '权限范围：读取/写入本机 Claude Code 配置目录与 macOS Keychain 中的 Claude Code 凭据；API Key 账号保存于本工具本地账号数据，并在切换或启动 CLI 时明文写入 settings.json 的 env。',
                     )}
                   </li>
@@ -2501,7 +2501,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                     {t(
                     isDesktopSubPlatform ? 'claude.flowNotice.desktopNetwork' : 'claude.flowNotice.cliNetwork',
                     isDesktopSubPlatform
-                      ? '网络范围：Desktop 登录窗口访问 claude.ai；刷新账号会请求 Claude Web 相关接口。'
+                      ? '网络范围：Claude 登录窗口访问 claude.ai；刷新账号会请求 Claude Web 相关接口。'
                         : '网络范围：OAuth 授权访问 Claude 官方授权页和 token/profile/usage 接口；API Key 导入不联网，启动后由 Claude CLI 访问所选供应商。',
                     )}
                   </li>
@@ -2527,7 +2527,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                   type="text"
                   placeholder={t(
                     isDesktopSubPlatform ? 'claude.searchDesktop' : 'claude.searchCli',
-                    isDesktopSubPlatform ? '搜索 Claude Desktop 账号...' : '搜索 Claude CLI 账号...',
+                    isDesktopSubPlatform ? '搜索 Claude 账号...' : '搜索 Claude CLI 账号...',
                   )}
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -2599,7 +2599,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
               <p>
                 {t(
                   isDesktopSubPlatform ? 'claude.noDesktopAccounts' : 'claude.noCliAccounts',
-                  isDesktopSubPlatform ? '暂无 Claude Desktop 账号' : '暂无 Claude CLI 账号',
+                  isDesktopSubPlatform ? '暂无 Claude 账号' : '暂无 Claude CLI 账号',
                 )}
               </p>
               <button className="btn btn-primary" onClick={openAddModal}>
@@ -2888,9 +2888,9 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                       ? 'claude.addAccount.desktopTitle'
                       : 'claude.addAccount.cliTitle',
                   editingDesktopGatewayAccountId
-                    ? '编辑 Claude Desktop Gateway'
+                    ? '编辑 Claude Gateway'
                     : isDesktopSubPlatform
-                      ? '添加 Claude Desktop 账号'
+                      ? '添加 Claude 账号'
                       : '添加 Claude CLI 账号',
                 )}
               </h2>
@@ -2960,7 +2960,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                       <Monitor size={20} />
                     </div>
                     <div>
-                      <h3>{t('claude.desktopOAuth.title', 'Claude Desktop 登录')}</h3>
+                      <h3>{t('claude.desktopOAuth.title', 'Claude 登录')}</h3>
                       <p>
                         {t(
                           'claude.desktopOAuth.desc',
@@ -2982,7 +2982,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                   <p className="oauth-hint">
                     {t(
                       'claude.desktopOAuth.hint',
-                      '登录态会先保存到本工具本地账号库，不会立刻写入官方 Claude Desktop；切号时才写回 Claude。',
+                      '登录态会先保存到本工具本地账号库，不会立刻写入官方 Claude；切号时才写回 Claude。',
                     )}
                   </p>
                   <p className="oauth-hint">
@@ -3047,7 +3047,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                   <p className="oauth-hint">
                     {t(
                       'claude.oauth.proRequiredHint',
-                      'Claude 官方 OAuth 通常用于 Claude Code 授权；如果页面停在升级或无权限页面，可改用 Claude Desktop 登录。',
+                      'Claude 官方 OAuth 通常用于 Claude Code 授权；如果页面停在升级或无权限页面，可改用 Claude 登录。',
                     )}
                   </p>
                   <div className="oauth-url-section">
@@ -3129,8 +3129,8 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                     {t(
                       addTab === 'desktopGateway' ? 'claude.desktopGateway.desc' : 'claude.apiKey.desc',
                       addTab === 'desktopGateway'
-                        ? '保存 Gateway API Key 作为 Claude Desktop 3P 配置；切换时写入受管 profile 并用官方 Claude Desktop 启动。'
-                        : '保存 Claude CLI API Key 作为独立凭证；切换或启动 CLI 时会写入 Claude Code settings.json 的 env，不会写入 Claude Desktop 登录态。',
+                        ? '保存 Gateway API Key 作为 Claude 3P 配置；切换时写入受管 profile 并用官方 Claude 启动。'
+                        : '保存 Claude CLI API Key 作为独立凭证；切换或启动 CLI 时会写入 Claude Code settings.json 的 env，不会写入 Claude 登录态。',
                     )}
                   </p>
                   <div className="form-group">
@@ -3396,8 +3396,8 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                                         setDesktopGatewayModelsError(null);
                                         setAddModalError(null);
                                       }}
-                                      ariaLabel={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude Desktop 模型名')}
-                                      placeholder={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude Desktop 模型名')}
+                                      ariaLabel={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude 模型名')}
+                                      placeholder={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude 模型名')}
                                       menuWidth={260}
                                     />
                                     {showCustomDesktopInput && (
@@ -3411,7 +3411,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                                           setDesktopGatewayModelsError(null);
                                           setAddModalError(null);
                                         }}
-                                        placeholder={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude Desktop 模型名')}
+                                        placeholder={t('claude.desktopGateway.desktopModelPlaceholder', 'Claude 模型名')}
                                         spellCheck={false}
                                       />
                                     )}
@@ -3478,8 +3478,8 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                     {t(
                       addTab === 'desktopGateway' ? 'claude.desktopGateway.hint' : 'claude.apiKey.hint',
                       addTab === 'desktopGateway'
-                        ? 'Gateway 账号不会读取 Claude 订阅信息；API Key 会按官方 3P 配置写入受管 profile，用于启动 Claude Desktop。'
-                        : 'API Key 账号仅用于 Claude CLI；会以明文 env 写入 Claude Code settings.json，不会写入 Claude Desktop 登录态，也不支持订阅额度刷新。',
+                        ? 'Gateway 账号不会读取 Claude 订阅信息；API Key 会按官方 3P 配置写入受管 profile，用于启动 Claude。'
+                        : 'API Key 账号仅用于 Claude CLI；会以明文 env 写入 Claude Code settings.json，不会写入 Claude 登录态，也不支持订阅额度刷新。',
                     )}
                   </p>
                   <button
@@ -3546,7 +3546,7 @@ export function ClaudeAccountsPage({ subPlatform = 'desktop' }: ClaudeAccountsPa
                       placeholder={t(
                         isDesktopSubPlatform ? 'claude.import.desktopJsonPlaceholder' : 'claude.import.cliJsonPlaceholder',
                         isDesktopSubPlatform
-                          ? '粘贴导出的 Claude Desktop Gateway 账号 JSON'
+                          ? '粘贴导出的 Claude Gateway 账号 JSON'
                           : '粘贴导出的 Claude CLI 账号 JSON',
                       )}
                       onChange={(event) => setJsonInput(event.target.value)}

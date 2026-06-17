@@ -82,7 +82,7 @@ const PROVIDER_ALIAS_MAP: Record<string, PlatformId> = {
   overview: 'antigravity',
   accounts: 'antigravity',
   codex: 'codex',
-  claude: 'claude',
+  claude: 'claude_manager',
   zed: 'zed',
   github_copilot: 'github-copilot',
   githubcopilot: 'github-copilot',

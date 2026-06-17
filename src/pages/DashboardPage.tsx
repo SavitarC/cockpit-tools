@@ -127,9 +127,6 @@ const DASHBOARD_DEFERRED_PREFETCH_BATCH_DELAY_MS = 1200;
 let dashboardStartupPrefetched = false;
 
 function normalizeDashboardCardPlatformId(platformId: PlatformId): PlatformId {
-  if (platformId === 'claude' || platformId === 'claude_cli') {
-    return 'claude_manager';
-  }
   return platformId === 'antigravity_ide' ? 'antigravity' : platformId;
 }
 
@@ -249,7 +246,6 @@ export function DashboardPage({
           await useCodexAccountStore.getState().updateAccountTags(accountId, newTags);
           break;
         case 'claude_manager':
-        case 'claude':
           await useClaudeAccountStore.getState().updateAccountTags(accountId, newTags);
           break;
         case 'github-copilot':
@@ -2399,8 +2395,6 @@ export function DashboardPage({
     antigravity_ide: stats.antigravity,
     codex: stats.codex,
     claude_manager: stats.claude,
-    claude: stats.claude,
-    claude_cli: stats.claude,
     zed: stats.zed,
     'github-copilot': stats.githubCopilot,
     windsurf: stats.windsurf,
@@ -2425,10 +2419,6 @@ export function DashboardPage({
         const countPlatformId =
           platformId === 'antigravity_ide'
             ? 'antigravity'
-            : platformId === 'claude'
-              ? 'claude_manager'
-            : platformId === 'claude_cli'
-              ? 'claude_manager'
               : platformId;
         if (countedPlatformIds.has(countPlatformId)) {
           return sum;
@@ -2596,7 +2586,7 @@ export function DashboardPage({
       );
     }
 
-    if (platformId === 'claude_manager' || platformId === 'claude') {
+    if (platformId === 'claude_manager') {
       return (
         <div className="main-card codex-card" key={platformId}>
           <div className="main-card-header">

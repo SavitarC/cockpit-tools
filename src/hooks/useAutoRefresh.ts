@@ -442,7 +442,7 @@ export function useAutoRefresh() {
             },
             {
               key: 'claude',
-              label: 'Claude Desktop',
+              label: 'Claude',
               intervalMinutes: config.claude_auto_refresh_minutes,
               currentMinutes: resolveCurrentMinutes('claude', currentAccountEmails.claude, currentRefreshMinutesMap),
               fullRefreshingRef: claudeRefreshingRef,

@@ -1076,7 +1076,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         case 'codex':
           return 'Codex';
         case 'claude':
-          return 'Claude Desktop';
+          return 'Claude';
         case 'github_copilot':
           return 'GitHub Copilot';
         case 'windsurf':

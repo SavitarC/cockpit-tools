@@ -2576,7 +2576,7 @@ function MainApp() {
       },
       {
         command: 'refresh_all_claude_quotas',
-        errorMessage: 'Failed to refresh Claude Desktop quotas:',
+        errorMessage: 'Failed to refresh Claude quotas:',
       },
       {
         command: 'refresh_all_github_copilot_tokens',

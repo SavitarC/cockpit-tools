@@ -67,7 +67,6 @@ import { useTraeInstanceStore } from '../stores/useTraeInstanceStore';
 import { useWindsurfInstanceStore } from '../stores/useWindsurfInstanceStore';
 import { useWorkbuddyInstanceStore } from '../stores/useWorkbuddyInstanceStore';
 import { ALL_PLATFORM_IDS, PLATFORM_PAGE_MAP, PlatformId } from '../types/platform';
-import { isClaudeDesktopRuntimeAccount } from '../types/claude';
 import type { InstanceProfile } from '../types/instance';
 import { isPrivacyModeEnabledByDefault, maskSensitiveValue } from '../utils/privacy';
 import { getPlatformLabel, renderPlatformIcon } from '../utils/platformMeta';
@@ -139,9 +138,6 @@ type FloatingCardInstanceStoreApi = Pick<
 function loadInitialPlatform(): PlatformId {
   try {
     const saved = localStorage.getItem(FLOATING_CARD_PLATFORM_STORAGE_KEY);
-    if (saved === 'claude' || saved === 'claude_cli') {
-      return 'claude_manager';
-    }
     if (saved && ALL_PLATFORM_IDS.includes(saved as PlatformId)) {
       return saved as PlatformId;
     }
@@ -175,10 +171,7 @@ function resolveInstanceStoreApi(platformId: PlatformId): FloatingCardInstanceSt
     case 'codex':
       return useCodexInstanceStore.getState();
     case 'claude_manager':
-    case 'claude':
       return useClaudeInstanceStore.getState();
-    case 'claude_cli':
-      return null;
     case 'github-copilot':
       return useGitHubCopilotInstanceStore.getState();
     case 'windsurf':
@@ -421,8 +414,6 @@ export function FloatingCardWindow() {
           ]);
           break;
         case 'claude_manager':
-        case 'claude':
-        case 'claude_cli':
           await Promise.allSettled([
             useClaudeAccountStore.getState().fetchAccounts(),
             useClaudeAccountStore.getState().fetchCurrentAccountId(),
@@ -680,22 +671,6 @@ export function FloatingCardWindow() {
     }
   }, [instanceContext, selectedPlatform]);
 
-  const claudeDesktopAccounts = useMemo(
-    () => claudeAccounts.filter(isClaudeDesktopRuntimeAccount),
-    [claudeAccounts],
-  );
-  const claudeCliAccounts = useMemo(
-    () => claudeAccounts.filter((account) => !isClaudeDesktopRuntimeAccount(account)),
-    [claudeAccounts],
-  );
-  const claudeDesktopCurrent = useMemo(
-    () => resolveCurrentAccountById(claudeDesktopAccounts, claudeCurrentId),
-    [claudeDesktopAccounts, claudeCurrentId],
-  );
-  const claudeCliCurrent = useMemo(
-    () => resolveCurrentAccountById(claudeCliAccounts, claudeCurrentId),
-    [claudeCliAccounts, claudeCurrentId],
-  );
   const githubCopilotCurrent = useMemo(
     () => resolveCurrentOrMostRecentAccount(githubCopilotAccounts, githubCopilotCurrentId),
     [githubCopilotAccounts, githubCopilotCurrentId],
@@ -759,16 +734,6 @@ export function FloatingCardWindow() {
           accounts: claudeAccounts,
           actualCurrentAccount: resolveCurrentAccountById(claudeAccounts, claudeCurrentId),
         };
-      case 'claude':
-        return {
-          accounts: claudeDesktopAccounts,
-          actualCurrentAccount: claudeDesktopCurrent,
-        };
-      case 'claude_cli':
-        return {
-          accounts: claudeCliAccounts,
-          actualCurrentAccount: claudeCliCurrent,
-        };
       case 'github-copilot':
         return {
           accounts: githubCopilotAccounts,
@@ -829,11 +794,7 @@ export function FloatingCardWindow() {
     agAccounts,
     agCurrent,
     claudeAccounts,
-    claudeCliAccounts,
     claudeCurrentId,
-    claudeCliCurrent,
-    claudeDesktopAccounts,
-    claudeDesktopCurrent,
     codebuddyAccounts,
     codebuddyCnAccounts,
     codebuddyCnCurrent,
@@ -881,10 +842,6 @@ export function FloatingCardWindow() {
         return getRecommendedCodexAccount(codexAccounts, effectiveCurrentId);
       case 'claude_manager':
         return getRecommendedClaudeAccount(claudeAccounts, effectiveCurrentId);
-      case 'claude':
-        return getRecommendedClaudeAccount(claudeDesktopAccounts, effectiveCurrentId);
-      case 'claude_cli':
-        return getRecommendedClaudeAccount(claudeCliAccounts, effectiveCurrentId);
       case 'github-copilot':
         return getRecommendedGitHubCopilotAccount(githubCopilotAccounts, effectiveCurrentId);
       case 'windsurf':
@@ -911,8 +868,6 @@ export function FloatingCardWindow() {
   }, [
     agAccounts,
     claudeAccounts,
-    claudeCliAccounts,
-    claudeDesktopAccounts,
     codebuddyAccounts,
     codebuddyCnAccounts,
     codexAccounts,
@@ -974,8 +929,6 @@ export function FloatingCardWindow() {
       case 'codex':
         return buildCodexAccountPresentation(viewedAccount as typeof codexAccounts[number], t);
       case 'claude_manager':
-      case 'claude':
-      case 'claude_cli':
         return buildClaudeAccountPresentation(viewedAccount as typeof claudeAccounts[number], t);
       case 'github-copilot':
         return buildGitHubCopilotAccountPresentation(viewedAccount as typeof githubCopilotAccounts[number], t);
@@ -1063,8 +1016,6 @@ export function FloatingCardWindow() {
             await useCodexAccountStore.getState().refreshQuota(viewedAccount.id);
             break;
           case 'claude_manager':
-          case 'claude':
-          case 'claude_cli':
             await useClaudeAccountStore.getState().refreshToken(viewedAccount.id);
             break;
           case 'github-copilot':
@@ -1181,8 +1132,6 @@ export function FloatingCardWindow() {
             await useCodexAccountStore.getState().fetchCurrentAccount();
             break;
           case 'claude_manager':
-          case 'claude':
-          case 'claude_cli':
             await useClaudeAccountStore.getState().switchAccount(viewedAccount.id);
             await useClaudeAccountStore.getState().fetchCurrentAccountId();
             break;

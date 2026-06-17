@@ -220,20 +220,18 @@ const FALLBACK_PLATFORM_SETTINGS_ORDER: Record<PlatformId, number> = {
   antigravity: 0,
   antigravity_ide: 1,
   codex: 2,
-  claude: 3,
-  claude_cli: 4,
-  claude_manager: 5,
-  'github-copilot': 6,
-  windsurf: 7,
-  kiro: 8,
-  cursor: 9,
-  gemini: 10,
-  codebuddy: 11,
-  codebuddy_cn: 12,
-  qoder: 13,
-  trae: 14,
-  workbuddy: 15,
-  zed: 16,
+  claude_manager: 3,
+  'github-copilot': 4,
+  windsurf: 5,
+  kiro: 6,
+  cursor: 7,
+  gemini: 8,
+  codebuddy: 9,
+  codebuddy_cn: 10,
+  qoder: 11,
+  trae: 12,
+  workbuddy: 13,
+  zed: 14,
 };
 type UpdateCheckSource = 'auto' | 'manual';
 type UpdateCheckFinishedDetail = {
@@ -3500,19 +3498,19 @@ export function SettingsPage() {
 
               </div>
 
-              <div style={{ order: platformSettingsOrder.claude }}>
+              <div style={{ order: platformSettingsOrder.claude_manager }}>
                 <div className="group-title">
-                  {t('settings.general.claudeSettingsTitle', 'Claude Desktop 设置')}
+                  {t('settings.general.claudeSettingsTitle', 'Claude 设置')}
                 </div>
                 <div className="settings-group">
                   {renderPlatformAutoRefreshRow({
                     title: t(
                       'settings.general.claudeAutoRefresh',
-                      'Claude Desktop 自动刷新配额',
+                      'Claude 自动刷新配额',
                     ),
                     description: t(
                       'settings.general.claudeAutoRefreshDesc',
-                      '后台自动更新 Claude Desktop 账号配额缓存',
+                      '后台自动更新 Claude 账号配额缓存',
                     ),
                     value: claudeAutoRefresh,
                     setValue: setClaudeAutoRefresh,

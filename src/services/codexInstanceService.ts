@@ -175,7 +175,7 @@ export async function repairSessionVisibilityAcrossInstances(
   options?: CodexSessionVisibilityRepairRequestOptions,
 ): Promise<CodexSessionVisibilityRepairSummary> {
   return await invoke("codex_repair_session_visibility_across_instances", {
-    mode: "quick",
+    mode: options?.mode ?? "quick",
     runId: runId ?? null,
     targetProvider: options?.targetProvider ?? null,
     targetInstanceId: options?.targetInstanceId ?? null,

@@ -339,7 +339,7 @@ fn prepare_claude_cli_launch(
         ClaudeAuthMode::DesktopOAuth | ClaudeAuthMode::DesktopGateway
     ) {
         return Err(
-            "Claude Desktop 登录态不能启动 Claude Code CLI，请使用 OAuth / Setup Token 账号。"
+            "Claude 登录态不能启动 Claude Code CLI，请使用 OAuth / Setup Token 账号。"
                 .to_string(),
         );
     }
@@ -351,7 +351,10 @@ fn prepare_claude_cli_launch(
         BTreeMap::new()
     };
     let command = build_claude_cli_command(&normalized_working_dir, &env)?;
-    crate::modules::provider_current_state::set_current_account_id("claude_cli", Some(account_id))?;
+    crate::modules::provider_current_state::set_current_account_id(
+        "claude_code_account",
+        Some(account_id),
+    )?;
     Ok((account, normalized_working_dir, command))
 }
 
@@ -562,7 +565,7 @@ pub async fn claude_desktop_login_start(
 ) -> Result<ClaudeDesktopLoginStartResponse, String> {
     tauri::async_runtime::spawn_blocking(claude_account::start_desktop_login)
         .await
-        .map_err(|error| format!("启动 Claude Desktop 登录任务失败: {}", error))?
+        .map_err(|error| format!("启动 Claude 登录任务失败: {}", error))?
 }
 
 #[tauri::command]
@@ -575,7 +578,7 @@ pub async fn claude_desktop_login_complete(
         claude_account::complete_desktop_login(&login_id, account_name.as_deref())
     })
     .await
-    .map_err(|error| format!("完成 Claude Desktop 登录任务失败: {}", error))??;
+    .map_err(|error| format!("完成 Claude 登录任务失败: {}", error))??;
     let _ = crate::modules::tray::update_tray_menu(&app);
     Ok(account)
 }
@@ -758,9 +761,9 @@ pub fn switch_claude_account(app: AppHandle, account_id: String) -> Result<Strin
         account.auth_mode,
         ClaudeAuthMode::DesktopOAuth | ClaudeAuthMode::DesktopGateway
     ) {
-        "claude"
+        "claude_desktop_account"
     } else {
-        "claude_cli"
+        "claude_code_account"
     };
     crate::modules::provider_current_state::set_current_account_id(
         current_platform,

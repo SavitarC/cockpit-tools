@@ -780,9 +780,9 @@
       "codexAppSpeedLaunch": "重新啟動 Codex",
       "codexAppSpeedSaveFailed": "儲存 Codex 速度失敗：{{error}}",
       "codexAppSpeedLaunchFailed": "重新啟動 Codex 失敗：{{error}}",
-      "claudeSettingsTitle": "Claude Desktop 設定",
-      "claudeAutoRefresh": "Claude Desktop 自動重新整理額度",
-      "claudeAutoRefreshDesc": "在背景自動更新 Claude Desktop 帳號額度快取"
+      "claudeSettingsTitle": "Claude 設定",
+      "claudeAutoRefresh": "Claude 自動重新整理額度",
+      "claudeAutoRefreshDesc": "在背景自動更新 Claude 帳號額度快取"
     },
     "network": {
       "apiTitle": "反重力駕駛艙 API",
@@ -2481,6 +2481,11 @@
         "loadingProviders": "正在讀取 provider...",
         "noProvider": "未發現 provider",
         "providerLoadFailed": "讀取 provider 候選失敗：{{error}}",
+        "modeTitle": "修復方式",
+        "modeQuick": "快速修復",
+        "modeQuickDesc": "只校正官方 state DB 和會話檔首條中繼資料，適合日常切號後恢復。",
+        "modeDeep": "深度修復",
+        "modeDeepDesc": "保留目前完整中繼資料修復，適合快速修復後仍不可見時測試。",
         "scopeTitle": "會話範圍",
         "scopeAll": "全部會話",
         "scopeAllDesc": "修復目前管理清單中的 {{count}} 筆會話。",
@@ -3307,7 +3312,7 @@
     },
     "claudeRefreshInterval": "配額自動重新整理",
     "claude": {
-      "appPath": "Claude Desktop 路徑"
+      "appPath": "Claude 路徑"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Claude 已加入",
       "addToCodex": "加入 Codex",
       "addToClaude": "加入 Claude CLI",
-      "addToClaudeDesktop": "加入 Claude Desktop",
+      "addToClaudeDesktop": "加入 Claude",
       "addToClaudeCli": "加入 Claude CLI",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "已帶入 APIKEY.FUN 設定，請確認後加入 Claude Desktop。"
+      "claudeDesktopReady": "已帶入 APIKEY.FUN 設定，請確認後加入 Claude。"
     },
     "copyKey": "複製金鑰",
     "clearKey": "清除輸入"
   },
   "claude": {
     "import": {
-      "localSuccess": "已匯入本機 Claude Desktop 登入狀態：{{count}} 個",
-      "localClient": "匯入目前 Desktop",
+      "localSuccess": "已匯入本機 Claude 登入狀態：{{count}} 個",
+      "localClient": "匯入目前 Claude",
       "jsonLabel": "JSON 資料",
       "jsonPlaceholder": "貼上匯出的 Claude 帳號 JSON",
-      "localDesc": "讀取本機官方 Claude Desktop 目前登入狀態，複製為本工具本機帳號快照。",
-      "desktopJsonPlaceholder": "貼上匯出的 Claude Desktop Gateway 帳號 JSON",
+      "localDesc": "讀取本機官方 Claude 目前登入狀態，複製為本工具本機帳號快照。",
+      "desktopJsonPlaceholder": "貼上匯出的 Claude Gateway 帳號 JSON",
       "cliJsonPlaceholder": "貼上匯出的 Claude CLI 帳號 JSON"
     },
     "deleteCurrentDisabled": "目前帳號不可刪除",
     "flowNotice": {
       "title": "Claude 帳號管理說明（點擊展開/收合）",
-      "desc": "本工具可管理 Claude Desktop 登入狀態與 Anthropic API Key。Desktop 登入會在平台授權視窗完成並先儲存在本機帳號庫；切號時才寫入官方 Claude Desktop。",
-      "permission": "權限範圍：讀取/寫入官方 Claude Desktop 應用資料目錄；API Key 與 Desktop 快照會儲存在本工具本機帳號資料。",
-      "network": "網路範圍：Desktop 登入視窗會存取 claude.ai；刷新帳號會請求 Claude Web 相關介面；API Key 匯入本身不連網。",
-      "desktopDesc": "本工具可管理 Claude Desktop 登入狀態。登入會先儲存在本工具本機帳號庫；切號時才寫入官方 Claude Desktop。",
+      "desc": "本工具可管理 Claude 登入狀態與 Anthropic API Key。Claude 登入會在平台授權視窗完成並先儲存在本機帳號庫；切號時才寫入官方 Claude。",
+      "permission": "權限範圍：讀取/寫入官方 Claude 應用資料目錄；API Key 與 Claude 快照會儲存在本工具本機帳號資料。",
+      "network": "網路範圍：Claude 登入視窗會存取 claude.ai；刷新帳號會請求 Claude Web 相關介面；API Key 匯入本身不連網。",
+      "desktopDesc": "本工具可管理 Claude 登入狀態。登入會先儲存在本工具本機帳號庫；切號時才寫入官方 Claude。",
       "cliDesc": "本工具可管理 Claude Code OAuth 與多供應商 API Key。OAuth 切號會寫入本機 Claude Code 設定；API Key 會寫入 Claude Code settings.json 的 env。",
-      "desktopPermission": "權限範圍：讀取/寫入官方 Claude Desktop 應用程式資料目錄；Desktop 快照保存於本工具本機帳號資料。",
+      "desktopPermission": "權限範圍：讀取/寫入官方 Claude 應用程式資料目錄；Claude 快照保存於本工具本機帳號資料。",
       "cliPermission": "權限範圍：讀取/寫入本機 Claude Code 設定目錄與 macOS Keychain 中的 Claude Code 憑證；API Key 帳號保存在本工具本機資料，切換或啟動 CLI 時會以明文寫入 settings.json 的 env。",
-      "desktopNetwork": "網路範圍：Desktop 登入視窗會開啟 claude.ai；重新整理帳號可能請求 Claude Web 相關端點。",
+      "desktopNetwork": "網路範圍：Claude 登入視窗會開啟 claude.ai；重新整理帳號可能請求 Claude Web 相關端點。",
       "cliNetwork": "網路範圍：OAuth 授權會存取 Claude 官方授權頁與 token/profile/usage 介面；API Key 匯入不連網，啟動後由 Claude CLI 存取所選供應商。"
     },
     "search": "搜尋 Claude 帳號...",
     "noAccounts": "尚無 Claude 帳號",
     "addAccount": {
       "title": "新增 Claude 帳號",
-      "desktopTitle": "新增 Claude Desktop 帳號",
+      "desktopTitle": "新增 Claude 帳號",
       "cliTitle": "新增 Claude CLI 帳號"
     },
     "deleteConfirm": "確定刪除 Claude 帳號 {{email}} 嗎？",
@@ -4667,11 +4672,11 @@
       "success": "切換成功"
     },
     "instances": {
-      "unsupportedDescPlatform": "Claude Desktop 多開實例僅支援 macOS、Windows 和 Linux。",
+      "unsupportedDescPlatform": "Claude 多開實例僅支援 macOS、Windows 和 Linux。",
       "launchDialogTitle": "啟動實例",
       "launchCommand": "啟動命令",
       "executeInTerminal": "在終端機執行",
-      "startSuccess": "Claude Desktop 已啟動"
+      "startSuccess": "Claude 已啟動"
     },
     "quota": {
       "title": "額度",
@@ -4702,23 +4707,23 @@
       "oauth": "OAuth 模式",
       "setup_token": "設定 Token",
       "api_key": "API Key 模式",
-      "desktop_oauth": "Desktop 登入"
+      "desktop_oauth": "Claude 登入"
     },
     "apiKey": {
-      "desc": "將 Claude CLI API Key 儲存為獨立憑證；切換或啟動 CLI 時會寫入 Claude Code settings.json 的 env，不會寫入 Claude Desktop 登入狀態。",
+      "desc": "將 Claude CLI API Key 儲存為獨立憑證；切換或啟動 CLI 時會寫入 Claude Code settings.json 的 env，不會寫入 Claude 登入狀態。",
       "nameLabel": "帳號名稱",
       "namePlaceholder": "選填，例如 APIKEY.FUN",
       "keyLabel": "API 金鑰",
       "placeholder": "貼上供應商 API Key",
       "hide": "隱藏 API Key",
       "show": "顯示 API Key",
-      "hint": "API Key 帳號僅用於 Claude CLI；會以明文 env 寫入 Claude Code settings.json，不會寫入 Claude Desktop 登入狀態，也不支援訂閱額度刷新。",
+      "hint": "API Key 帳號僅用於 Claude CLI；會以明文 env 寫入 Claude Code settings.json，不會寫入 Claude 登入狀態，也不支援訂閱額度刷新。",
       "importAction": "匯入 API Key",
       "required": "請輸入 API Key",
       "templateRequired": "請填寫 {{label}}",
       "importSuccess": "Claude API Key 帳號已匯入：{{name}}",
       "quotaUnsupported": "API Key 帳號不支援刷新",
-      "switchDisabled": "API Key 帳號不能切換到 Claude Desktop",
+      "switchDisabled": "API Key 帳號不能切換到 Claude",
       "cliUnsupported": "API Key 帳號不能啟動 Claude CLI",
       "providerLabel": "供應商",
       "customProvider": "自訂",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL 不是有效 URL"
     },
     "desktopOAuth": {
-      "title": "Claude Desktop 登入",
+      "title": "Claude 登入",
       "desc": "在本工具開啟 Claude 登入視窗，支援 Google、Apple、電子郵件與 free 帳號。",
       "start": "開啟登入",
       "preparingRuntime": "準備登入元件...",
-      "hint": "登入狀態會先儲存在本工具本機帳號庫，不會立刻寫入官方 Claude Desktop；切號時才寫回 Claude。",
+      "hint": "登入狀態會先儲存在本工具本機帳號庫，不會立刻寫入官方 Claude；切號時才寫回 Claude。",
       "runtimeHint": "首次使用時會下載並校驗 Electron 登入元件到本地應用資料目錄；安裝包不內建，之後會重用本地快取。",
       "nameLabel": "帳號名稱",
       "namePlaceholder": "可選，例如 Claude Free",
       "waiting": "請在已開啟的 Claude 授權視窗完成登入。看到聊天頁後回到這裡點擊完成匯入。",
       "profileDir": "隔離 profile 目錄",
       "complete": "完成匯入",
-      "localTitle": "匯入目前 Desktop",
-      "localDesc": "讀取本機官方 Claude Desktop 目前登入狀態，複製為本工具本機帳號快照。",
+      "localTitle": "匯入目前 Claude",
+      "localDesc": "讀取本機官方 Claude 目前登入狀態，複製為本工具本機帳號快照。",
       "localAction": "匯入",
-      "localSuccess": "已匯入本機 Claude Desktop 登入狀態：{{name}}",
-      "importSuccess": "Claude Desktop 登入狀態已匯入：{{name}}",
-      "switchHint": "切換到官方 Claude Desktop",
+      "localSuccess": "已匯入本機 Claude 登入狀態：{{name}}",
+      "importSuccess": "Claude 登入狀態已匯入：{{name}}",
+      "switchHint": "切換到官方 Claude",
       "planUnknown": "訂閱未知"
     },
     "oauth": {
       "title": "Claude OAuth 授權",
       "desc": "開啟 Claude 官方 OAuth 授權頁，完成後貼上回呼連結或 code 匯入帳號。",
       "start": "OAuth 授權",
-      "proRequiredHint": "Claude 官方 OAuth 通常用於 Claude Code 授權；如果頁面停在升級或無權限頁面，可改用 Claude Desktop 登入。",
+      "proRequiredHint": "Claude 官方 OAuth 通常用於 Claude Code 授權；如果頁面停在升級或無權限頁面，可改用 Claude 登入。",
       "openInstruction": "點擊下方按鈕，在瀏覽器中完成 Claude OAuth 授權。",
       "waiting": "完成授權後，請將最終頁面位址或頁面顯示的 code 貼到下方。",
       "authUrl": "授權連結",
@@ -4773,7 +4778,7 @@
       "updateFailed": "更新訂閱標識失敗：{{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "舊 OAuth 帳號不能切換到 Claude Desktop",
+      "switchDisabled": "舊 OAuth 帳號不能切換到 Claude",
       "quotaUnsupported": "舊 OAuth 帳號不再支援刷新",
       "cliUnsupported": "舊 OAuth 帳號不能啟動 Claude CLI"
     },
@@ -4812,19 +4817,19 @@
       "desktop": "Claude 桌面端",
       "cli": "Claude 命令列"
     },
-    "searchDesktop": "搜尋 Claude Desktop 帳號...",
+    "searchDesktop": "搜尋 Claude 帳號...",
     "searchCli": "搜尋 Claude CLI 帳號...",
-    "noDesktopAccounts": "暫無 Claude Desktop 帳號",
+    "noDesktopAccounts": "暫無 Claude 帳號",
     "noCliAccounts": "暫無 Claude CLI 帳號",
     "desktopGateway": {
       "label": "閘道",
       "authScheme": "認證方式",
       "importAction": "匯入 Gateway",
-      "importSuccess": "Claude Desktop Gateway 帳號已匯入：{{name}}",
+      "importSuccess": "Claude Gateway 帳號已匯入：{{name}}",
       "baseUrlRequired": "請輸入 Gateway Base URL",
       "noQuota": "Gateway 帳號不顯示 Claude 訂閱額度",
-      "desc": "將 Gateway API Key 儲存為 Claude Desktop 3P 設定；切換時寫入受管 profile，並以官方 Claude Desktop 啟動。",
-      "hint": "Gateway 帳號不會讀取 Claude 訂閱資訊；API Key 會依官方 3P 設定寫入受管 profile，用於啟動 Claude Desktop。",
+      "desc": "將 Gateway API Key 儲存為 Claude 3P 設定；切換時寫入受管 profile，並以官方 Claude 啟動。",
+      "hint": "Gateway 帳號不會讀取 Claude 訂閱資訊；API Key 會依官方 3P 設定寫入受管 profile，用於啟動 Claude。",
       "modelsLabel": "模型目錄",
       "modelsEmpty": "目前 Gateway 未回傳模型清單。",
       "modelsLoaded": "已取得 {{count}} 個模型，可視需要修改。",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "每行一個模型 ID",
       "modelsLoading": "正在取得模型目錄...",
       "modelsRequired": "請填寫模型目錄",
-      "editTitle": "編輯 Claude Desktop Gateway",
+      "editTitle": "編輯 Claude Gateway",
       "updateAction": "儲存 Gateway",
-      "updateSuccess": "Claude Desktop Gateway 帳號已更新：{{name}}",
+      "updateSuccess": "Claude Gateway 帳號已更新：{{name}}",
       "connectionMode": "連線方式",
       "modeDirect": "直連",
       "modeLocalMapping": "本機閘道映射",
       "mappingsRequired": "請設定模型映射",
-      "mappingDesktopModelInvalid": "映射左側必須填寫 Claude Desktop 可識別的 Claude 模型名稱",
-      "directModelsInvalid": "直連模式只支援 Claude Desktop 可識別的 Claude 模型名稱",
-      "desktopModelPlaceholder": "Claude Desktop 模型名稱",
+      "mappingDesktopModelInvalid": "映射左側必須填寫 Claude 可識別的 Claude 模型名稱",
+      "directModelsInvalid": "直連模式只支援 Claude 可識別的 Claude 模型名稱",
+      "desktopModelPlaceholder": "Claude 模型名稱",
       "upstreamModelPlaceholder": "上游實際模型名稱",
       "addMapping": "新增映射"
     }

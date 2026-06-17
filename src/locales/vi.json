@@ -780,9 +780,9 @@
       "codexAppSpeedLaunch": "Khởi động lại Codex",
       "codexAppSpeedSaveFailed": "Không thể lưu tốc độ Codex: {{error}}",
       "codexAppSpeedLaunchFailed": "Không thể khởi động lại Codex: {{error}}",
-      "claudeSettingsTitle": "Cài đặt Claude Desktop",
-      "claudeAutoRefresh": "Tự động làm mới hạn mức Claude Desktop",
-      "claudeAutoRefreshDesc": "Tự động làm mới bộ nhớ đệm hạn mức cho tài khoản Claude Desktop trong nền."
+      "claudeSettingsTitle": "Cài đặt Claude",
+      "claudeAutoRefresh": "Tự động làm mới hạn mức Claude",
+      "claudeAutoRefreshDesc": "Tự động làm mới bộ nhớ đệm hạn mức cho tài khoản Claude trong nền."
     },
     "network": {
       "apiTitle": "API Antigravity Cockpit",
@@ -2370,6 +2370,11 @@
         "loadingProviders": "Đang tải provider...",
         "noProvider": "Không tìm thấy provider",
         "providerLoadFailed": "Không tải được provider: {{error}}",
+        "modeTitle": "Chế độ sửa",
+        "modeQuick": "Sửa nhanh",
+        "modeQuickDesc": "Sửa state DB chính thức và dòng siêu dữ liệu phiên đầu tiên. Phù hợp sau khi đổi tài khoản thường ngày.",
+        "modeDeep": "Sửa sâu",
+        "modeDeepDesc": "Giữ cách sửa toàn bộ siêu dữ liệu hiện tại để thử khi sửa nhanh chưa đủ.",
         "scopeTitle": "Phạm vi phiên",
         "scopeAll": "Tất cả phiên",
         "scopeAllDesc": "Sửa {{count}} phiên trong danh sách hiện tại.",
@@ -3307,7 +3312,7 @@
     },
     "claudeRefreshInterval": "Tự làm mới hạn mức",
     "claude": {
-      "appPath": "Đường dẫn Claude Desktop"
+      "appPath": "Đường dẫn Claude"
     }
   },
   "quotaAlert": {
@@ -4621,45 +4626,45 @@
       "claudeAdded": "Đã thêm Claude",
       "addToCodex": "Thêm vào Codex",
       "addToClaude": "Thêm vào Claude CLI",
-      "addToClaudeDesktop": "Thêm vào Claude Desktop",
+      "addToClaudeDesktop": "Thêm vào Claude",
       "addToClaudeCli": "Thêm vào Claude CLI",
       "codexShort": "Codex",
       "claudeShort": "Claude CLI"
     },
     "prefill": {
-      "claudeDesktopReady": "Đã điền cấu hình APIKEY.FUN. Hãy xác nhận để thêm vào Claude Desktop."
+      "claudeDesktopReady": "Đã điền cấu hình APIKEY.FUN. Hãy xác nhận để thêm vào Claude."
     },
     "copyKey": "Copy Key​",
     "clearKey": "Clear input​"
   },
   "claude": {
     "import": {
-      "localSuccess": "Đã nhập {{count}} đăng nhập Claude Desktop cục bộ",
-      "localClient": "Nhập Desktop hiện tại",
+      "localSuccess": "Đã nhập {{count}} đăng nhập Claude cục bộ",
+      "localClient": "Nhập Claude hiện tại",
       "jsonLabel": "Dữ liệu JSON",
       "jsonPlaceholder": "Dán JSON tài khoản Claude đã xuất",
-      "localDesc": "Đọc trạng thái đăng nhập hiện tại của ứng dụng Claude Desktop chính thức và sao chép thành bản chụp tài khoản cục bộ trong công cụ này.",
-      "desktopJsonPlaceholder": "Dán JSON tài khoản Claude Desktop Gateway đã xuất",
+      "localDesc": "Đọc trạng thái đăng nhập hiện tại của ứng dụng Claude chính thức và sao chép thành bản chụp tài khoản cục bộ trong công cụ này.",
+      "desktopJsonPlaceholder": "Dán JSON tài khoản Claude Gateway đã xuất",
       "cliJsonPlaceholder": "Dán JSON tài khoản Claude CLI đã xuất"
     },
     "deleteCurrentDisabled": "Không thể xóa tài khoản hiện tại",
     "flowNotice": {
       "title": "Tài khoản Claude",
-      "desc": "Công cụ này quản lý trạng thái đăng nhập Claude Desktop và Anthropic API Key. Đăng nhập Desktop hoàn tất trong cửa sổ ủy quyền của nền tảng này và được lưu cục bộ trước; chỉ ghi vào Claude Desktop chính thức khi đổi tài khoản.",
-      "permission": "Phạm vi quyền: đọc/ghi thư mục dữ liệu của ứng dụng Claude Desktop chính thức. API Key và bản chụp Desktop được lưu trong dữ liệu tài khoản cục bộ của công cụ này.",
-      "network": "Phạm vi mạng: cửa sổ đăng nhập Desktop mở claude.ai; làm mới tài khoản có thể gọi endpoint Claude Web. Việc nhập API Key tự nó không dùng mạng.",
-      "desktopDesc": "Công cụ này quản lý trạng thái đăng nhập Claude Desktop. Trạng thái được lưu cục bộ trước và chỉ ghi vào Claude Desktop chính thức khi chuyển tài khoản.",
+      "desc": "Công cụ này quản lý trạng thái đăng nhập Claude và Anthropic API Key. Đăng nhập Claude hoàn tất trong cửa sổ ủy quyền của nền tảng này và được lưu cục bộ trước; chỉ ghi vào Claude chính thức khi đổi tài khoản.",
+      "permission": "Phạm vi quyền: đọc/ghi thư mục dữ liệu của ứng dụng Claude chính thức. API Key và bản chụp Claude được lưu trong dữ liệu tài khoản cục bộ của công cụ này.",
+      "network": "Phạm vi mạng: cửa sổ đăng nhập Claude mở claude.ai; làm mới tài khoản có thể gọi endpoint Claude Web. Việc nhập API Key tự nó không dùng mạng.",
+      "desktopDesc": "Công cụ này quản lý trạng thái đăng nhập Claude. Trạng thái được lưu cục bộ trước và chỉ ghi vào Claude chính thức khi chuyển tài khoản.",
       "cliDesc": "Công cụ này quản lý Claude Code OAuth và API Key của nhiều nhà cung cấp. Chuyển OAuth sẽ ghi vào cấu hình Claude Code cục bộ; API Key sẽ ghi các giá trị env của nhà cung cấp vào Claude Code settings.json.",
-      "desktopPermission": "Phạm vi quyền: đọc/ghi thư mục dữ liệu ứng dụng Claude Desktop chính thức. Snapshot Desktop được lưu trong dữ liệu tài khoản cục bộ của công cụ này.",
+      "desktopPermission": "Phạm vi quyền: đọc/ghi thư mục dữ liệu ứng dụng Claude chính thức. Snapshot Claude được lưu trong dữ liệu tài khoản cục bộ của công cụ này.",
       "cliPermission": "Phạm vi quyền: đọc/ghi cấu hình Claude Code cục bộ và thông tin xác thực Claude Code trong macOS Keychain; tài khoản API Key được lưu cục bộ trong công cụ này và được ghi dạng env văn bản rõ vào settings.json khi chuyển hoặc chạy CLI.",
-      "desktopNetwork": "Phạm vi mạng: cửa sổ đăng nhập Desktop mở claude.ai; làm mới tài khoản có thể gọi endpoint Claude Web.",
+      "desktopNetwork": "Phạm vi mạng: cửa sổ đăng nhập Claude mở claude.ai; làm mới tài khoản có thể gọi endpoint Claude Web.",
       "cliNetwork": "Phạm vi mạng: OAuth truy cập trang ủy quyền Claude chính thức và endpoint token/profile/usage; nhập API Key không dùng mạng, sau khi mở Claude CLI sẽ truy cập nhà cung cấp đã chọn."
     },
     "search": "Tìm tài khoản Claude...",
     "noAccounts": "Chưa có tài khoản Claude",
     "addAccount": {
       "title": "Thêm tài khoản Claude",
-      "desktopTitle": "Thêm tài khoản Claude Desktop",
+      "desktopTitle": "Thêm tài khoản Claude",
       "cliTitle": "Thêm tài khoản Claude CLI"
     },
     "deleteConfirm": "Xóa tài khoản Claude {{email}}?",
@@ -4667,11 +4672,11 @@
       "success": "Đã chuyển thành công"
     },
     "instances": {
-      "unsupportedDescPlatform": "Nhiều phiên bản Claude Desktop chỉ được hỗ trợ trên macOS, Windows và Linux.",
+      "unsupportedDescPlatform": "Nhiều phiên bản Claude chỉ được hỗ trợ trên macOS, Windows và Linux.",
       "launchDialogTitle": "Khởi chạy phiên bản",
       "launchCommand": "Lệnh khởi chạy",
       "executeInTerminal": "Chạy trong terminal",
-      "startSuccess": "Đã khởi động Claude Desktop"
+      "startSuccess": "Đã khởi động Claude"
     },
     "quota": {
       "title": "Hạn mức",
@@ -4702,23 +4707,23 @@
       "oauth": "Chế độ OAuth",
       "setup_token": "Token thiết lập",
       "api_key": "Khóa API",
-      "desktop_oauth": "Đăng nhập Desktop"
+      "desktop_oauth": "Đăng nhập Claude"
     },
     "apiKey": {
-      "desc": "Lưu Claude CLI API Key như một thông tin xác thực riêng. Khi chuyển hoặc chạy CLI, các giá trị env của nhà cung cấp được ghi vào Claude Code settings.json, không ghi trạng thái đăng nhập Claude Desktop.",
+      "desc": "Lưu Claude CLI API Key như một thông tin xác thực riêng. Khi chuyển hoặc chạy CLI, các giá trị env của nhà cung cấp được ghi vào Claude Code settings.json, không ghi trạng thái đăng nhập Claude.",
       "nameLabel": "Tên tài khoản",
       "namePlaceholder": "Tùy chọn, ví dụ APIKEY.FUN",
       "keyLabel": "Khóa API",
       "placeholder": "Dán API Key của nhà cung cấp",
       "hide": "Ẩn API Key",
       "show": "Hiện API Key",
-      "hint": "Tài khoản API Key chỉ dùng cho Claude CLI. Chúng được ghi dạng env văn bản rõ vào Claude Code settings.json, không ảnh hưởng Claude Desktop và không hỗ trợ làm mới hạn mức gói.",
+      "hint": "Tài khoản API Key chỉ dùng cho Claude CLI. Chúng được ghi dạng env văn bản rõ vào Claude Code settings.json, không ảnh hưởng Claude và không hỗ trợ làm mới hạn mức gói.",
       "importAction": "Nhập API Key",
       "required": "Nhập API Key",
       "templateRequired": "Nhập {{label}}",
       "importSuccess": "Đã nhập tài khoản Claude API Key: {{name}}",
       "quotaUnsupported": "Tài khoản API Key không hỗ trợ làm mới",
-      "switchDisabled": "Tài khoản API Key không chuyển sang Claude Desktop",
+      "switchDisabled": "Tài khoản API Key không chuyển sang Claude",
       "cliUnsupported": "Tài khoản API Key không mở được Claude CLI",
       "providerLabel": "Nhà cung cấp",
       "customProvider": "Tùy chỉnh",
@@ -4730,30 +4735,30 @@
       "baseUrlInvalid": "Base URL không hợp lệ"
     },
     "desktopOAuth": {
-      "title": "Đăng nhập Claude Desktop",
+      "title": "Đăng nhập Claude",
       "desc": "Đăng nhập Claude trong công cụ này; hỗ trợ Google, Apple, email và free.",
       "start": "Mở đăng nhập",
       "preparingRuntime": "Đang chuẩn bị...",
-      "hint": "Lưu cục bộ trước; ghi vào Claude Desktop khi chuyển tài khoản.",
+      "hint": "Lưu cục bộ trước; ghi vào Claude khi chuyển tài khoản.",
       "runtimeHint": "Ở lần dùng đầu tiên, thành phần đăng nhập Electron có thể được tải xuống và xác minh trong thư mục dữ liệu ứng dụng cục bộ; nó không đi kèm bộ cài và sẽ được dùng lại sau đó.",
       "nameLabel": "Tên tài khoản",
       "namePlaceholder": "Tùy chọn, ví dụ Claude Free",
       "waiting": "Đăng nhập trong cửa sổ Claude rồi hoàn tất nhập tại đây.",
       "profileDir": "Thư mục profile tách biệt",
       "complete": "Hoàn tất",
-      "localTitle": "Nhập Desktop hiện tại",
-      "localDesc": "Sao chép phiên Claude Desktop hiện tại thành snapshot cục bộ.",
+      "localTitle": "Nhập Claude hiện tại",
+      "localDesc": "Sao chép phiên Claude hiện tại thành snapshot cục bộ.",
       "localAction": "Nhập",
-      "localSuccess": "Đã nhập đăng nhập Claude Desktop cục bộ: {{name}}",
-      "importSuccess": "Đã nhập đăng nhập Claude Desktop: {{name}}",
-      "switchHint": "Chuyển sang Claude Desktop chính thức",
+      "localSuccess": "Đã nhập đăng nhập Claude cục bộ: {{name}}",
+      "importSuccess": "Đã nhập đăng nhập Claude: {{name}}",
+      "switchHint": "Chuyển sang Claude chính thức",
       "planUnknown": "Gói chưa rõ"
     },
     "oauth": {
       "title": "Ủy quyền Claude OAuth",
       "desc": "Mở trang ủy quyền OAuth chính thức của Claude, rồi dán liên kết callback hoặc code để nhập tài khoản.",
       "start": "Ủy quyền OAuth",
-      "proRequiredHint": "OAuth chính thức của Claude thường dùng cho Claude Code. Nếu trang dừng ở nâng cấp hoặc không có quyền, hãy dùng đăng nhập Claude Desktop.",
+      "proRequiredHint": "OAuth chính thức của Claude thường dùng cho Claude Code. Nếu trang dừng ở nâng cấp hoặc không có quyền, hãy dùng đăng nhập Claude.",
       "openInstruction": "Nhấn nút bên dưới và hoàn tất ủy quyền Claude OAuth trong trình duyệt.",
       "waiting": "Sau khi hoàn tất, dán URL trang cuối hoặc code được hiển thị vào bên dưới.",
       "authUrl": "Liên kết ủy quyền",
@@ -4773,7 +4778,7 @@
       "updateFailed": "Không cập nhật được nhãn gói: {{error}}"
     },
     "legacyOAuth": {
-      "switchDisabled": "Tài khoản OAuth cũ không thể chuyển sang Claude Desktop",
+      "switchDisabled": "Tài khoản OAuth cũ không thể chuyển sang Claude",
       "quotaUnsupported": "Tài khoản OAuth cũ không còn hỗ trợ làm mới",
       "cliUnsupported": "Tài khoản OAuth cũ không thể mở Claude CLI"
     },
@@ -4812,18 +4817,18 @@
       "desktop": "Claude máy tính",
       "cli": "Claude dòng lệnh"
     },
-    "searchDesktop": "Tìm tài khoản Claude Desktop...",
+    "searchDesktop": "Tìm tài khoản Claude...",
     "searchCli": "Tìm tài khoản Claude CLI...",
-    "noDesktopAccounts": "Chưa có tài khoản Claude Desktop",
+    "noDesktopAccounts": "Chưa có tài khoản Claude",
     "noCliAccounts": "Chưa có tài khoản Claude CLI",
     "desktopGateway": {
       "label": "Cổng",
       "authScheme": "Kiểu auth",
       "importAction": "Nhập Gateway",
-      "importSuccess": "Đã nhập tài khoản Claude Desktop Gateway: {{name}}",
+      "importSuccess": "Đã nhập tài khoản Claude Gateway: {{name}}",
       "baseUrlRequired": "Nhập Gateway Base URL",
       "noQuota": "Tài khoản Gateway không hiển thị hạn mức thuê bao Claude",
-      "desc": "Lưu Gateway API Key làm cấu hình Claude Desktop 3P. Khi chuyển đổi, cấu hình được ghi vào profile được quản lý và mở Claude Desktop chính thức.",
+      "desc": "Lưu Gateway API Key làm cấu hình Claude 3P. Khi chuyển đổi, cấu hình được ghi vào profile được quản lý và mở Claude chính thức.",
       "hint": "Tài khoản Gateway không đọc thông tin thuê bao Claude. API Key được ghi vào profile được quản lý theo cấu hình 3P chính thức.",
       "modelsLabel": "Danh mục model",
       "modelsEmpty": "Gateway này không trả về model.",
@@ -4833,16 +4838,16 @@
       "modelsPlaceholder": "Mỗi dòng một ID model",
       "modelsLoading": "Đang tải danh mục model...",
       "modelsRequired": "Nhập danh mục model",
-      "editTitle": "Sửa Claude Desktop Gateway",
+      "editTitle": "Sửa Claude Gateway",
       "updateAction": "Lưu Gateway",
-      "updateSuccess": "Đã cập nhật tài khoản Claude Desktop Gateway: {{name}}",
+      "updateSuccess": "Đã cập nhật tài khoản Claude Gateway: {{name}}",
       "connectionMode": "Kết nối",
       "modeDirect": "Trực tiếp",
       "modeLocalMapping": "Ánh xạ cục bộ",
       "mappingsRequired": "Hãy cấu hình ánh xạ model",
-      "mappingDesktopModelInvalid": "Bên trái phải là tên model Claude mà Claude Desktop nhận biết",
-      "directModelsInvalid": "Chế độ trực tiếp chỉ hỗ trợ tên model Claude mà Claude Desktop nhận biết",
-      "desktopModelPlaceholder": "Model Claude Desktop",
+      "mappingDesktopModelInvalid": "Bên trái phải là tên model Claude mà Claude nhận biết",
+      "directModelsInvalid": "Chế độ trực tiếp chỉ hỗ trợ tên model Claude mà Claude nhận biết",
+      "desktopModelPlaceholder": "Model Claude",
       "upstreamModelPlaceholder": "Model nguồn thực tế",
       "addMapping": "Thêm ánh xạ"
     }
