@@ -128,11 +128,6 @@ jobs:
             args: "--target x86_64-apple-darwin"
             release_dir: "target/x86_64-apple-darwin/release"
             bootstrap_targets: "macos/x86_64"
-          - label: "macos-universal"
-            platform: "macos-latest"
-            args: "--target universal-apple-darwin"
-            release_dir: "target/universal-apple-darwin/release"
-            bootstrap_targets: "macos/aarch64,macos/x86_64"
           - label: "ubuntu-22.04"
             platform: "ubuntu-22.04"
             args: ""
@@ -391,7 +386,6 @@ jobs:
           const macArchByArtifact = new Map([
             ['bundles-macos-aarch64', 'aarch64'],
             ['bundles-macos-x86_64', 'x64'],
-            ['bundles-macos-universal', 'universal'],
           ]);
 
           function walk(dir, files = []) {
