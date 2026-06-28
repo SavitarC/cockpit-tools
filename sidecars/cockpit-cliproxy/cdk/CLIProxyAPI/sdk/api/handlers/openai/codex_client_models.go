@@ -2,15 +2,25 @@ package openai
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/registry"
+	log "github.com/sirupsen/logrus"
 )
 
 type codexClientModelsPayload struct {
 	Models []map[string]any `json:"models"`
+}
+
+type codexClientModelTemplateSource struct {
+	name     string
+	data     []byte
+	required bool
 }
 
 var (
@@ -75,26 +85,107 @@ func buildCodexClientModels(models []map[string]any) []map[string]any {
 
 func loadCodexClientModelTemplates() (map[string]map[string]any, map[string]any, error) {
 	codexClientModelTemplatesOnce.Do(func() {
-		var payload codexClientModelsPayload
-		codexClientModelTemplatesErr = json.Unmarshal(registry.GetCodexClientModelsJSON(), &payload)
-		if codexClientModelTemplatesErr != nil {
-			return
+		codexClientModelTemplates, codexClientDefaultTemplate, codexClientModelTemplatesErr = loadCodexClientModelTemplatesFromSources(defaultCodexClientModelTemplateSources())
+	})
+
+	return codexClientModelTemplates, codexClientDefaultTemplate, codexClientModelTemplatesErr
+}
+
+func defaultCodexClientModelTemplateSources() []codexClientModelTemplateSource {
+	sources := make([]codexClientModelTemplateSource, 0, 3)
+	if data, err := readUserCodexModelsCache(); err == nil && len(strings.TrimSpace(string(data))) > 0 {
+		sources = append(sources, codexClientModelTemplateSource{
+			name: "user models_cache.json",
+			data: data,
+		})
+	} else if err != nil && !os.IsNotExist(err) {
+		log.Warnf("codex client models: failed to read user models_cache.json, using embedded fallback: %v", err)
+	}
+
+	sources = append(sources,
+		codexClientModelTemplateSource{
+			name:     "embedded models_cache.json",
+			data:     registry.GetCodexModelsCacheJSON(),
+			required: true,
+		},
+		codexClientModelTemplateSource{
+			name:     "embedded codex_client_models.json",
+			data:     registry.GetCodexClientModelsJSON(),
+			required: true,
+		},
+	)
+	return sources
+}
+
+func readUserCodexModelsCache() ([]byte, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
+}
+
+func loadCodexClientModelTemplatesFromSources(sources []codexClientModelTemplateSource) (map[string]map[string]any, map[string]any, error) {
+	templates := make(map[string]map[string]any)
+	var defaultTemplate map[string]any
+	var firstRequiredErr error
+
+	for _, source := range sources {
+		if len(strings.TrimSpace(string(source.data))) == 0 {
+			if source.required && firstRequiredErr == nil {
+				firstRequiredErr = fmt.Errorf("%s is empty", source.name)
+			}
+			continue
 		}
 
-		codexClientModelTemplates = make(map[string]map[string]any, len(payload.Models))
+		var payload codexClientModelsPayload
+		if err := json.Unmarshal(source.data, &payload); err != nil {
+			if source.required && firstRequiredErr == nil {
+				firstRequiredErr = fmt.Errorf("%s: %w", source.name, err)
+			} else if !source.required {
+				log.Warnf("codex client models: failed to parse %s, using fallback templates: %v", source.name, err)
+			}
+			continue
+		}
+
 		for _, model := range payload.Models {
 			slug := strings.TrimSpace(stringModelValue(model, "slug"))
 			if slug == "" {
 				continue
 			}
-			codexClientModelTemplates[slug] = cloneCodexClientModelMap(model)
-			if slug == "gpt-5.5" {
-				codexClientDefaultTemplate = cloneCodexClientModelMap(model)
+			if _, exists := templates[slug]; exists {
+				if slug == "gpt-5.5" && defaultTemplate != nil {
+					mergeMissingCodexClientModelFields(defaultTemplate, model)
+				}
+				continue
+			}
+			templates[slug] = cloneCodexClientModelMap(model)
+			if slug == "gpt-5.5" && defaultTemplate == nil {
+				defaultTemplate = cloneCodexClientModelMap(model)
 			}
 		}
-	})
+	}
 
-	return codexClientModelTemplates, codexClientDefaultTemplate, codexClientModelTemplatesErr
+	if defaultTemplate == nil {
+		if firstRequiredErr != nil {
+			return nil, nil, firstRequiredErr
+		}
+		return nil, nil, fmt.Errorf("codex client model templates missing gpt-5.5 default")
+	}
+
+	return templates, defaultTemplate, nil
+}
+
+func mergeMissingCodexClientModelFields(target map[string]any, fallback map[string]any) {
+	if target == nil {
+		return
+	}
+	for key, value := range fallback {
+		if _, exists := target[key]; exists {
+			continue
+		}
+		target[key] = cloneCodexClientModelValue(value)
+	}
 }
 
 func applyCodexClientModelMetadata(entry map[string]any, id string, model map[string]any) {

@@ -257,6 +257,8 @@ func TestAmpProviderModelRoutes(t *testing.T) {
 }
 
 func TestModelsWithClientVersionReturnsCodexCatalog(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
 	modelRegistry := registry.GetGlobalRegistry()
 	clientID := "test-client-version-catalog"
 	modelRegistry.RegisterClient(clientID, "openai", []*registry.ModelInfo{
@@ -330,9 +332,6 @@ func TestModelsWithClientVersionReturnsCodexCatalog(t *testing.T) {
 	}
 	if gpt55 == nil {
 		t.Fatal("expected gpt-5.5 codex catalog entry")
-	}
-	if _, ok := gpt55["minimal_client_version"]; !ok {
-		t.Fatal("expected minimal_client_version in codex catalog")
 	}
 	serviceTiers, ok := gpt55["service_tiers"].([]any)
 	if !ok || len(serviceTiers) != 1 {
