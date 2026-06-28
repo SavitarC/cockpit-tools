@@ -905,6 +905,181 @@ fn read_model_context_window_from_config_toml(base_dir: &Path) -> i64 {
         .unwrap_or(CODEX_DEFAULT_MODEL_CONTEXT_WINDOW)
 }
 
+fn load_codex_model_catalog_template(base_dir: &Path) -> Option<serde_json::Value> {
+    let content = fs::read_to_string(base_dir.join("models_cache.json")).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let models = value.get("models")?.as_array()?;
+    for slug in ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"] {
+        if let Some(model) = models.iter().find(|item| {
+            item.as_object().is_some()
+                && item.get("slug").and_then(|value| value.as_str()) == Some(slug)
+        }) {
+            return Some(model.clone());
+        }
+    }
+    models
+        .iter()
+        .find(|item| item.as_object().is_some())
+        .cloned()
+}
+
+fn fallback_codex_model_info_template() -> serde_json::Value {
+    serde_json::json!({
+        "slug": "template",
+        "display_name": "template",
+        "description": "template",
+        "default_reasoning_level": serde_json::Value::Null,
+        "supported_reasoning_levels": [],
+        "shell_type": "default",
+        "visibility": "list",
+        "supported_in_api": true,
+        "priority": 1000,
+        "additional_speed_tiers": [],
+        "service_tiers": [],
+        "default_service_tier": serde_json::Value::Null,
+        "availability_nux": serde_json::Value::Null,
+        "upgrade": serde_json::Value::Null,
+        "base_instructions": "You are Codex, a coding agent. Help the user with software engineering tasks.",
+        "supports_reasoning_summaries": false,
+        "default_reasoning_summary": "auto",
+        "support_verbosity": false,
+        "default_verbosity": serde_json::Value::Null,
+        "apply_patch_tool_type": serde_json::Value::Null,
+        "web_search_tool_type": "text",
+        "truncation_policy": {
+            "mode": "bytes",
+            "limit": 10000
+        },
+        "supports_parallel_tool_calls": false,
+        "supports_image_detail_original": false,
+        "context_window": CODEX_DEFAULT_MODEL_CONTEXT_WINDOW,
+        "max_context_window": CODEX_DEFAULT_MODEL_CONTEXT_WINDOW,
+        "auto_compact_token_limit": serde_json::Value::Null,
+        "comp_hash": serde_json::Value::Null,
+        "effective_context_window_percent": 95,
+        "experimental_supported_tools": [],
+        "input_modalities": ["text", "image"],
+        "supports_search_tool": false,
+        "use_responses_lite": false,
+        "auto_review_model_override": serde_json::Value::Null,
+        "tool_mode": serde_json::Value::Null,
+        "multi_agent_version": serde_json::Value::Null,
+        "model_messages": serde_json::Value::Null
+    })
+}
+
+fn is_valid_codex_model_info_field(field: &str, value: &serde_json::Value) -> bool {
+    match field {
+        "supported_reasoning_levels"
+        | "additional_speed_tiers"
+        | "service_tiers"
+        | "experimental_supported_tools"
+        | "input_modalities" => value.is_array(),
+        "truncation_policy" => value.is_object(),
+        "shell_type"
+        | "visibility"
+        | "base_instructions"
+        | "default_reasoning_summary"
+        | "web_search_tool_type" => value.is_string(),
+        "supported_in_api"
+        | "supports_reasoning_summaries"
+        | "support_verbosity"
+        | "supports_parallel_tool_calls"
+        | "supports_image_detail_original"
+        | "supports_search_tool"
+        | "use_responses_lite" => value.is_boolean(),
+        "effective_context_window_percent" => value.is_number(),
+        "default_reasoning_level"
+        | "default_service_tier"
+        | "default_verbosity"
+        | "apply_patch_tool_type"
+        | "comp_hash"
+        | "auto_review_model_override"
+        | "tool_mode" => value.is_null() || value.is_string(),
+        "auto_compact_token_limit" => value.is_null() || value.is_number(),
+        "multi_agent_version" => value.is_null() || value.is_string() || value.is_number(),
+        "model_messages" => value.is_null() || value.is_object(),
+        _ => true,
+    }
+}
+
+fn build_codex_model_info_entry(
+    template: &serde_json::Value,
+    model: &str,
+    index: usize,
+    context_window: i64,
+) -> serde_json::Value {
+    let mut entry = if template.as_object().is_some() {
+        template.clone()
+    } else {
+        fallback_codex_model_info_template()
+    };
+    let fallback = fallback_codex_model_info_template();
+    if let (Some(entry_object), Some(fallback_object)) =
+        (entry.as_object_mut(), fallback.as_object())
+    {
+        for field in [
+            "supported_reasoning_levels",
+            "default_reasoning_level",
+            "shell_type",
+            "visibility",
+            "supported_in_api",
+            "additional_speed_tiers",
+            "service_tiers",
+            "default_service_tier",
+            "base_instructions",
+            "supports_reasoning_summaries",
+            "default_reasoning_summary",
+            "support_verbosity",
+            "default_verbosity",
+            "apply_patch_tool_type",
+            "web_search_tool_type",
+            "truncation_policy",
+            "supports_parallel_tool_calls",
+            "supports_image_detail_original",
+            "auto_compact_token_limit",
+            "comp_hash",
+            "effective_context_window_percent",
+            "experimental_supported_tools",
+            "input_modalities",
+            "supports_search_tool",
+            "use_responses_lite",
+            "auto_review_model_override",
+            "tool_mode",
+            "multi_agent_version",
+            "model_messages",
+        ] {
+            let needs_default = entry_object
+                .get(field)
+                .map(|value| !is_valid_codex_model_info_field(field, value))
+                .unwrap_or(true);
+            if needs_default {
+                if let Some(default_value) = fallback_object.get(field) {
+                    entry_object.insert(field.to_string(), default_value.clone());
+                }
+            }
+        }
+        entry_object.insert("slug".to_string(), serde_json::json!(model));
+        entry_object.insert("display_name".to_string(), serde_json::json!(model));
+        entry_object.insert("description".to_string(), serde_json::json!(model));
+        entry_object.insert(
+            "context_window".to_string(),
+            serde_json::json!(context_window),
+        );
+        entry_object.insert(
+            "max_context_window".to_string(),
+            serde_json::json!(context_window),
+        );
+        entry_object.insert(
+            "priority".to_string(),
+            serde_json::json!(1000 + index as i64),
+        );
+        entry_object.insert("availability_nux".to_string(), serde_json::Value::Null);
+        entry_object.insert("upgrade".to_string(), serde_json::Value::Null);
+    }
+    entry
+}
+
 fn write_codex_model_catalog_json(
     base_dir: &Path,
     account: &CodexAccount,
@@ -916,43 +1091,13 @@ fn write_codex_model_catalog_json(
     }
     let filename = model_catalog_filename_for_account(account);
     let context_window = read_model_context_window_from_config_toml(base_dir);
+    let template = load_codex_model_catalog_template(base_dir)
+        .unwrap_or_else(fallback_codex_model_info_template);
     let catalog = serde_json::json!({
         "models": models
             .iter()
             .enumerate()
-            .map(|(index, model)| {
-                    serde_json::json!({
-                        "slug": model,
-                        "display_name": model,
-                        "description": model,
-                        "context_window": context_window,
-                        "max_context_window": context_window,
-                        "priority": 1000 + index as i64,
-                        "supported_reasoning_levels": [
-                            {
-                                "effort": "low",
-                                "description": "Fast responses with lighter reasoning",
-                            },
-                            {
-                                "effort": "medium",
-                                "description": "Balances speed and reasoning depth for everyday tasks",
-                            },
-                            {
-                                "effort": "high",
-                                "description": "Greater reasoning depth for complex problems",
-                            },
-                            {
-                                "effort": "xhigh",
-                                "description": "Extra high reasoning depth for complex problems",
-                            },
-                        ],
-                        "default_reasoning_level": "medium",
-                        "additional_speed_tiers": [],
-                        "service_tiers": [],
-                        "availability_nux": serde_json::Value::Null,
-                        "upgrade": serde_json::Value::Null,
-                    })
-            })
+            .map(|(index, model)| build_codex_model_info_entry(&template, model, index, context_window))
             .collect::<Vec<_>>()
     });
     let content = serde_json::to_string_pretty(&catalog)
@@ -6833,27 +6978,168 @@ mod tests {
             models[0].get("priority").and_then(|item| item.as_i64()),
             Some(1000)
         );
-        let reasoning_levels = models[0]
-            .get("supported_reasoning_levels")
-            .and_then(|item| item.as_array())
-            .expect("supported reasoning levels");
-        assert_eq!(reasoning_levels.len(), 4);
-        assert_eq!(
-            reasoning_levels[0]
-                .get("effort")
-                .and_then(|item| item.as_str()),
-            Some("low")
-        );
-        assert_eq!(
-            models[0]
-                .get("default_reasoning_level")
-                .and_then(|item| item.as_str()),
-            Some("medium")
-        );
+        let entry = models[0].as_object().expect("model entry object");
+        assert_schema_complete_codex_model_entry(entry);
         assert_eq!(
             models[1].get("priority").and_then(|item| item.as_i64()),
             Some(1001)
         );
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
+    fn codex_model_catalog_json_clones_preferred_models_cache_template() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-template-test");
+        fs::write(
+            base_dir.join("config.toml"),
+            "model_context_window = 256000\n",
+        )
+        .expect("write config");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    {
+                        "slug": "gpt-5.4-mini",
+                        "template_marker": "mini-template",
+                        "base_instructions": "mini instructions"
+                    },
+                    {
+                        "slug": "gpt-5.4",
+                        "template_marker": "standard-template",
+                        "base_instructions": "standard instructions"
+                    },
+                    {
+                        "slug": "gpt-5.5",
+                        "template_marker": "preferred-template",
+                        "base_instructions": "preferred instructions",
+                        "shell_type": "shell_command",
+                        "visibility": "list",
+                        "supported_in_api": true
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["remote-model".to_string()],
+        );
+
+        let filename =
+            write_codex_model_catalog_json(&base_dir, &account, &["remote-model".to_string()])
+                .expect("write catalog")
+                .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let entry = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .and_then(|items| items.first())
+            .and_then(|item| item.as_object())
+            .expect("model entry");
+        assert_eq!(
+            entry.get("template_marker").and_then(|item| item.as_str()),
+            Some("preferred-template")
+        );
+        assert_eq!(
+            entry.get("slug").and_then(|item| item.as_str()),
+            Some("remote-model")
+        );
+        assert_eq!(
+            entry.get("display_name").and_then(|item| item.as_str()),
+            Some("remote-model")
+        );
+        assert_eq!(
+            entry.get("context_window").and_then(|item| item.as_i64()),
+            Some(256000)
+        );
+        assert_eq!(
+            entry
+                .get("max_context_window")
+                .and_then(|item| item.as_i64()),
+            Some(256000)
+        );
+        assert_eq!(
+            entry.get("priority").and_then(|item| item.as_i64()),
+            Some(1000)
+        );
+        assert!(entry
+            .get("availability_nux")
+            .is_some_and(|item| item.is_null()));
+        assert!(entry.get("upgrade").is_some_and(|item| item.is_null()));
+        assert_schema_complete_codex_model_entry(entry);
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
+    fn codex_model_catalog_json_replaces_invalid_template_fields() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-invalid-template-test");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    {
+                        "slug": "gpt-5.5",
+                        "template_marker": "kept",
+                        "supported_reasoning_levels": null,
+                        "shell_type": [],
+                        "visibility": false,
+                        "supported_in_api": "yes",
+                        "base_instructions": {},
+                        "truncation_policy": null,
+                        "supports_parallel_tool_calls": null,
+                        "experimental_supported_tools": null,
+                        "model_messages": "bad"
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["remote-model".to_string()],
+        );
+
+        let filename =
+            write_codex_model_catalog_json(&base_dir, &account, &["remote-model".to_string()])
+                .expect("write catalog")
+                .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let entry = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .and_then(|items| items.first())
+            .and_then(|item| item.as_object())
+            .expect("model entry");
+        assert_eq!(
+            entry.get("template_marker").and_then(|item| item.as_str()),
+            Some("kept")
+        );
+        assert_schema_complete_codex_model_entry(entry);
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
     }
@@ -7001,6 +7287,152 @@ custom_flag = "keep-me"
         assert!(config.contains("custom_flag = \"keep-me\""));
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    fn assert_schema_complete_codex_model_entry(
+        entry: &serde_json::Map<String, serde_json::Value>,
+    ) {
+        for field in [
+            "slug",
+            "display_name",
+            "description",
+            "default_reasoning_level",
+            "supported_reasoning_levels",
+            "shell_type",
+            "visibility",
+            "supported_in_api",
+            "priority",
+            "additional_speed_tiers",
+            "service_tiers",
+            "default_service_tier",
+            "availability_nux",
+            "upgrade",
+            "base_instructions",
+            "supports_reasoning_summaries",
+            "default_reasoning_summary",
+            "support_verbosity",
+            "default_verbosity",
+            "apply_patch_tool_type",
+            "web_search_tool_type",
+            "truncation_policy",
+            "supports_parallel_tool_calls",
+            "supports_image_detail_original",
+            "context_window",
+            "max_context_window",
+            "auto_compact_token_limit",
+            "comp_hash",
+            "effective_context_window_percent",
+            "experimental_supported_tools",
+            "input_modalities",
+            "supports_search_tool",
+            "use_responses_lite",
+            "auto_review_model_override",
+            "tool_mode",
+            "multi_agent_version",
+            "model_messages",
+        ] {
+            assert!(entry.contains_key(field), "missing required field {field}");
+        }
+        assert!(entry.get("slug").and_then(|item| item.as_str()).is_some());
+        assert!(entry
+            .get("display_name")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("description")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("supported_reasoning_levels")
+            .and_then(|item| item.as_array())
+            .is_some());
+        assert!(entry
+            .get("shell_type")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("visibility")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("supported_in_api")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("priority")
+            .and_then(|item| item.as_i64())
+            .is_some());
+        assert!(entry
+            .get("additional_speed_tiers")
+            .and_then(|item| item.as_array())
+            .is_some());
+        assert!(entry
+            .get("service_tiers")
+            .and_then(|item| item.as_array())
+            .is_some());
+        assert!(entry
+            .get("base_instructions")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("supports_reasoning_summaries")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("default_reasoning_summary")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("support_verbosity")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("web_search_tool_type")
+            .and_then(|item| item.as_str())
+            .is_some());
+        assert!(entry
+            .get("truncation_policy")
+            .and_then(|item| item.as_object())
+            .is_some());
+        assert!(entry
+            .get("supports_parallel_tool_calls")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("supports_image_detail_original")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("context_window")
+            .and_then(|item| item.as_i64())
+            .is_some());
+        assert!(entry
+            .get("max_context_window")
+            .and_then(|item| item.as_i64())
+            .is_some());
+        assert!(entry
+            .get("effective_context_window_percent")
+            .and_then(|item| item.as_i64())
+            .is_some());
+        assert!(entry
+            .get("experimental_supported_tools")
+            .and_then(|item| item.as_array())
+            .is_some());
+        assert!(entry
+            .get("input_modalities")
+            .and_then(|item| item.as_array())
+            .is_some());
+        assert!(entry
+            .get("supports_search_tool")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("use_responses_lite")
+            .and_then(|item| item.as_bool())
+            .is_some());
+        assert!(entry
+            .get("model_messages")
+            .is_some_and(|item| item.is_null() || item.is_object()));
     }
 
     fn make_temp_dir(prefix: &str) -> std::path::PathBuf {
