@@ -445,11 +445,30 @@ async fn sync_api_key_model_catalog_if_available(mut account: CodexAccount) -> C
     }
     match fetch_api_key_remote_models(&account).await {
         Ok(models) if !models.is_empty() => {
-            account.api_model_catalog = models;
-            if let Err(err) = save_account(&account) {
+            let mut latest = load_account(&account.id).unwrap_or_else(|| account.clone());
+            let account_unchanged = latest.is_api_key_auth()
+                && normalize_api_key(latest.openai_api_key.as_deref().unwrap_or_default())
+                    == normalize_api_key(account.openai_api_key.as_deref().unwrap_or_default())
+                && normalize_api_base_url(latest.api_base_url.as_deref())
+                    == normalize_api_base_url(account.api_base_url.as_deref())
+                && latest.api_provider_mode == account.api_provider_mode
+                && normalize_optional_ref(latest.api_provider_id.as_deref())
+                    == normalize_optional_ref(account.api_provider_id.as_deref());
+
+            if account_unchanged {
+                latest.api_model_catalog = models;
+                account = latest;
+                if let Err(err) = save_account(&account) {
+                    logger::log_warn(&format!(
+                        "[Codex API Key Models] 远端模型列表已同步但缓存账号失败: account_id={}, error={}",
+                        account.id, err
+                    ));
+                }
+            } else {
+                account.api_model_catalog = models;
                 logger::log_warn(&format!(
-                    "[Codex API Key Models] 远端模型列表已同步但缓存账号失败: account_id={}, error={}",
-                    account.id, err
+                    "[Codex API Key Models] 账号配置已变化，跳过远端模型列表落盘: account_id={}",
+                    account.id
                 ));
             }
             account
@@ -865,14 +884,39 @@ fn is_cockpit_managed_model_catalog_path(raw: Option<&str>) -> bool {
         && file_name.ends_with(CODEX_MANAGED_MODEL_CATALOG_SUFFIX)
 }
 
-fn remove_cockpit_managed_model_catalog_pointer(doc: &mut Document) {
-    let should_remove = doc
+fn resolve_cockpit_managed_model_catalog_path(base_dir: &Path, raw: &str) -> Option<PathBuf> {
+    if !is_cockpit_managed_model_catalog_path(Some(raw)) {
+        return None;
+    }
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(trimmed);
+    if path.is_absolute() {
+        Some(path)
+    } else {
+        Some(base_dir.join(path))
+    }
+}
+
+fn remove_cockpit_managed_model_catalog_pointer(base_dir: &Path, doc: &mut Document) {
+    let managed_catalog_path = doc
         .get(CODEX_CONFIG_MODEL_CATALOG_JSON_KEY)
         .and_then(|item| item.as_str())
-        .map(|path| is_cockpit_managed_model_catalog_path(Some(path)))
-        .unwrap_or(false);
-    if should_remove {
+        .and_then(|path| resolve_cockpit_managed_model_catalog_path(base_dir, path));
+    if let Some(path) = managed_catalog_path {
         let _ = doc.remove(CODEX_CONFIG_MODEL_CATALOG_JSON_KEY);
+        let _ = doc.remove(CODEX_CONFIG_MODEL_KEY);
+        if path.exists() {
+            if let Err(err) = fs::remove_file(&path) {
+                logger::log_warn(&format!(
+                    "[Codex API Key Models] 清理旧模型目录失败: path={}, error={}",
+                    path.display(),
+                    err
+                ));
+            }
+        }
     }
 }
 
@@ -1081,25 +1125,19 @@ fn is_valid_codex_model_info_field(field: &str, value: &serde_json::Value) -> bo
     }
 }
 
-fn build_codex_model_info_entry(
-    templates: &CodexModelCatalogTemplates,
+fn complete_codex_model_info_entry(
+    mut entry: serde_json::Value,
     model: &str,
     index: usize,
     context_window: i64,
+    override_identity_fields: bool,
 ) -> serde_json::Value {
-    if let Some(entry) = templates.entries_by_slug.get(model) {
-        return entry.clone();
-    }
-    let mut entry = if templates.fallback_template.as_object().is_some() {
-        templates.fallback_template.clone()
-    } else {
-        fallback_codex_model_info_template()
-    };
     let fallback = fallback_codex_model_info_template();
     if let (Some(entry_object), Some(fallback_object)) =
         (entry.as_object_mut(), fallback.as_object())
     {
         for field in [
+            "description",
             "supported_reasoning_levels",
             "default_reasoning_level",
             "shell_type",
@@ -1140,25 +1178,91 @@ fn build_codex_model_info_entry(
                 }
             }
         }
-        entry_object.insert("slug".to_string(), serde_json::json!(model));
-        entry_object.insert("display_name".to_string(), serde_json::json!(model));
-        entry_object.insert("description".to_string(), serde_json::json!(model));
-        entry_object.insert(
-            "context_window".to_string(),
-            serde_json::json!(context_window),
-        );
-        entry_object.insert(
-            "max_context_window".to_string(),
-            serde_json::json!(context_window),
-        );
-        entry_object.insert(
-            "priority".to_string(),
-            serde_json::json!(1000 + index as i64),
-        );
-        entry_object.insert("availability_nux".to_string(), serde_json::Value::Null);
-        entry_object.insert("upgrade".to_string(), serde_json::Value::Null);
+
+        if override_identity_fields
+            || entry_object
+                .get("slug")
+                .and_then(|value| value.as_str())
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            entry_object.insert("slug".to_string(), serde_json::json!(model));
+        }
+        if override_identity_fields
+            || entry_object
+                .get("display_name")
+                .and_then(|value| value.as_str())
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            entry_object.insert("display_name".to_string(), serde_json::json!(model));
+        }
+        if override_identity_fields
+            || entry_object
+                .get("description")
+                .and_then(|value| value.as_str())
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            entry_object.insert("description".to_string(), serde_json::json!(model));
+        }
+        if override_identity_fields
+            || entry_object
+                .get("context_window")
+                .and_then(|value| value.as_i64())
+                .filter(|value| *value > 0)
+                .is_none()
+        {
+            entry_object.insert(
+                "context_window".to_string(),
+                serde_json::json!(context_window),
+            );
+        }
+        if override_identity_fields
+            || entry_object
+                .get("max_context_window")
+                .and_then(|value| value.as_i64())
+                .filter(|value| *value > 0)
+                .is_none()
+        {
+            entry_object.insert(
+                "max_context_window".to_string(),
+                serde_json::json!(context_window),
+            );
+        }
+        if override_identity_fields
+            || entry_object
+                .get("priority")
+                .and_then(|value| value.as_i64())
+                .is_none()
+        {
+            entry_object.insert(
+                "priority".to_string(),
+                serde_json::json!(1000 + index as i64),
+            );
+        }
+        if override_identity_fields || !entry_object.contains_key("availability_nux") {
+            entry_object.insert("availability_nux".to_string(), serde_json::Value::Null);
+        }
+        if override_identity_fields || !entry_object.contains_key("upgrade") {
+            entry_object.insert("upgrade".to_string(), serde_json::Value::Null);
+        }
     }
     entry
+}
+
+fn build_codex_model_info_entry(
+    templates: &CodexModelCatalogTemplates,
+    model: &str,
+    index: usize,
+    context_window: i64,
+) -> serde_json::Value {
+    if let Some(entry) = templates.entries_by_slug.get(model) {
+        return complete_codex_model_info_entry(entry.clone(), model, index, context_window, false);
+    }
+    let entry = if templates.fallback_template.as_object().is_some() {
+        templates.fallback_template.clone()
+    } else {
+        fallback_codex_model_info_template()
+    };
+    complete_codex_model_info_entry(entry, model, index, context_window, true)
 }
 
 fn write_codex_model_catalog_json(
@@ -1383,7 +1487,7 @@ fn write_api_provider_to_config_toml(
 
     match provider_config.mode {
         CodexApiProviderMode::OpenaiBuiltin => {
-            remove_cockpit_managed_model_catalog_pointer(&mut doc);
+            remove_cockpit_managed_model_catalog_pointer(base_dir, &mut doc);
             let _ = doc.remove(CODEX_CONFIG_MODEL_PROVIDER_KEY);
             remove_managed_api_key_model_providers_from_doc(&mut doc);
             #[cfg(target_os = "windows")]
@@ -1401,7 +1505,7 @@ fn write_api_provider_to_config_toml(
             }
         }
         CodexApiProviderMode::Custom => {
-            remove_cockpit_managed_model_catalog_pointer(&mut doc);
+            remove_cockpit_managed_model_catalog_pointer(base_dir, &mut doc);
             let _ = doc.remove(CODEX_CONFIG_OPENAI_BASE_URL_KEY);
             let provider_id = provider_config
                 .provider_id
@@ -1556,7 +1660,7 @@ fn write_api_key_provider_to_config_toml(
 
     let catalog_models = normalize_api_model_catalog(account.api_model_catalog.clone());
     if catalog_models.is_empty() {
-        remove_cockpit_managed_model_catalog_pointer(&mut doc);
+        remove_cockpit_managed_model_catalog_pointer(base_dir, &mut doc);
     } else if let Some(filename) =
         write_codex_model_catalog_json(base_dir, account, &catalog_models)?
     {
@@ -6680,15 +6784,16 @@ mod tests {
         write_codex_model_catalog_json, write_managed_projection_to_dir,
         write_quick_config_to_config_toml, ApiProviderConfig, CodexAccountIndex,
         CodexAccountSummary, CodexAuthFile, CodexAuthTokens, CodexJsonImportCandidate,
-        LocalCodexOAuthSnapshot, CODEX_AUTO_COMPACT_DEFAULT_LIMIT, CODEX_CONTEXT_WINDOW_1M_VALUE,
+        LocalCodexOAuthSnapshot, CODEX_API_MODELS_MAX_BODY_BYTES, CODEX_AUTO_COMPACT_DEFAULT_LIMIT,
+        CODEX_CONTEXT_WINDOW_1M_VALUE,
     };
     use crate::models::codex::{CodexAccount, CodexApiProviderMode, CodexTokens};
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     use std::fs;
     use std::io::{Read, Write};
     use std::path::Path;
-    use std::sync::{LazyLock, Mutex};
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::sync::{mpsc, LazyLock, Mutex};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     static TEST_ENV_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
@@ -7000,6 +7105,256 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn api_key_model_catalog_sync_success_merges_latest_saved_account_fields() {
+        let _lock = TEST_ENV_LOCK.lock().unwrap_or_else(|err| err.into_inner());
+        let _env = TestEnvGuard::new("codex-api-key-model-sync-merge-test");
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let (request_started_tx, request_started_rx) = mpsc::channel();
+        let (respond_tx, respond_rx) = mpsc::channel();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request).expect("read request");
+            request_started_tx.send(()).expect("signal request started");
+            respond_rx.recv().expect("wait for response signal");
+            let body = r#"{"data":[{"id":"remote-gpt-5.5"},{"id":"remote-gpt-5.4"}]}"#;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write response");
+        });
+        let mut account = CodexAccount::new_api_key(
+            "codex-api-sync-merge".to_string(),
+            "api@example.com".to_string(),
+            "sk-test".to_string(),
+            CodexApiProviderMode::Custom,
+            Some(format!("http://{}", addr)),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["cached-model".to_string()],
+        );
+        account.account_name = Some("Before remote sync".to_string());
+        save_account(&account).expect("save account");
+
+        let sync_account = account.clone();
+        let sync_thread = std::thread::spawn(move || {
+            tokio::runtime::Runtime::new()
+                .expect("create runtime")
+                .block_on(sync_api_key_model_catalog_if_available(sync_account))
+        });
+        request_started_rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("request should start");
+
+        let mut latest = load_account("codex-api-sync-merge").expect("load latest account");
+        latest.account_name = Some("Edited while syncing".to_string());
+        latest.tags = Some(vec!["keep-me".to_string()]);
+        latest.bound_oauth_account_id = Some("oauth-latest".to_string());
+        save_account(&latest).expect("save concurrent account update");
+
+        respond_tx.send(()).expect("release response");
+        let synced = sync_thread.join().expect("sync thread joined");
+        server.join().expect("server joined");
+        let saved = load_account("codex-api-sync-merge").expect("load saved account");
+
+        assert_eq!(
+            saved.api_model_catalog,
+            vec!["remote-gpt-5.5".to_string(), "remote-gpt-5.4".to_string()]
+        );
+        assert_eq!(saved.account_name.as_deref(), Some("Edited while syncing"));
+        assert_eq!(saved.tags, Some(vec!["keep-me".to_string()]));
+        assert_eq!(
+            saved.bound_oauth_account_id.as_deref(),
+            Some("oauth-latest")
+        );
+        assert_eq!(synced.account_name.as_deref(), Some("Edited while syncing"));
+    }
+
+    #[tokio::test]
+    async fn api_key_model_catalog_sync_skips_save_when_account_identity_changes() {
+        let _lock = TEST_ENV_LOCK.lock().unwrap_or_else(|err| err.into_inner());
+        let _env = TestEnvGuard::new("codex-api-key-model-sync-identity-changed-test");
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let (request_started_tx, request_started_rx) = mpsc::channel();
+        let (respond_tx, respond_rx) = mpsc::channel();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request).expect("read request");
+            request_started_tx.send(()).expect("signal request started");
+            respond_rx.recv().expect("wait for response signal");
+            let body = r#"{"data":[{"id":"remote-gpt-5.5"}]}"#;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write response");
+        });
+        let account = CodexAccount::new_api_key(
+            "codex-api-sync-identity-changed".to_string(),
+            "api@example.com".to_string(),
+            "sk-test".to_string(),
+            CodexApiProviderMode::Custom,
+            Some(format!("http://{}", addr)),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["cached-model".to_string()],
+        );
+        save_account(&account).expect("save account");
+
+        let sync_account = account.clone();
+        let sync_thread = std::thread::spawn(move || {
+            tokio::runtime::Runtime::new()
+                .expect("create runtime")
+                .block_on(sync_api_key_model_catalog_if_available(sync_account))
+        });
+        request_started_rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("request should start");
+
+        let mut latest = load_account("codex-api-sync-identity-changed").expect("load account");
+        latest.auth_mode = crate::models::codex::CodexAuthMode::OAuth;
+        latest.openai_api_key = None;
+        latest.api_base_url = None;
+        latest.api_provider_mode = CodexApiProviderMode::OpenaiBuiltin;
+        latest.api_provider_id = None;
+        latest.api_provider_name = None;
+        latest.api_model_catalog = vec!["oauth-kept-model".to_string()];
+        latest.tokens = CodexTokens {
+            id_token: "oauth-id".to_string(),
+            access_token: "oauth-access".to_string(),
+            refresh_token: Some("oauth-refresh".to_string()),
+        };
+        save_account(&latest).expect("save concurrent identity change");
+
+        respond_tx.send(()).expect("release response");
+        let synced = sync_thread.join().expect("sync thread joined");
+        server.join().expect("server joined");
+        let saved = load_account("codex-api-sync-identity-changed").expect("load saved account");
+
+        assert!(!saved.is_api_key_auth());
+        assert_eq!(saved.openai_api_key, None);
+        assert_eq!(
+            saved.api_model_catalog,
+            vec!["oauth-kept-model".to_string()]
+        );
+        assert_eq!(synced.api_model_catalog, vec!["remote-gpt-5.5".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn api_key_model_catalog_sync_empty_response_keeps_cached_models() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request).expect("read request");
+            let body = r#"{"data":[]}"#;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write response");
+        });
+        let account = CodexAccount::new_api_key(
+            "codex-api-empty-models".to_string(),
+            "api@example.com".to_string(),
+            "sk-test".to_string(),
+            CodexApiProviderMode::Custom,
+            Some(format!("http://{}", addr)),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["cached-model".to_string()],
+        );
+
+        let updated = sync_api_key_model_catalog_if_available(account.clone()).await;
+
+        server.join().expect("server joined");
+        assert_eq!(updated.api_model_catalog, account.api_model_catalog);
+    }
+
+    #[tokio::test]
+    async fn fetch_api_key_remote_models_reports_error_responses_and_invalid_json() {
+        for (body, status_line) in [
+            (r#"{"error":"nope"}"#, "HTTP/1.1 500 Internal Server Error"),
+            ("not-json", "HTTP/1.1 200 OK"),
+        ] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
+            let addr = listener.local_addr().expect("local addr");
+            let body = body.to_string();
+            let status_line = status_line.to_string();
+            let server = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().expect("accept request");
+                let mut request = [0u8; 4096];
+                let _ = stream.read(&mut request).expect("read request");
+                write!(
+                    stream,
+                    "{}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    status_line,
+                    body.len(),
+                    body
+                )
+                .expect("write response");
+            });
+            let account = CodexAccount::new_api_key(
+                "codex-api-error-models".to_string(),
+                "api@example.com".to_string(),
+                "sk-test".to_string(),
+                CodexApiProviderMode::Custom,
+                Some(format!("http://{}", addr)),
+                Some("relay".to_string()),
+                Some("Relay".to_string()),
+                Vec::new(),
+            );
+
+            let result = fetch_api_key_remote_models(&account).await;
+
+            server.join().expect("server joined");
+            assert!(result.is_err());
+        }
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request).expect("read request");
+            let body = "x".repeat(CODEX_API_MODELS_MAX_BODY_BYTES + 1);
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write response");
+        });
+        let account = CodexAccount::new_api_key(
+            "codex-api-large-models".to_string(),
+            "api@example.com".to_string(),
+            "sk-test".to_string(),
+            CodexApiProviderMode::Custom,
+            Some(format!("http://{}", addr)),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            Vec::new(),
+        );
+
+        let result = fetch_api_key_remote_models(&account).await;
+
+        server.join().expect("server joined");
+        assert!(result.is_err());
+    }
+
     #[test]
     fn codex_model_catalog_json_contains_codex_model_entries() {
         let base_dir = make_temp_dir("codex-model-catalog-json-test");
@@ -7304,6 +7659,73 @@ mod tests {
     }
 
     #[test]
+    fn codex_model_catalog_json_completes_exact_cached_entries_missing_schema_fields() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-exact-cache-complete-test");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    {
+                        "slug": "gpt-5.5",
+                        "display_name": "Cached GPT 5.5",
+                        "template_marker": "exact-cache-entry",
+                        "default_reasoning_level": null,
+                        "supported_reasoning_levels": [],
+                        "shell_type": [],
+                        "visibility": false,
+                        "supported_in_api": "yes",
+                        "base_instructions": {},
+                        "truncation_policy": null,
+                        "supports_parallel_tool_calls": null,
+                        "experimental_supported_tools": null,
+                        "model_messages": "bad"
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["gpt-5.5".to_string()],
+        );
+
+        let filename =
+            write_codex_model_catalog_json(&base_dir, &account, &["gpt-5.5".to_string()])
+                .expect("write catalog")
+                .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let entry = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .and_then(|items| items.first())
+            .and_then(|item| item.as_object())
+            .expect("model entry");
+        assert_eq!(
+            entry.get("template_marker").and_then(|item| item.as_str()),
+            Some("exact-cache-entry")
+        );
+        assert_eq!(
+            entry.get("display_name").and_then(|item| item.as_str()),
+            Some("Cached GPT 5.5")
+        );
+        assert_schema_complete_codex_model_entry(entry);
+        assert_default_fallback_reasoning_metadata(entry);
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
     fn codex_model_catalog_json_does_not_exact_match_trimmed_cache_slugs() {
         let base_dir = make_temp_dir("codex-model-catalog-json-trimmed-cache-slug-test");
         fs::write(
@@ -7549,9 +7971,20 @@ mod tests {
     fn api_key_bundle_empty_catalog_only_removes_cockpit_managed_pointer() {
         let base_dir = make_temp_dir("codex-api-key-empty-catalog-config-test");
         let config_path = base_dir.join("config.toml");
+        let managed_catalog_path = base_dir
+            .join("profiles")
+            .join("cockpit-model-catalog-old.json");
+        fs::create_dir_all(
+            managed_catalog_path
+                .parent()
+                .expect("managed catalog parent"),
+        )
+        .expect("create managed catalog parent");
+        fs::write(&managed_catalog_path, "{}").expect("write managed catalog");
         fs::write(
             &config_path,
             r#"model_catalog_json = "profiles/cockpit-model-catalog-old.json"
+model = "old-managed-model"
 
 [model_providers.codex_local_access]
 custom_flag = "keep-me"
@@ -7573,11 +8006,14 @@ custom_flag = "keep-me"
 
         let config = fs::read_to_string(&config_path).expect("read config");
         assert!(!config.contains("model_catalog_json"));
+        assert!(!config.contains("model = \"old-managed-model\""));
         assert!(config.contains("custom_flag = \"keep-me\""));
+        assert!(!managed_catalog_path.exists());
 
         fs::write(
             &config_path,
             r#"model_catalog_json = "profiles/user-catalog.json"
+model = "user-model"
 
 [model_providers.codex_local_access]
 custom_flag = "keep-me"
@@ -7589,6 +8025,7 @@ custom_flag = "keep-me"
 
         let config = fs::read_to_string(&config_path).expect("read config");
         assert!(config.contains("model_catalog_json = \"profiles/user-catalog.json\""));
+        assert!(config.contains("model = \"user-model\""));
         assert!(config.contains("custom_flag = \"keep-me\""));
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
@@ -8995,6 +9432,7 @@ custom_flag = "keep-me"
             r#"model_provider = "codex_local_access"
 openai_base_url = "https://legacy.example.com/v1"
 model_catalog_json = "cockpit-model-catalog-old.json"
+model = "managed-remote-model"
 model_context_window = 1000000
 
 [model_providers.codex_local_access]
@@ -9024,6 +9462,8 @@ requires_openai_auth = false
 "#,
         )
         .expect("write managed provider config");
+        fs::write(base_dir.join("cockpit-model-catalog-old.json"), "{}")
+            .expect("write managed catalog");
         let provider_config = resolve_api_provider_config(
             None,
             Some(CodexApiProviderMode::OpenaiBuiltin),
@@ -9042,8 +9482,10 @@ requires_openai_auth = false
         assert!(!content.contains("[model_providers.openai_api_key]"));
         assert!(content.contains("[model_providers.user_manual_provider_not_managed]"));
         assert!(!content.contains("model_catalog_json"));
+        assert!(!content.contains("model = \"managed-remote-model\""));
         assert!(!content.contains("openai_base_url"));
         assert!(content.contains("model_context_window = 1000000"));
+        assert!(!base_dir.join("cockpit-model-catalog-old.json").exists());
         assert_eq!(
             read_api_provider_from_config_toml(&base_dir),
             ApiProviderConfig {
@@ -9064,6 +9506,7 @@ requires_openai_auth = false
         fs::write(
             &config_path,
             r#"model_catalog_json = "profiles/user-catalog.json"
+model = "user-model"
 
 [model_providers.codex_local_access]
 name = "OpenAI Official"
@@ -9086,6 +9529,7 @@ experimental_bearer_token = "sk-history"
 
         let content = fs::read_to_string(&config_path).expect("read config");
         assert!(content.contains("model_catalog_json = \"profiles/user-catalog.json\""));
+        assert!(content.contains("model = \"user-model\""));
         assert!(!content.contains("[model_providers.codex_local_access]"));
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
