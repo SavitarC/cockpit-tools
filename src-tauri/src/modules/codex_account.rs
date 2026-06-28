@@ -928,8 +928,25 @@ fn fallback_codex_model_info_template() -> serde_json::Value {
         "slug": "template",
         "display_name": "template",
         "description": "template",
-        "default_reasoning_level": serde_json::Value::Null,
-        "supported_reasoning_levels": [],
+        "default_reasoning_level": "medium",
+        "supported_reasoning_levels": [
+            {
+                "effort": "low",
+                "description": "Fast responses with lighter reasoning"
+            },
+            {
+                "effort": "medium",
+                "description": "Balances speed and reasoning depth for everyday tasks"
+            },
+            {
+                "effort": "high",
+                "description": "Greater reasoning depth for complex problems"
+            },
+            {
+                "effort": "xhigh",
+                "description": "Extra high reasoning depth for complex problems"
+            }
+        ],
         "shell_type": "default",
         "visibility": "list",
         "supported_in_api": true,
@@ -968,10 +985,25 @@ fn fallback_codex_model_info_template() -> serde_json::Value {
     })
 }
 
+fn is_valid_codex_reasoning_levels(value: &serde_json::Value) -> bool {
+    value.as_array().is_some_and(|items| {
+        !items.is_empty()
+            && items.iter().all(|item| {
+                item.get("effort")
+                    .and_then(|effort| effort.as_str())
+                    .is_some_and(|effort| !effort.trim().is_empty())
+                    && item
+                        .get("description")
+                        .and_then(|description| description.as_str())
+                        .is_some_and(|description| !description.trim().is_empty())
+            })
+    })
+}
+
 fn is_valid_codex_model_info_field(field: &str, value: &serde_json::Value) -> bool {
     match field {
-        "supported_reasoning_levels"
-        | "additional_speed_tiers"
+        "supported_reasoning_levels" => is_valid_codex_reasoning_levels(value),
+        "additional_speed_tiers"
         | "service_tiers"
         | "experimental_supported_tools"
         | "input_modalities" => value.is_array(),
@@ -989,8 +1021,8 @@ fn is_valid_codex_model_info_field(field: &str, value: &serde_json::Value) -> bo
         | "supports_search_tool"
         | "use_responses_lite" => value.is_boolean(),
         "effective_context_window_percent" => value.is_number(),
-        "default_reasoning_level"
-        | "default_service_tier"
+        "default_reasoning_level" => value.is_string(),
+        "default_service_tier"
         | "default_verbosity"
         | "apply_patch_tool_type"
         | "comp_hash"
@@ -6981,6 +7013,12 @@ mod tests {
         let entry = models[0].as_object().expect("model entry object");
         assert_schema_complete_codex_model_entry(entry);
         assert_eq!(
+            entry
+                .get("default_reasoning_level")
+                .and_then(|item| item.as_str()),
+            Some("medium")
+        );
+        assert_eq!(
             models[1].get("priority").and_then(|item| item.as_i64()),
             Some(1001)
         );
@@ -7094,7 +7132,8 @@ mod tests {
                     {
                         "slug": "gpt-5.5",
                         "template_marker": "kept",
-                        "supported_reasoning_levels": null,
+                        "default_reasoning_level": null,
+                        "supported_reasoning_levels": [],
                         "shell_type": [],
                         "visibility": false,
                         "supported_in_api": "yes",
@@ -7346,6 +7385,22 @@ custom_flag = "keep-me"
             .get("supported_reasoning_levels")
             .and_then(|item| item.as_array())
             .is_some());
+        assert_eq!(
+            entry
+                .get("default_reasoning_level")
+                .and_then(|item| item.as_str()),
+            Some("medium")
+        );
+        assert_eq!(
+            entry
+                .get("supported_reasoning_levels")
+                .and_then(|item| item.as_array())
+                .expect("supported reasoning levels")
+                .iter()
+                .filter_map(|item| item.get("effort").and_then(|effort| effort.as_str()))
+                .collect::<Vec<_>>(),
+            vec!["low", "medium", "high", "xhigh"]
+        );
         assert!(entry
             .get("shell_type")
             .and_then(|item| item.as_str())
