@@ -921,18 +921,37 @@ fn write_codex_model_catalog_json(
             .iter()
             .enumerate()
             .map(|(index, model)| {
-                serde_json::json!({
-                    "slug": model,
-                    "display_name": model,
-                    "description": model,
-                    "context_window": context_window,
-                    "max_context_window": context_window,
-                    "priority": 1000 + index as i64,
-                    "additional_speed_tiers": [],
-                    "service_tiers": [],
-                    "availability_nux": serde_json::Value::Null,
-                    "upgrade": serde_json::Value::Null,
-                })
+                    serde_json::json!({
+                        "slug": model,
+                        "display_name": model,
+                        "description": model,
+                        "context_window": context_window,
+                        "max_context_window": context_window,
+                        "priority": 1000 + index as i64,
+                        "supported_reasoning_levels": [
+                            {
+                                "effort": "low",
+                                "description": "Fast responses with lighter reasoning",
+                            },
+                            {
+                                "effort": "medium",
+                                "description": "Balances speed and reasoning depth for everyday tasks",
+                            },
+                            {
+                                "effort": "high",
+                                "description": "Greater reasoning depth for complex problems",
+                            },
+                            {
+                                "effort": "xhigh",
+                                "description": "Extra high reasoning depth for complex problems",
+                            },
+                        ],
+                        "default_reasoning_level": "medium",
+                        "additional_speed_tiers": [],
+                        "service_tiers": [],
+                        "availability_nux": serde_json::Value::Null,
+                        "upgrade": serde_json::Value::Null,
+                    })
             })
             .collect::<Vec<_>>()
     });
@@ -6813,6 +6832,23 @@ mod tests {
         assert_eq!(
             models[0].get("priority").and_then(|item| item.as_i64()),
             Some(1000)
+        );
+        let reasoning_levels = models[0]
+            .get("supported_reasoning_levels")
+            .and_then(|item| item.as_array())
+            .expect("supported reasoning levels");
+        assert_eq!(reasoning_levels.len(), 4);
+        assert_eq!(
+            reasoning_levels[0]
+                .get("effort")
+                .and_then(|item| item.as_str()),
+            Some("low")
+        );
+        assert_eq!(
+            models[0]
+                .get("default_reasoning_level")
+                .and_then(|item| item.as_str()),
+            Some("medium")
         );
         assert_eq!(
             models[1].get("priority").and_then(|item| item.as_i64()),
