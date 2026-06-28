@@ -905,10 +905,14 @@ fn read_model_context_window_from_config_toml(base_dir: &Path) -> i64 {
         .unwrap_or(CODEX_DEFAULT_MODEL_CONTEXT_WINDOW)
 }
 
-fn load_codex_model_catalog_template(base_dir: &Path) -> Option<serde_json::Value> {
-    let content = fs::read_to_string(base_dir.join("models_cache.json")).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&content).ok()?;
-    let models = value.get("models")?.as_array()?;
+struct CodexModelCatalogTemplates {
+    entries_by_slug: HashMap<String, serde_json::Value>,
+    fallback_template: serde_json::Value,
+}
+
+fn find_preferred_codex_model_catalog_template(
+    models: &[serde_json::Value],
+) -> Option<serde_json::Value> {
     for slug in ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"] {
         if let Some(model) = models.iter().find(|item| {
             item.as_object().is_some()
@@ -921,6 +925,48 @@ fn load_codex_model_catalog_template(base_dir: &Path) -> Option<serde_json::Valu
         .iter()
         .find(|item| item.as_object().is_some())
         .cloned()
+}
+
+fn load_codex_model_catalog_templates(base_dir: &Path) -> CodexModelCatalogTemplates {
+    let fallback_template = fallback_codex_model_info_template();
+    let Ok(content) = fs::read_to_string(base_dir.join("models_cache.json")) else {
+        return CodexModelCatalogTemplates {
+            entries_by_slug: HashMap::new(),
+            fallback_template,
+        };
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) else {
+        return CodexModelCatalogTemplates {
+            entries_by_slug: HashMap::new(),
+            fallback_template,
+        };
+    };
+    let Some(models) = value.get("models").and_then(|item| item.as_array()) else {
+        return CodexModelCatalogTemplates {
+            entries_by_slug: HashMap::new(),
+            fallback_template,
+        };
+    };
+
+    let entries_by_slug = models
+        .iter()
+        .filter(|item| item.as_object().is_some())
+        .filter_map(|item| {
+            let slug = item.get("slug").and_then(|value| value.as_str())?;
+            if slug.trim().is_empty() {
+                None
+            } else {
+                Some((slug.to_string(), item.clone()))
+            }
+        })
+        .collect::<HashMap<_, _>>();
+    let fallback_template =
+        find_preferred_codex_model_catalog_template(models).unwrap_or(fallback_template);
+
+    CodexModelCatalogTemplates {
+        entries_by_slug,
+        fallback_template,
+    }
 }
 
 fn fallback_codex_model_info_template() -> serde_json::Value {
@@ -1036,13 +1082,16 @@ fn is_valid_codex_model_info_field(field: &str, value: &serde_json::Value) -> bo
 }
 
 fn build_codex_model_info_entry(
-    template: &serde_json::Value,
+    templates: &CodexModelCatalogTemplates,
     model: &str,
     index: usize,
     context_window: i64,
 ) -> serde_json::Value {
-    let mut entry = if template.as_object().is_some() {
-        template.clone()
+    if let Some(entry) = templates.entries_by_slug.get(model) {
+        return entry.clone();
+    }
+    let mut entry = if templates.fallback_template.as_object().is_some() {
+        templates.fallback_template.clone()
     } else {
         fallback_codex_model_info_template()
     };
@@ -1123,13 +1172,12 @@ fn write_codex_model_catalog_json(
     }
     let filename = model_catalog_filename_for_account(account);
     let context_window = read_model_context_window_from_config_toml(base_dir);
-    let template = load_codex_model_catalog_template(base_dir)
-        .unwrap_or_else(fallback_codex_model_info_template);
+    let templates = load_codex_model_catalog_templates(base_dir);
     let catalog = serde_json::json!({
         "models": models
             .iter()
             .enumerate()
-            .map(|(index, model)| build_codex_model_info_entry(&template, model, index, context_window))
+            .map(|(index, model)| build_codex_model_info_entry(&templates, model, index, context_window))
             .collect::<Vec<_>>()
     });
     let content = serde_json::to_string_pretty(&catalog)
@@ -7012,12 +7060,7 @@ mod tests {
         );
         let entry = models[0].as_object().expect("model entry object");
         assert_schema_complete_codex_model_entry(entry);
-        assert_eq!(
-            entry
-                .get("default_reasoning_level")
-                .and_then(|item| item.as_str()),
-            Some("medium")
-        );
+        assert_default_fallback_reasoning_metadata(entry);
         assert_eq!(
             models[1].get("priority").and_then(|item| item.as_i64()),
             Some(1001)
@@ -7123,6 +7166,228 @@ mod tests {
     }
 
     #[test]
+    fn codex_model_catalog_json_preserves_matching_models_cache_entries() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-matching-cache-test");
+        let cached_model = serde_json::json!({
+            "slug": "gpt-5.5",
+            "display_name": "Cached GPT 5.5",
+            "description": "Cached model description",
+            "default_reasoning_level": "high",
+            "supported_reasoning_levels": [
+                {
+                    "effort": "high",
+                    "description": "Cached high reasoning"
+                }
+            ],
+            "shell_type": "shell_command",
+            "visibility": "hidden",
+            "supported_in_api": false,
+            "priority": 42,
+            "additional_speed_tiers": ["cached-speed"],
+            "service_tiers": ["cached-service"],
+            "default_service_tier": "cached-service",
+            "availability_nux": {"cached": true},
+            "upgrade": {"plan": "cached"},
+            "base_instructions": "cached instructions",
+            "supports_reasoning_summaries": true,
+            "default_reasoning_summary": "detailed",
+            "support_verbosity": true,
+            "default_verbosity": "high",
+            "apply_patch_tool_type": "cached-patch",
+            "web_search_tool_type": "cached-search",
+            "truncation_policy": {
+                "mode": "tokens",
+                "limit": 1234
+            },
+            "supports_parallel_tool_calls": true,
+            "supports_image_detail_original": true,
+            "context_window": 999,
+            "max_context_window": 1999,
+            "auto_compact_token_limit": 888,
+            "comp_hash": "cached-hash",
+            "effective_context_window_percent": 77,
+            "experimental_supported_tools": ["cached-tool"],
+            "input_modalities": ["text"],
+            "supports_search_tool": true,
+            "use_responses_lite": true,
+            "auto_review_model_override": "cached-review",
+            "tool_mode": "cached-mode",
+            "multi_agent_version": 7,
+            "model_messages": {"cached": "message"},
+            "template_marker": "exact-cache-entry"
+        });
+        fs::write(
+            base_dir.join("config.toml"),
+            "model_context_window = 256000\n",
+        )
+        .expect("write config");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    cached_model.clone(),
+                    {
+                        "slug": "gpt-5.4",
+                        "template_marker": "fallback-template",
+                        "base_instructions": "fallback template instructions",
+                        "shell_type": "default",
+                        "visibility": "list",
+                        "supported_in_api": true
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["gpt-5.5".to_string(), "remote-only".to_string()],
+        );
+
+        let filename = write_codex_model_catalog_json(
+            &base_dir,
+            &account,
+            &["gpt-5.5".to_string(), "remote-only".to_string()],
+        )
+        .expect("write catalog")
+        .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let models = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .expect("models array");
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0], cached_model);
+        assert_eq!(
+            models[1].get("slug").and_then(|item| item.as_str()),
+            Some("remote-only")
+        );
+        assert_eq!(
+            models[1]
+                .get("template_marker")
+                .and_then(|item| item.as_str()),
+            Some("exact-cache-entry")
+        );
+        assert_eq!(
+            models[1].get("display_name").and_then(|item| item.as_str()),
+            Some("remote-only")
+        );
+        assert_eq!(
+            models[1].get("description").and_then(|item| item.as_str()),
+            Some("remote-only")
+        );
+        assert_eq!(
+            models[1]
+                .get("context_window")
+                .and_then(|item| item.as_i64()),
+            Some(256000)
+        );
+        assert!(models[1]
+            .get("availability_nux")
+            .is_some_and(|item| item.is_null()));
+        assert!(models[1].get("upgrade").is_some_and(|item| item.is_null()));
+        assert_schema_complete_codex_model_entry(
+            models[1].as_object().expect("generated entry object"),
+        );
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
+    fn codex_model_catalog_json_does_not_exact_match_trimmed_cache_slugs() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-trimmed-cache-slug-test");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    {
+                        "slug": " gpt-5.5 ",
+                        "display_name": "Whitespace Cache Entry",
+                        "template_marker": "whitespace-cache-entry",
+                        "priority": 42,
+                        "context_window": 999,
+                        "max_context_window": 999,
+                        "availability_nux": {"cached": true},
+                        "upgrade": {"plan": "cached"}
+                    },
+                    {
+                        "slug": "gpt-5.4",
+                        "template_marker": "fallback-template",
+                        "base_instructions": "fallback template instructions",
+                        "shell_type": "default",
+                        "visibility": "list",
+                        "supported_in_api": true
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["gpt-5.5".to_string()],
+        );
+
+        let filename =
+            write_codex_model_catalog_json(&base_dir, &account, &["gpt-5.5".to_string()])
+                .expect("write catalog")
+                .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let models = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .expect("models array");
+        assert_eq!(models.len(), 1);
+        assert_eq!(
+            models[0].get("slug").and_then(|item| item.as_str()),
+            Some("gpt-5.5")
+        );
+        assert_eq!(
+            models[0]
+                .get("template_marker")
+                .and_then(|item| item.as_str()),
+            Some("fallback-template")
+        );
+        assert_eq!(
+            models[0].get("display_name").and_then(|item| item.as_str()),
+            Some("gpt-5.5")
+        );
+        assert_eq!(
+            models[0].get("priority").and_then(|item| item.as_i64()),
+            Some(1000)
+        );
+        assert!(models[0]
+            .get("availability_nux")
+            .is_some_and(|item| item.is_null()));
+        assert!(models[0].get("upgrade").is_some_and(|item| item.is_null()));
+        assert_schema_complete_codex_model_entry(
+            models[0].as_object().expect("generated entry object"),
+        );
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
     fn codex_model_catalog_json_replaces_invalid_template_fields() {
         let base_dir = make_temp_dir("codex-model-catalog-json-invalid-template-test");
         fs::write(
@@ -7179,6 +7444,7 @@ mod tests {
             Some("kept")
         );
         assert_schema_complete_codex_model_entry(entry);
+        assert_default_fallback_reasoning_metadata(entry);
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
     }
@@ -7385,22 +7651,25 @@ custom_flag = "keep-me"
             .get("supported_reasoning_levels")
             .and_then(|item| item.as_array())
             .is_some());
-        assert_eq!(
-            entry
-                .get("default_reasoning_level")
-                .and_then(|item| item.as_str()),
-            Some("medium")
-        );
-        assert_eq!(
-            entry
-                .get("supported_reasoning_levels")
-                .and_then(|item| item.as_array())
-                .expect("supported reasoning levels")
-                .iter()
-                .filter_map(|item| item.get("effort").and_then(|effort| effort.as_str()))
-                .collect::<Vec<_>>(),
-            vec!["low", "medium", "high", "xhigh"]
-        );
+        assert!(entry
+            .get("default_reasoning_level")
+            .and_then(|item| item.as_str())
+            .is_some());
+        let reasoning_levels = entry
+            .get("supported_reasoning_levels")
+            .and_then(|item| item.as_array())
+            .expect("supported reasoning levels");
+        assert!(!reasoning_levels.is_empty());
+        for level in reasoning_levels {
+            assert!(level
+                .get("effort")
+                .and_then(|item| item.as_str())
+                .is_some_and(|item| !item.trim().is_empty()));
+            assert!(level
+                .get("description")
+                .and_then(|item| item.as_str())
+                .is_some_and(|item| !item.trim().is_empty()));
+        }
         assert!(entry
             .get("shell_type")
             .and_then(|item| item.as_str())
@@ -7488,6 +7757,27 @@ custom_flag = "keep-me"
         assert!(entry
             .get("model_messages")
             .is_some_and(|item| item.is_null() || item.is_object()));
+    }
+
+    fn assert_default_fallback_reasoning_metadata(
+        entry: &serde_json::Map<String, serde_json::Value>,
+    ) {
+        assert_eq!(
+            entry
+                .get("default_reasoning_level")
+                .and_then(|item| item.as_str()),
+            Some("medium")
+        );
+        assert_eq!(
+            entry
+                .get("supported_reasoning_levels")
+                .and_then(|item| item.as_array())
+                .expect("supported reasoning levels")
+                .iter()
+                .filter_map(|item| item.get("effort").and_then(|effort| effort.as_str()))
+                .collect::<Vec<_>>(),
+            vec!["low", "medium", "high", "xhigh"]
+        );
     }
 
     fn make_temp_dir(prefix: &str) -> std::path::PathBuf {
