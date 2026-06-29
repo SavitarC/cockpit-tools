@@ -50,6 +50,16 @@ pub struct NetworkConfig {
     pub global_proxy_no_proxy: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClaudeDesktopLaunchCandidate {
+    pub target_type: String,
+    pub label: String,
+    pub target: String,
+    pub source: String,
+    pub supports_multi_instance: bool,
+}
+
 /// 通用设置配置（前端使用）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneralConfig {
@@ -103,6 +113,10 @@ pub struct GeneralConfig {
     pub hide_dock_icon: bool,
     /// 菜单栏图标样式（macOS）: "template", "color"
     pub tray_icon_style: String,
+    /// 冷启动启动页面：页面 ID 或 last_closed
+    pub startup_page: String,
+    /// 上次主窗口关闭/隐藏时所在页面
+    pub last_closed_page: String,
     /// 是否在启动时显示悬浮卡片
     pub floating_card_show_on_startup: bool,
     /// 是否在启动后自动最小化主窗口
@@ -918,6 +932,12 @@ fn sanitize_startup_wakeup_delay_seconds(raw: i32) -> i32 {
     raw.clamp(0, MAX_STARTUP_WAKEUP_DELAY_SECONDS)
 }
 
+fn normalize_page_config_value(raw: Option<String>, fallback: &str) -> String {
+    raw.map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| fallback.to_string())
+}
+
 fn normalize_auto_switch_account_scope_mode(raw: &str) -> String {
     if raw.trim().to_lowercase() == AUTO_SWITCH_ACCOUNT_SCOPE_SELECTED {
         AUTO_SWITCH_ACCOUNT_SCOPE_SELECTED.to_string()
@@ -975,7 +995,7 @@ fn resolve_downloads_dir() -> Result<PathBuf, String> {
 }
 
 fn get_auto_backup_dir_path() -> Result<PathBuf, String> {
-    Ok(modules::account::get_data_dir()?.join(AUTO_BACKUP_DIR_NAME))
+    Ok(modules::app_data::get_data_dir()?.join(AUTO_BACKUP_DIR_NAME))
 }
 
 fn ensure_auto_backup_dir_path() -> Result<PathBuf, String> {
@@ -1430,7 +1450,7 @@ fn open_path_in_system(path: &Path) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn open_data_folder() -> Result<(), String> {
-    let path = modules::account::get_data_dir()?;
+    let path = modules::app_data::get_data_dir()?;
     open_path_in_system(path.as_path())
 }
 
@@ -1953,6 +1973,8 @@ pub fn save_network_config(
         minimize_behavior: current.minimize_behavior,
         hide_dock_icon: current.hide_dock_icon,
         tray_icon_style: current.tray_icon_style,
+        startup_page: current.startup_page,
+        last_closed_page: current.last_closed_page,
         floating_card_show_on_startup: current.floating_card_show_on_startup,
         startup_minimized: current.startup_minimized,
         floating_card_always_on_top: current.floating_card_always_on_top,
@@ -2238,6 +2260,8 @@ pub fn get_general_config(app: tauri::AppHandle) -> Result<GeneralConfig, String
         minimize_behavior: minimize_behavior_str.to_string(),
         hide_dock_icon: user_config.hide_dock_icon,
         tray_icon_style: user_config.tray_icon_style.as_str().to_string(),
+        startup_page: user_config.startup_page,
+        last_closed_page: user_config.last_closed_page,
         floating_card_show_on_startup: user_config.floating_card_show_on_startup,
         startup_minimized: user_config.startup_minimized,
         floating_card_always_on_top: user_config.floating_card_always_on_top,
@@ -2375,6 +2399,8 @@ pub fn save_general_config(
     minimize_behavior: Option<String>,
     hide_dock_icon: Option<bool>,
     tray_icon_style: Option<String>,
+    startup_page: Option<String>,
+    last_closed_page: Option<String>,
     floating_card_show_on_startup: Option<bool>,
     startup_minimized: Option<bool>,
     floating_card_always_on_top: Option<bool>,
@@ -2521,6 +2547,9 @@ pub fn save_general_config(
         .as_deref()
         .map(TrayIconStyle::from_str)
         .unwrap_or(current.tray_icon_style);
+    let startup_page_value = normalize_page_config_value(startup_page, &current.startup_page);
+    let last_closed_page_value =
+        normalize_page_config_value(last_closed_page, &current.last_closed_page);
     let floating_card_show_on_startup_value =
         floating_card_show_on_startup.unwrap_or(current.floating_card_show_on_startup);
     let startup_minimized_value = startup_minimized.unwrap_or(current.startup_minimized);
@@ -2611,6 +2640,8 @@ pub fn save_general_config(
         minimize_behavior: minimize_behavior_enum,
         hide_dock_icon: hide_dock_icon_value,
         tray_icon_style: tray_icon_style_value,
+        startup_page: startup_page_value,
+        last_closed_page: last_closed_page_value,
         floating_card_show_on_startup: floating_card_show_on_startup_value,
         startup_minimized: startup_minimized_value,
         floating_card_always_on_top: floating_card_always_on_top_value,
@@ -2872,40 +2903,45 @@ pub fn set_claude_app_scan_roots(scan_roots: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn set_codex_launch_on_switch(enabled: bool) -> Result<(), String> {
-    let current = config::get_user_config();
-    if current.codex_launch_on_switch == enabled {
-        return Ok(());
-    }
-    let new_config = UserConfig {
-        codex_launch_on_switch: enabled,
-        ..current
-    };
-    config::save_user_config(&new_config)
+    modules::platform_adapter::call_codex(
+        "settings.setLaunchOnSwitch",
+        serde_json::json!({ "enabled": enabled }),
+    )
 }
 
 #[tauri::command]
 pub fn set_codex_local_access_entry_visible(enabled: bool) -> Result<(), String> {
-    let current = config::get_user_config();
-    if current.codex_local_access_entry_visible == enabled {
-        return Ok(());
-    }
-    let new_config = UserConfig {
-        codex_local_access_entry_visible: enabled,
-        ..current
-    };
-    config::save_user_config(&new_config)
+    modules::platform_adapter::call_codex(
+        "settings.setLocalAccessEntryVisible",
+        serde_json::json!({ "enabled": enabled }),
+    )
 }
 
 #[tauri::command]
 pub fn detect_app_path(app: String, force: Option<bool>) -> Result<Option<String>, String> {
     let force = force.unwrap_or(false);
     match app.as_str() {
-        "windsurf" => Ok(modules::windsurf_instance::detect_and_save_windsurf_launch_path(force)),
-        "kiro" => Ok(modules::kiro_instance::detect_and_save_kiro_launch_path(
-            force,
-        )),
-        "cursor" => Ok(modules::cursor_instance::detect_and_save_cursor_launch_path(force)),
-        "claude" => Ok(modules::claude_instance::detect_and_save_claude_launch_path(force)),
+        "windsurf" => modules::platform_adapter::call_windsurf(
+            "runtime.detectLaunchPath",
+            serde_json::json!({ "force": force }),
+        ),
+        "kiro" => modules::platform_adapter::call_kiro(
+            "runtime.detectLaunchPath",
+            serde_json::json!({ "force": force }),
+        ),
+        "cursor" => modules::platform_adapter::call_cursor(
+            "runtime.detectLaunchPath",
+            serde_json::json!({ "force": force }),
+        ),
+        "claude" => {
+            if !modules::platform_package::is_platform_package_installed("claude_manager") {
+                return Ok(None);
+            }
+            modules::platform_adapter::call_claude_manager(
+                "runtime.detectLaunchPath",
+                serde_json::json!({ "force": force }),
+            )
+        }
         "antigravity" | "antigravity_ide" | "antigravity_legacy" | "codex" | "zed" | "vscode"
         | "codebuddy" | "codebuddy_cn" | "qoder" | "trae" | "opencode" | "workbuddy" => Ok(
             modules::process::detect_and_save_app_path(app.as_str(), force),
@@ -2917,12 +2953,14 @@ pub fn detect_app_path(app: String, force: Option<bool>) -> Result<Option<String
 #[tauri::command]
 pub fn scan_claude_desktop_launch_targets(
     scan_roots: Option<String>,
-) -> Result<Vec<modules::claude_instance::ClaudeDesktopLaunchCandidate>, String> {
-    let roots = scan_roots
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-    Ok(modules::claude_instance::scan_claude_desktop_launch_targets(roots))
+) -> Result<Vec<ClaudeDesktopLaunchCandidate>, String> {
+    if !modules::platform_package::is_platform_package_installed("claude_manager") {
+        return Ok(Vec::new());
+    }
+    modules::platform_adapter::call_claude_manager(
+        "runtime.scanLaunchTargets",
+        serde_json::json!({ "scanRoots": scan_roots }),
+    )
 }
 
 #[tauri::command]
@@ -2958,6 +2996,36 @@ pub async fn get_antigravity_installed_version_info(
 pub fn set_wakeup_override(enabled: bool) -> Result<(), String> {
     websocket::broadcast_wakeup_override(enabled);
     Ok(())
+}
+
+#[tauri::command]
+pub fn save_last_closed_page(page: String) -> Result<(), String> {
+    let current = config::get_user_config();
+    let normalized_page = normalize_page_config_value(Some(page), "dashboard");
+    if current.last_closed_page == normalized_page {
+        return Ok(());
+    }
+
+    let new_config = UserConfig {
+        last_closed_page: normalized_page,
+        ..current
+    };
+    config::save_user_config(&new_config)
+}
+
+#[tauri::command]
+pub fn save_startup_page(page: String) -> Result<(), String> {
+    let current = config::get_user_config();
+    let normalized_page = normalize_page_config_value(Some(page), "dashboard");
+    if current.startup_page == normalized_page {
+        return Ok(());
+    }
+
+    let new_config = UserConfig {
+        startup_page: normalized_page,
+        ..current
+    };
+    config::save_user_config(&new_config)
 }
 
 /// 执行窗口关闭操作

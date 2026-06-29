@@ -187,6 +187,14 @@ pub struct UserConfig {
     /// Codex 启动路径（为空则使用默认路径）
     #[serde(default = "default_codex_app_path")]
     pub codex_app_path: String,
+    /// 切换 Codex 后需联动重启的指定应用路径
+    #[serde(default = "default_codex_specified_app_path")]
+    pub codex_specified_app_path: String,
+    /// Claude 桌面应用启动路径（为空则使用默认路径）
+    #[serde(default = "default_claude_app_path")]
+    pub claude_app_path: String,
+    #[serde(default = "default_claude_app_scan_roots")]
+    pub claude_app_scan_roots: String,
     /// Zed 启动路径（为空则使用默认路径）
     #[serde(default = "default_zed_app_path")]
     pub zed_app_path: String,
@@ -238,6 +246,12 @@ pub struct UserConfig {
     /// 切换 Codex 时是否自动启动/重启 Codex App
     #[serde(default = "default_codex_launch_on_switch")]
     pub codex_launch_on_switch: bool,
+    /// 切换 Codex 时是否自动重启指定应用
+    #[serde(default = "default_codex_restart_specified_app_on_switch")]
+    pub codex_restart_specified_app_on_switch: bool,
+    /// 是否在 Codex 总览中显示 API 服务入口
+    #[serde(default = "default_codex_local_access_entry_visible")]
+    pub codex_local_access_entry_visible: bool,
     /// Antigravity 切号是否启用“本地落盘 + 扩展无感”且不重启
     #[serde(default = "default_antigravity_dual_switch_no_restart_enabled")]
     pub antigravity_dual_switch_no_restart_enabled: bool,
@@ -548,6 +562,15 @@ fn default_antigravity_app_path() -> String {
 fn default_codex_app_path() -> String {
     String::new()
 }
+fn default_codex_specified_app_path() -> String {
+    String::new()
+}
+fn default_claude_app_path() -> String {
+    String::new()
+}
+fn default_claude_app_scan_roots() -> String {
+    String::new()
+}
 fn default_zed_app_path() -> String {
     String::new()
 }
@@ -597,6 +620,12 @@ fn default_openclaw_auth_overwrite_on_switch() -> bool {
     false
 }
 fn default_codex_launch_on_switch() -> bool {
+    true
+}
+fn default_codex_restart_specified_app_on_switch() -> bool {
+    false
+}
+fn default_codex_local_access_entry_visible() -> bool {
     true
 }
 fn default_antigravity_dual_switch_no_restart_enabled() -> bool {
@@ -773,6 +802,9 @@ impl Default for UserConfig {
             opencode_app_path: default_opencode_app_path(),
             antigravity_app_path: default_antigravity_app_path(),
             codex_app_path: default_codex_app_path(),
+            codex_specified_app_path: default_codex_specified_app_path(),
+            claude_app_path: default_claude_app_path(),
+            claude_app_scan_roots: default_claude_app_scan_roots(),
             zed_app_path: default_zed_app_path(),
             vscode_app_path: default_vscode_app_path(),
             windsurf_app_path: default_windsurf_app_path(),
@@ -791,6 +823,8 @@ impl Default for UserConfig {
             ghcp_launch_on_switch: default_ghcp_launch_on_switch(),
             openclaw_auth_overwrite_on_switch: default_openclaw_auth_overwrite_on_switch(),
             codex_launch_on_switch: default_codex_launch_on_switch(),
+            codex_restart_specified_app_on_switch: default_codex_restart_specified_app_on_switch(),
+            codex_local_access_entry_visible: default_codex_local_access_entry_visible(),
             antigravity_dual_switch_no_restart_enabled:
                 default_antigravity_dual_switch_no_restart_enabled(),
             auto_switch_enabled: default_auto_switch_enabled(),
@@ -963,16 +997,17 @@ pub fn sync_global_proxy_env(config: &UserConfig) {
 
 /// 获取数据目录路径
 pub fn get_data_dir() -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or("无法获取 Home 目录")?;
-    Ok(home.join(DATA_DIR))
+    crate::modules::account::resolve_data_dir()
 }
 
 /// 获取共享目录路径（供其他模块使用）
 /// 与 get_data_dir 相同，但不返回 Result
 pub fn get_shared_dir() -> PathBuf {
-    dirs::home_dir()
-        .map(|h| h.join(DATA_DIR))
-        .unwrap_or_else(|| PathBuf::from(DATA_DIR))
+    get_data_dir().unwrap_or_else(|_| {
+        dirs::home_dir()
+            .map(|h| h.join(DATA_DIR))
+            .unwrap_or_else(|| PathBuf::from(DATA_DIR))
+    })
 }
 
 /// 获取服务状态文件路径
@@ -1198,6 +1233,13 @@ pub fn load_user_config() -> Result<UserConfig, String> {
             obj.insert(
                 "codex_startup_wakeup_delay_seconds".to_string(),
                 json!(default_codex_startup_wakeup_delay_seconds()),
+            );
+        }
+
+        if !obj.contains_key("codex_local_access_entry_visible") {
+            obj.insert(
+                "codex_local_access_entry_visible".to_string(),
+                json!(default_codex_local_access_entry_visible()),
             );
         }
 

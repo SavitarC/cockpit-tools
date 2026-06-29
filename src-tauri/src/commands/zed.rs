@@ -1,25 +1,110 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
+
+use serde::de::DeserializeOwned;
+use serde::Deserialize;
+use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
 use crate::models::zed::{ZedAccount, ZedOAuthStartResponse, ZedRuntimeStatus};
-use crate::modules::{logger, zed_account, zed_instance, zed_oauth};
+use crate::modules::{logger, platform_adapter, platform_package, quota_alert};
 
-#[tauri::command]
-pub fn list_zed_accounts() -> Result<Vec<ZedAccount>, String> {
-    zed_account::list_accounts_checked()
+const ZED_FAST_LOCAL_MUTATION_TIMEOUT: Duration = Duration::from_secs(20);
+
+fn ensure_zed_package_installed() -> Result<(), String> {
+    platform_package::ensure_platform_package_installed("zed")
+}
+
+fn zed_call<T: DeserializeOwned>(method: &str, payload: Value) -> Result<T, String> {
+    ensure_zed_package_installed()?;
+    platform_adapter::call_zed(method, payload)
+}
+
+async fn zed_call_async<T>(method: &'static str, payload: Value) -> Result<T, String>
+where
+    T: DeserializeOwned + Send + 'static,
+{
+    ensure_zed_package_installed()?;
+    tauri::async_runtime::spawn_blocking(move || platform_adapter::call_zed(method, payload))
+        .await
+        .map_err(|error| format!("Zed adapter 任务失败: {}", error))?
+}
+
+async fn zed_call_async_with_timeout<T>(
+    method: &'static str,
+    payload: Value,
+    timeout: Duration,
+) -> Result<T, String>
+where
+    T: DeserializeOwned + Send + 'static,
+{
+    ensure_zed_package_installed()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        platform_adapter::call_zed_with_timeout(method, payload, timeout)
+    })
+    .await
+    .map_err(|error| format!("Zed adapter 任务失败: {}", error))?
+}
+
+fn update_tray_menu_in_background(app: AppHandle) {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _ = crate::modules::tray::update_tray_menu(&app);
+    });
+}
+
+fn dispatch_zed_quota_alert_if_needed() -> Result<(), String> {
+    let payload: Option<quota_alert::QuotaAlertPayload> =
+        zed_call("quota.alertPayload", json!({}))?;
+    if let Some(payload) = payload.as_ref() {
+        quota_alert::dispatch_quota_alert(payload);
+    }
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SwitchResult {
+    message: String,
+    #[serde(default)]
+    restart_error: Option<String>,
+    path_missing: bool,
+}
+
+fn emit_zed_path_missing(app: &AppHandle, retry: Value) {
+    let _ = app.emit(
+        "app:path_missing",
+        json!({
+            "app": "zed",
+            "retry": retry
+        }),
+    );
 }
 
 #[tauri::command]
-pub fn delete_zed_account(app: AppHandle, account_id: String) -> Result<(), String> {
-    zed_account::remove_account(&account_id)?;
-    let _ = crate::modules::tray::update_tray_menu(&app);
+pub async fn list_zed_accounts() -> Result<Vec<ZedAccount>, String> {
+    zed_call_async_with_timeout("accounts.list", json!({}), ZED_FAST_LOCAL_MUTATION_TIMEOUT).await
+}
+
+#[tauri::command]
+pub async fn delete_zed_account(app: AppHandle, account_id: String) -> Result<(), String> {
+    zed_call_async_with_timeout::<()>(
+        "accounts.delete",
+        json!({ "accountId": account_id }),
+        ZED_FAST_LOCAL_MUTATION_TIMEOUT,
+    )
+    .await?;
+    update_tray_menu_in_background(app);
     Ok(())
 }
 
 #[tauri::command]
-pub fn delete_zed_accounts(app: AppHandle, account_ids: Vec<String>) -> Result<(), String> {
-    zed_account::remove_accounts(&account_ids)?;
-    let _ = crate::modules::tray::update_tray_menu(&app);
+pub async fn delete_zed_accounts(app: AppHandle, account_ids: Vec<String>) -> Result<(), String> {
+    zed_call_async_with_timeout::<()>(
+        "accounts.deleteMany",
+        json!({ "accountIds": account_ids }),
+        ZED_FAST_LOCAL_MUTATION_TIMEOUT,
+    )
+    .await?;
+    update_tray_menu_in_background(app);
     Ok(())
 }
 
@@ -28,21 +113,24 @@ pub fn import_zed_from_json(
     app: AppHandle,
     json_content: String,
 ) -> Result<Vec<ZedAccount>, String> {
-    let accounts = zed_account::import_from_json(&json_content)?;
+    let accounts = zed_call(
+        "accounts.importJson",
+        json!({ "jsonContent": json_content }),
+    )?;
     let _ = crate::modules::tray::update_tray_menu(&app);
     Ok(accounts)
 }
 
 #[tauri::command]
 pub async fn import_zed_from_local(app: AppHandle) -> Result<Vec<ZedAccount>, String> {
-    let account = zed_account::import_from_local().await?;
+    let account: ZedAccount = zed_call_async("accounts.importLocal", json!({})).await?;
     let _ = crate::modules::tray::update_tray_menu(&app);
     Ok(vec![account])
 }
 
 #[tauri::command]
 pub fn export_zed_accounts(account_ids: Vec<String>) -> Result<String, String> {
-    zed_account::export_accounts(&account_ids)
+    zed_call("accounts.export", json!({ "accountIds": account_ids }))
 }
 
 #[tauri::command]
@@ -52,8 +140,9 @@ pub async fn refresh_zed_token(app: AppHandle, account_id: String) -> Result<Zed
         "[Zed Command] 手动刷新账号开始: account_id={}",
         account_id
     ));
-    let account = zed_account::refresh_account(&account_id).await?;
-    if let Err(err) = zed_account::run_quota_alert_if_needed() {
+    let account: ZedAccount =
+        zed_call_async("accounts.refresh", json!({ "accountId": account_id })).await?;
+    if let Err(err) = dispatch_zed_quota_alert_if_needed() {
         logger::log_warn(&format!("[QuotaAlert][Zed] 刷新后预警检查失败: {}", err));
     }
     let _ = crate::modules::tray::update_tray_menu(&app);
@@ -69,9 +158,9 @@ pub async fn refresh_zed_token(app: AppHandle, account_id: String) -> Result<Zed
 pub async fn refresh_all_zed_tokens(app: AppHandle) -> Result<i32, String> {
     let started_at = Instant::now();
     logger::log_info("[Zed Command] 批量刷新开始");
-    let refreshed = zed_account::refresh_all_accounts().await?;
+    let refreshed: Vec<ZedAccount> = zed_call_async("accounts.refreshAll", json!({})).await?;
     if !refreshed.is_empty() {
-        if let Err(err) = zed_account::run_quota_alert_if_needed() {
+        if let Err(err) = dispatch_zed_quota_alert_if_needed() {
             logger::log_warn(&format!(
                 "[QuotaAlert][Zed] 全量刷新后预警检查失败: {}",
                 err
@@ -92,14 +181,18 @@ pub fn update_zed_account_tags(
     account_id: String,
     tags: Vec<String>,
 ) -> Result<ZedAccount, String> {
-    zed_account::update_account_tags(&account_id, tags)
+    zed_call(
+        "accounts.updateTags",
+        json!({ "accountId": account_id, "tags": tags }),
+    )
 }
 
 #[tauri::command]
 pub async fn zed_oauth_login_start() -> Result<ZedOAuthStartResponse, String> {
     let started_at = Instant::now();
     logger::log_info("[Zed OAuth] start 命令触发");
-    let result = zed_oauth::start_login().await;
+    let result: Result<ZedOAuthStartResponse, String> =
+        zed_call_async("oauth.start", json!({})).await;
     match &result {
         Ok(response) => logger::log_info(&format!(
             "[Zed OAuth] start 命令完成: login_id={}, elapsed={}ms",
@@ -117,7 +210,10 @@ pub async fn zed_oauth_login_start() -> Result<ZedOAuthStartResponse, String> {
 
 #[tauri::command]
 pub fn zed_oauth_login_peek() -> Option<ZedOAuthStartResponse> {
-    zed_oauth::peek_pending_login()
+    if ensure_zed_package_installed().is_err() {
+        return None;
+    }
+    zed_call("oauth.peek", json!({})).ok()
 }
 
 #[tauri::command]
@@ -130,7 +226,8 @@ pub async fn zed_oauth_login_complete(
         "[Zed OAuth] complete 命令触发: login_id={}",
         login_id
     ));
-    let account = zed_oauth::complete_login(&login_id).await?;
+    let account: ZedAccount =
+        zed_call_async("oauth.complete", json!({ "loginId": login_id })).await?;
     let _ = crate::modules::tray::update_tray_menu(&app);
     logger::log_info(&format!(
         "[Zed OAuth] complete 命令完成: account_id={}, elapsed={}ms",
@@ -142,12 +239,15 @@ pub async fn zed_oauth_login_complete(
 
 #[tauri::command]
 pub fn zed_oauth_login_cancel(login_id: Option<String>) -> Result<(), String> {
-    zed_oauth::cancel_login(login_id.as_deref())
+    zed_call("oauth.cancel", json!({ "loginId": login_id }))
 }
 
 #[tauri::command]
 pub fn zed_oauth_submit_callback_url(login_id: String, callback_url: String) -> Result<(), String> {
-    zed_oauth::submit_callback_url(login_id.as_str(), callback_url.as_str())
+    zed_call(
+        "oauth.submitCallbackUrl",
+        json!({ "loginId": login_id, "callbackUrl": callback_url }),
+    )
 }
 
 #[tauri::command]
@@ -158,85 +258,67 @@ pub async fn inject_zed_account(app: AppHandle, account_id: String) -> Result<St
         account_id
     ));
 
-    let account = zed_account::inject_account(&account_id)?;
-    let restart_result = zed_instance::restart_default_session();
+    let result: SwitchResult =
+        zed_call_async("switch.inject", json!({ "accountId": account_id })).await?;
     let _ = crate::modules::tray::update_tray_menu(&app);
 
-    match restart_result {
-        Ok(_) => {
-            logger::log_info(&format!(
-                "[Zed Switch] 切号成功: account_id={}, github_login={}, elapsed={}ms",
-                account.id,
-                account.github_login,
-                started_at.elapsed().as_millis()
-            ));
-            Ok(format!("切换完成: {}", account.github_login))
+    if result.path_missing {
+        emit_zed_path_missing(
+            &app,
+            json!({ "kind": "switchAccount", "accountId": account_id }),
+        );
+        if let Some(error) = result.restart_error.as_deref() {
+            logger::log_warn(&format!("[Zed Switch] 切号完成但重启失败: err={}", error));
         }
-        Err(err) => {
-            if err.starts_with("APP_PATH_NOT_FOUND:") || err.contains("启动 Zed 失败") {
-                let _ = app.emit(
-                    "app:path_missing",
-                    serde_json::json!({
-                        "app": "zed",
-                        "retry": { "kind": "switchAccount", "accountId": account_id }
-                    }),
-                );
-                logger::log_warn(&format!(
-                    "[Zed Switch] 切号完成但重启失败: account_id={}, err={}",
-                    account.id, err
-                ));
-                return Ok(format!("切换完成，但 Zed 重启失败: {}", err));
-            }
-            Err(err)
-        }
+        return Ok(result.message);
     }
+
+    logger::log_info(&format!(
+        "[Zed Switch] 切号成功: elapsed={}ms",
+        started_at.elapsed().as_millis()
+    ));
+    Ok(result.message)
 }
 
 #[tauri::command]
 pub async fn zed_logout_current_account(app: AppHandle) -> Result<String, String> {
-    zed_account::clear_current_runtime_account()?;
-    let restart_result = zed_instance::restart_default_session();
+    let result: SwitchResult = zed_call_async("switch.logoutCurrent", json!({})).await?;
     let _ = crate::modules::tray::update_tray_menu(&app);
 
-    match restart_result {
-        Ok(_) => Ok("已退出当前 Zed 账号".to_string()),
-        Err(err) => {
-            if err.starts_with("APP_PATH_NOT_FOUND:") || err.contains("启动 Zed 失败") {
-                let _ = app.emit(
-                    "app:path_missing",
-                    serde_json::json!({
-                        "app": "zed",
-                        "retry": { "kind": "default" }
-                    }),
-                );
-                return Ok(format!("已退出当前 Zed 账号，但 Zed 重启失败: {}", err));
-            }
-            Err(err)
+    if result.path_missing {
+        emit_zed_path_missing(&app, json!({ "kind": "default" }));
+        if let Some(error) = result.restart_error.as_deref() {
+            logger::log_warn(&format!(
+                "[Zed Switch] 退出当前账号完成但重启失败: err={}",
+                error
+            ));
         }
     }
+
+    Ok(result.message)
 }
 
 #[tauri::command]
 pub fn zed_get_runtime_status() -> Result<ZedRuntimeStatus, String> {
-    Ok(zed_instance::get_runtime_status())
+    zed_call("runtime.status", json!({}))
 }
 
 #[tauri::command]
 pub fn zed_start_default_session() -> Result<ZedRuntimeStatus, String> {
-    zed_instance::start_default_session()
+    zed_call("runtime.startDefault", json!({}))
 }
 
 #[tauri::command]
 pub fn zed_stop_default_session() -> Result<ZedRuntimeStatus, String> {
-    zed_instance::stop_default_session()
+    zed_call("runtime.stopDefault", json!({}))
 }
 
 #[tauri::command]
 pub fn zed_restart_default_session() -> Result<ZedRuntimeStatus, String> {
-    zed_instance::restart_default_session()
+    zed_call("runtime.restartDefault", json!({}))
 }
 
 #[tauri::command]
 pub fn zed_focus_default_session() -> Result<ZedRuntimeStatus, String> {
-    zed_instance::focus_default_session()
+    zed_call("runtime.focusDefault", json!({}))
 }

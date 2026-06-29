@@ -1,31 +1,34 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { invoke } from '@tauri-apps/api/core';
 import { X, Minimize2, LogOut } from 'lucide-react';
 import { useEscClose } from '../hooks/useEscClose';
 import './CloseConfirmDialog.css';
 
 interface CloseConfirmDialogProps {
   onClose: () => void;
+  onAction: (action: 'minimize' | 'quit', remember: boolean) => Promise<void>;
 }
 
-export function CloseConfirmDialog({ onClose }: CloseConfirmDialogProps) {
+export function CloseConfirmDialog({ onClose, onAction }: CloseConfirmDialogProps) {
   const { t } = useTranslation();
   const [rememberChoice, setRememberChoice] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEscClose(true, onClose);
 
   const handleAction = async (action: 'minimize' | 'quit') => {
     setLoading(true);
+    setError('');
     try {
-      await invoke('handle_window_close', {
-        action,
-        remember: rememberChoice,
-      });
+      await onAction(action, rememberChoice);
       onClose();
     } catch (err) {
       console.error('Failed to handle window close:', err);
+      setError(t('closeDialog.actionFailed', {
+        error: String(err).replace(/^Error:\s*/, ''),
+        defaultValue: '操作失败：{{error}}',
+      }));
       setLoading(false);
     }
   };
@@ -39,6 +42,11 @@ export function CloseConfirmDialog({ onClose }: CloseConfirmDialogProps) {
         
         <h2 className="close-dialog-title">{t('closeDialog.title')}</h2>
         <p className="close-dialog-desc">{t('closeDialog.description')}</p>
+        {error && (
+          <div className="close-dialog-error" role="alert">
+            {error}
+          </div>
+        )}
         
         <div className="close-dialog-options">
           <button

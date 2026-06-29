@@ -126,11 +126,11 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
     selected, toggleSelect, toggleSelectAll,
     tagFilter, groupByTag, setGroupByTag, showTagFilter, setShowTagFilter,
     showTagModal, setShowTagModal, tagFilterRef, availableTags,
-    toggleTagFilterValue, clearTagFilter, tagDeleteConfirm, tagDeleteConfirmError, tagDeleteConfirmErrorScrollKey, setTagDeleteConfirm,
+    toggleTagFilterValue, clearTagFilter, tagDeleteConfirm, tagDeleteConfirmError, tagDeleteConfirmErrorScrollKey, closeTagDeleteConfirm,
     deletingTag, confirmDeleteTag, openTagModal, handleSaveTags,
     refreshing, refreshingAll, injecting,
     handleRefresh, handleRefreshAll, handleDelete, handleBatchDelete,
-    deleteConfirm, deleteConfirmError, deleteConfirmErrorScrollKey, setDeleteConfirm, deleting, confirmDelete,
+    deleteConfirm, deleteConfirmError, deleteConfirmErrorScrollKey, closeDeleteConfirm, deleting, confirmDelete,
     message, setMessage,
     exporting, handleExport, handleExportByIds, getScopedSelectedCount,
     showExportModal, exportJsonContent, exportJsonHidden,
@@ -151,8 +151,8 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
   } = page;
 
   useEscClose(showAddModal, closeAddModal);
-  useEscClose(!!deleteConfirm, () => setDeleteConfirm(null));
-  useEscClose(!!tagDeleteConfirm, () => setTagDeleteConfirm(null));
+  useEscClose(!!deleteConfirm, closeDeleteConfirm);
+  useEscClose(!!tagDeleteConfirm, closeTagDeleteConfirm);
   useEscClose(showCheckinModal, () => setShowCheckinModal(false));
 
   useEffect(() => {
@@ -759,7 +759,7 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
               <h2>{t('common.confirmDelete', '确认删除')}</h2>
               <button
                 className="modal-close"
-                onClick={() => !deleting && setDeleteConfirm(null)}
+                onClick={closeDeleteConfirm}
                 aria-label={t('common.close', '关闭')}
               >
                 <X />
@@ -770,7 +770,7 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
               <p>{deleteConfirm.message}</p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>{t('common.cancel', '取消')}</button>
+              <button className="btn btn-secondary" onClick={closeDeleteConfirm}>{t('common.cancel', '取消')}</button>
               <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>{deleting ? t('common.processing', '处理中...') : t('common.confirm', '确认')}</button>
             </div>
           </div>
@@ -784,7 +784,7 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
               <h2>{t('common.confirmDeleteTag', '确认删除标签')}</h2>
               <button
                 className="modal-close"
-                onClick={() => !deletingTag && setTagDeleteConfirm(null)}
+                onClick={closeTagDeleteConfirm}
                 aria-label={t('common.close', '关闭')}
               >
                 <X />
@@ -795,7 +795,7 @@ export function CodebuddySuiteAccountsSharedView<TAccount extends CodebuddySuite
               <p>{t('common.deleteTagWarning', { tag: tagDeleteConfirm, defaultValue: '确定要从所有账号中移除标签 "{{tag}}" 吗？' })}</p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>{t('common.cancel', '取消')}</button>
+              <button className="btn btn-secondary" onClick={closeTagDeleteConfirm}>{t('common.cancel', '取消')}</button>
               <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>{deletingTag ? t('common.processing', '处理中...') : t('common.confirm', '确认')}</button>
             </div>
           </div>

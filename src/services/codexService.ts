@@ -7,6 +7,9 @@ import {
   CodexProviderWireApi,
   CodexQuickConfig,
   CodexQuota,
+  CodexReferralEligibilityRules,
+  CodexReferralInviteEligibility,
+  CodexReferralInviteResponse,
   CodexResetCreditsSnapshot,
 } from '../types/codex';
 
@@ -227,6 +230,41 @@ export async function getCodexResetCredits(
 /** 消耗一次 Codex 主动重置次数 */
 export async function consumeCodexResetCredit(accountId: string): Promise<void> {
   return await invoke('consume_codex_reset_credit', { accountId });
+}
+
+/** 获取 Codex 邀请入口资格 */
+export async function getCodexReferralInviteEligibility(
+  accountId: string,
+  referralKey?: string | null,
+): Promise<CodexReferralInviteEligibility> {
+  return await invoke('get_codex_referral_invite_eligibility', {
+    accountId,
+    referralKey: referralKey ?? null,
+  });
+}
+
+/** 获取 Codex 邀请资格规则 */
+export async function getCodexReferralEligibilityRules(
+  accountId: string,
+  referralKey?: string | null,
+): Promise<CodexReferralEligibilityRules> {
+  return await invoke('get_codex_referral_eligibility_rules', {
+    accountId,
+    referralKey: referralKey ?? null,
+  });
+}
+
+/** 发送 Codex 邀请邮件 */
+export async function sendCodexReferralInvites(
+  accountId: string,
+  emails: string[],
+  referralKey?: string | null,
+): Promise<CodexReferralInviteResponse> {
+  return await invoke('send_codex_referral_invites', {
+    accountId,
+    referralKey: referralKey ?? null,
+    emails,
+  });
 }
 
 /** 强制刷新单个账号的订阅信息 */

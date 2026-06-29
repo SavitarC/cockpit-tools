@@ -270,16 +270,24 @@ final class NativeMenuPopoverController: NSObject, ObservableObject, NSMenuDeleg
             ))
             menu.addItem(.separator())
 
-            menu.addItem(self.makeActionMenuItem(
-                title: snapshot.strings.open_details,
-                systemName: "arrow.up.forward.app",
-                action: #selector(self.handleOpenDetails(_:))
-            ))
-            menu.addItem(self.makeActionMenuItem(
-                title: snapshot.strings.view_all_accounts,
-                systemName: "person.2",
-                action: #selector(self.handleViewAllAccounts(_:))
-            ))
+            if platform.runtime_ready {
+                menu.addItem(self.makeActionMenuItem(
+                    title: snapshot.strings.open_details,
+                    systemName: "arrow.up.forward.app",
+                    action: #selector(self.handleOpenDetails(_:))
+                ))
+                menu.addItem(self.makeActionMenuItem(
+                    title: snapshot.strings.view_all_accounts,
+                    systemName: "person.2",
+                    action: #selector(self.handleViewAllAccounts(_:))
+                ))
+            } else {
+                menu.addItem(self.makeActionMenuItem(
+                    title: snapshot.strings.package_install_and_open,
+                    systemName: "square.and.arrow.down",
+                    action: #selector(self.handleViewAllAccounts(_:))
+                ))
+            }
         }
 
         if !menu.items.isEmpty {

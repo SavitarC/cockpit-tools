@@ -1,0 +1,2075 @@
+{
+  "version": "1",
+  "packages": [
+    {
+      "id": "antigravity",
+      "platformId": "antigravity",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Antigravity",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances",
+        "wakeup",
+        "verification"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-24",
+          "notes": [
+            "Antigravity page shell, account overview, multi-instance, wakeup, and verification tabs are supplied by the platform package UI runtime.",
+            "Antigravity account, OAuth, quota, switching, multi-instance, runtime, wakeup, and verification commands now execute through the package sidecar adapter; the package no longer declares platform business native boundaries."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "antigravity",
+            "label": "Antigravity",
+            "labelKey": "nav.overview",
+            "iconKey": "antigravity",
+            "page": "overview"
+          }
+        ],
+        "dataPaths": [
+          "accounts.json",
+          "accounts",
+          "groups.json",
+          "display_groups.json",
+          "antigravity_legacy_instances.json",
+          "wakeup_history.json",
+          "wakeup_verification_state.json",
+          "wakeup_verification_history.json"
+        ],
+        "localStorageKeys": [
+          "agtools.antigravity.runtime_target.v1",
+          "agtools.wakeup.enabled",
+          "agtools.wakeup.tasks",
+          "agtools.wakeup.schedule",
+          "agtools.wakeup.official_ls_version_mode",
+          "agtools.accountsOverview.antigravity.*"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/antigravity-0.26.7.zip",
+          "downloadSizeBytes": 11646751,
+          "sha256": "98f1596d98b0fe2ba224e08db5566a14829ccc4e4693b95b47035267158e8e51"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/antigravity-0.26.7.zip",
+      "downloadSizeBytes": 11646751,
+      "sha256": "98f1596d98b0fe2ba224e08db5566a14829ccc4e4693b95b47035267158e8e51",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-antigravity-adapter",
+        "macosEntry": "adapter/macos/cockpit-antigravity-adapter",
+        "windowsEntry": "adapter/windows/cockpit-antigravity-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-antigravity-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.currentId",
+          "accounts.saveSnapshot",
+          "accounts.addRefreshToken",
+          "accounts.setCurrent",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.reorder",
+          "accounts.importOldTools",
+          "accounts.importLocal",
+          "accounts.syncFromExtension",
+          "accounts.importJson",
+          "accounts.importFiles",
+          "accounts.export",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "accounts.updateNotes",
+          "accounts.groups.load",
+          "accounts.groups.save",
+          "accounts.syncCurrentFromClient",
+          "accounts.refreshCurrent",
+          "quota.alertPayload",
+          "switch.inject",
+          "switch.history.load",
+          "switch.history.clear",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.detectLaunchPath",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault",
+          "runtime.restore",
+          "oauth.prepareUrl",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "wakeup.fetchAvailableModels",
+          "wakeup.trigger",
+          "wakeup.scheduler.syncState",
+          "wakeup.scheduler.runEnabledTasks",
+          "wakeup.scheduler.confirmTask",
+          "wakeup.scheduler.cancelTask",
+          "wakeup.scheduler.checkTimeouts",
+          "wakeup.runtime.ensureReady",
+          "wakeup.crontab.validate",
+          "wakeup.sharedHistory.load",
+          "wakeup.sharedHistory.add",
+          "wakeup.sharedHistory.clear",
+          "wakeup.sharedScope.cancel",
+          "wakeup.sharedScope.release",
+          "wakeup.setOfficialLsVersionMode",
+          "wakeup.verification.loadState",
+          "wakeup.verification.loadHistory",
+          "wakeup.verification.deleteHistory",
+          "wakeup.verification.runBatch"
+        ]
+      }
+    },
+    {
+      "id": "antigravity_ide",
+      "platformId": "antigravity_ide",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Antigravity IDE",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances",
+        "wakeup",
+        "verification"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-24",
+          "notes": [
+            "Antigravity IDE page shell, account overview, multi-instance, wakeup, and verification tabs are supplied by the platform package UI runtime.",
+            "Antigravity IDE account, OAuth, quota, switching, multi-instance, runtime, wakeup, and verification commands now execute through the package sidecar adapter; the package no longer declares platform business native boundaries."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "antigravity_ide",
+            "label": "Antigravity IDE",
+            "labelKey": "nav.overview",
+            "iconKey": "antigravity_ide",
+            "page": "overview"
+          }
+        ],
+        "dataPaths": [
+          "accounts.json",
+          "accounts",
+          "groups.json",
+          "display_groups.json",
+          "instances.json",
+          "wakeup_history.json",
+          "wakeup_verification_state.json",
+          "wakeup_verification_history.json"
+        ],
+        "localStorageKeys": [
+          "agtools.antigravity.runtime_target.v1",
+          "agtools.wakeup.enabled",
+          "agtools.wakeup.tasks",
+          "agtools.wakeup.schedule",
+          "agtools.wakeup.official_ls_version_mode",
+          "agtools.accountsOverview.antigravity.*"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/antigravity_ide-0.26.7.zip",
+          "downloadSizeBytes": 11651530,
+          "sha256": "eadc9bd2829b086ec68a7ac55428bad03476f268de5f8383adb40abb6a45c818"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/antigravity_ide-0.26.7.zip",
+      "downloadSizeBytes": 11651530,
+      "sha256": "eadc9bd2829b086ec68a7ac55428bad03476f268de5f8383adb40abb6a45c818",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-antigravity-ide-adapter",
+        "macosEntry": "adapter/macos/cockpit-antigravity-ide-adapter",
+        "windowsEntry": "adapter/windows/cockpit-antigravity-ide-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-antigravity-ide-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.currentId",
+          "accounts.saveSnapshot",
+          "accounts.addRefreshToken",
+          "accounts.setCurrent",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.reorder",
+          "accounts.importOldTools",
+          "accounts.importLocal",
+          "accounts.syncFromExtension",
+          "accounts.importJson",
+          "accounts.importFiles",
+          "accounts.export",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "accounts.updateNotes",
+          "accounts.groups.load",
+          "accounts.groups.save",
+          "accounts.syncCurrentFromClient",
+          "accounts.refreshCurrent",
+          "quota.alertPayload",
+          "switch.inject",
+          "switch.history.load",
+          "switch.history.clear",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.detectLaunchPath",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault",
+          "runtime.restore",
+          "oauth.prepareUrl",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "wakeup.fetchAvailableModels",
+          "wakeup.trigger",
+          "wakeup.scheduler.syncState",
+          "wakeup.scheduler.runEnabledTasks",
+          "wakeup.scheduler.confirmTask",
+          "wakeup.scheduler.cancelTask",
+          "wakeup.scheduler.checkTimeouts",
+          "wakeup.runtime.ensureReady",
+          "wakeup.crontab.validate",
+          "wakeup.sharedHistory.load",
+          "wakeup.sharedHistory.add",
+          "wakeup.sharedHistory.clear",
+          "wakeup.sharedScope.cancel",
+          "wakeup.sharedScope.release",
+          "wakeup.setOfficialLsVersionMode",
+          "wakeup.verification.loadState",
+          "wakeup.verification.loadHistory",
+          "wakeup.verification.deleteHistory",
+          "wakeup.verification.runBatch"
+        ]
+      }
+    },
+    {
+      "id": "claude_manager",
+      "platformId": "claude_manager",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Claude",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-claude-adapter",
+        "macosEntry": "adapter/macos/cockpit-claude-adapter",
+        "windowsEntry": "adapter/windows/cockpit-claude-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-claude-adapter",
+        "methods": [
+          "health.check",
+          "adapter.shutdown",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importApiKey",
+          "accounts.importDesktopGateway",
+          "accounts.updateDesktopGateway",
+          "accounts.importCliLocal",
+          "accounts.export",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "accounts.updatePlan",
+          "accounts.updateNote",
+          "accounts.indexPath",
+          "gateway.listModels",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "desktopLogin.start",
+          "desktopLogin.complete",
+          "desktopLogin.cancel",
+          "desktopLogin.openVerificationWindow",
+          "cli.getLaunchCommand",
+          "cli.executeLaunchCommand",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.openWindow",
+          "instance.closeAll",
+          "instance.getLaunchCommand",
+          "instance.executeLaunchCommand",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault",
+          "switch.inject",
+          "runtime.detectLaunchPath",
+          "runtime.scanLaunchTargets"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "desktop",
+        "cli",
+        "gateway",
+        "oauth",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Claude account overview, Claude CLI, Gateway, OAuth, quota, Desktop runtime, and multi-instance tabs are supplied by the Claude platform package UI runtime and sidecar adapter.",
+            "Claude keeps nativeBoundaries empty; Core Shell only retains package lifecycle, runtime gate, adapter runner, event bridge, and system window/open capabilities."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "claude_manager",
+            "label": "Claude",
+            "labelKey": "nav.claude",
+            "iconKey": "claude",
+            "page": "claude"
+          }
+        ],
+        "dataPaths": [
+          "claude_accounts.json",
+          "claude_accounts",
+          "claude_instances.json",
+          "claude_oauth_pending.json",
+          "claude_desktop_login_pending.json",
+          "claude_desktop_profiles",
+          "claude_desktop_login",
+          "claude_desktop_backups",
+          "claude_code_settings_managed_env_keys.json"
+        ],
+        "localStorageKeys": [
+          "agtools.claude.accounts.cache.v2",
+          "agtools.claude.current_account_id",
+          "agtools.claude.instances.cache",
+          "agtools.claude.flow_notice_collapsed",
+          "agtools.claude.accounts_view_mode",
+          "agtools.claude.apiKeyUsage.cache.v1",
+          "agtools.claude.cli.last_working_dir"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/claude_manager-0.26.7.zip",
+          "downloadSizeBytes": 7946104,
+          "sha256": "513f08cfbf78b672263c415514165f98a2424498a366a74e072a0f61f06bc829"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/claude_manager-0.26.7.zip",
+      "downloadSizeBytes": 7946104,
+      "sha256": "513f08cfbf78b672263c415514165f98a2424498a366a74e072a0f61f06bc829"
+    },
+    {
+      "id": "zed",
+      "platformId": "zed",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Zed",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-zed-adapter",
+        "macosEntry": "adapter/macos/cockpit-zed-adapter",
+        "windowsEntry": "adapter/windows/cockpit-zed-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-zed-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.export",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.peek",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.logoutCurrent",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/zed-0.26.7.zip",
+          "downloadSizeBytes": 6253868,
+          "sha256": "b327c7957c508592ad2e1c354274015a9ba4eba78c7f7a27a6f1f9707d787977"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/zed-0.26.7.zip",
+      "downloadSizeBytes": 6253868,
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-22",
+          "notes": [
+            "Zed account overview, tabs, runtime controls, and page interactions are now supplied by the Zed platform package UI runtime.",
+            "Core Shell keeps the platform package lifecycle controls while Zed page UI changes can ship through Zed package updates."
+          ]
+        },
+        {
+          "version": "0.26.6",
+          "date": "2026-06-22",
+          "notes": [
+            "Zed platform package uses a sidecar adapter boundary for accounts, OAuth, switching, quota, and runtime commands.",
+            "Platform package lifecycle supports independent install, update, uninstall, size display, and runtime readiness checks."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "zed",
+            "label": "Zed",
+            "labelKey": "nav.zed",
+            "iconKey": "zed",
+            "page": "zed"
+          }
+        ],
+        "dataPaths": [
+          "zed_accounts.json",
+          "zed_accounts"
+        ],
+        "localStorageKeys": [
+          "agtools.zed.accounts.cache",
+          "agtools.zed.current_account_id",
+          "agtools.zed.flow_notice_collapsed"
+        ],
+        "nativeBoundaries": []
+      },
+      "sha256": "b327c7957c508592ad2e1c354274015a9ba4eba78c7f7a27a6f1f9707d787977"
+    },
+    {
+      "id": "kiro",
+      "platformId": "kiro",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Kiro",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-kiro-adapter",
+        "macosEntry": "adapter/macos/cockpit-kiro-adapter",
+        "windowsEntry": "adapter/windows/cockpit-kiro-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-kiro-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.keepaliveDue",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.detectLaunchPath",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/kiro-0.26.7.zip",
+          "downloadSizeBytes": 6322595,
+          "sha256": "8e32e99f4aba2bce186f7326200e71d887fea320656850f1dbfe52db4c29d8de"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/kiro-0.26.7.zip",
+      "downloadSizeBytes": 6322595,
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Kiro account overview, multi-instance tabs, OAuth, switching, quota refresh, and page interactions are now supplied by the Kiro platform package.",
+            "Core Shell keeps only Kiro platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "kiro",
+            "label": "Kiro",
+            "labelKey": "nav.kiro",
+            "iconKey": "kiro",
+            "page": "kiro"
+          }
+        ],
+        "dataPaths": [
+          "kiro_accounts.json",
+          "kiro_accounts",
+          "kiro_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.kiro.accounts.cache",
+          "agtools.kiro.current_account_id",
+          "agtools.kiro.flow_notice_collapsed",
+          "agtools.kiro.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "sha256": "8e32e99f4aba2bce186f7326200e71d887fea320656850f1dbfe52db4c29d8de"
+    },
+    {
+      "id": "github-copilot",
+      "platformId": "github-copilot",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "GitHub Copilot",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-github-copilot-adapter",
+        "macosEntry": "adapter/macos/cockpit-github-copilot-adapter",
+        "windowsEntry": "adapter/windows/cockpit-github-copilot-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-github-copilot-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/github-copilot-0.26.7.zip",
+          "downloadSizeBytes": 6216265,
+          "sha256": "d3d2ceffdf380d14867eeb99e35df1f7ff603d46d2b21e5164855cf4af704ff2"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/github-copilot-0.26.7.zip",
+      "downloadSizeBytes": 6216265,
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "GitHub Copilot account overview, VS Code switching, OAuth, quota refresh, OpenCode sync, and multi-instance tabs are now supplied by the GitHub Copilot platform package.",
+            "Core Shell keeps only GitHub Copilot platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "github-copilot",
+            "label": "GitHub Copilot",
+            "labelKey": "nav.githubCopilot",
+            "iconKey": "github-copilot",
+            "page": "github-copilot"
+          }
+        ],
+        "dataPaths": [
+          "github_copilot_accounts.json",
+          "github_copilot_accounts",
+          "github_copilot_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.github_copilot.accounts.cache",
+          "agtools.github_copilot.current_account_id",
+          "agtools.github_copilot.flow_notice_collapsed",
+          "agtools.github_copilot.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "sha256": "d3d2ceffdf380d14867eeb99e35df1f7ff603d46d2b21e5164855cf4af704ff2"
+    },
+    {
+      "id": "windsurf",
+      "platformId": "windsurf",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Windsurf",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-windsurf-adapter",
+        "macosEntry": "adapter/macos/cockpit-windsurf-adapter",
+        "windowsEntry": "adapter/windows/cockpit-windsurf-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-windsurf-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.addPassword",
+          "accounts.addPasswordBatch",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.detectLaunchPath",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/windsurf-0.26.7.zip",
+          "downloadSizeBytes": 6305716,
+          "sha256": "dd2d11db1a90b9ff3a33f913b29d25a8453c49a0c8e3159b471cc502bf895522"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/windsurf-0.26.7.zip",
+      "downloadSizeBytes": 6305716,
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances",
+        "passwordLogin"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Windsurf account overview, multi-instance tabs, OAuth, token import, password login, VS Code switching, quota refresh, and page interactions are now supplied by the Windsurf platform package.",
+            "Core Shell keeps only Windsurf platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "windsurf",
+            "label": "Windsurf",
+            "labelKey": "nav.windsurf",
+            "iconKey": "windsurf",
+            "page": "windsurf"
+          }
+        ],
+        "dataPaths": [
+          "windsurf_accounts.json",
+          "windsurf_accounts",
+          "windsurf_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.windsurf.accounts.cache",
+          "agtools.windsurf.current_account_id",
+          "agtools.windsurf.flow_notice_collapsed",
+          "agtools.windsurf.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "sha256": "dd2d11db1a90b9ff3a33f913b29d25a8453c49a0c8e3159b471cc502bf895522"
+    },
+    {
+      "id": "cursor",
+      "platformId": "cursor",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Cursor",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-cursor-adapter",
+        "macosEntry": "adapter/macos/cockpit-cursor-adapter",
+        "windowsEntry": "adapter/windows/cockpit-cursor-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-cursor-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.detectLaunchPath",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Cursor account overview, multi-instance tabs, OAuth, token import, switching, quota refresh, and page interactions are now supplied by the Cursor platform package.",
+            "Core Shell keeps only Cursor platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "cursor",
+            "label": "Cursor",
+            "labelKey": "nav.cursor",
+            "iconKey": "cursor",
+            "page": "cursor"
+          }
+        ],
+        "dataPaths": [
+          "cursor_accounts.json",
+          "cursor_accounts",
+          "cursor_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.cursor.accounts.cache",
+          "agtools.cursor.current_account_id",
+          "agtools.cursor.flow_notice_collapsed",
+          "agtools.cursor.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/cursor-0.26.7.zip",
+          "downloadSizeBytes": 6269776,
+          "sha256": "ce8a5b96632798e9ac82a610af7ec5ae6c14ff433be85f3be186cfd9c278c0b0"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/cursor-0.26.7.zip",
+      "downloadSizeBytes": 6269776,
+      "sha256": "ce8a5b96632798e9ac82a610af7ec5ae6c14ff433be85f3be186cfd9c278c0b0"
+    },
+    {
+      "id": "gemini",
+      "platformId": "gemini",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Gemini Cli",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-gemini-adapter",
+        "macosEntry": "adapter/macos/cockpit-gemini-adapter",
+        "windowsEntry": "adapter/windows/cockpit-gemini-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-gemini-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "instance.getLaunchCommand",
+          "instance.executeLaunchCommand",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Gemini Cli account overview, multi-instance tabs, OAuth, token import, switching, quota refresh, launch commands, and page interactions are now supplied by the Gemini platform package.",
+            "Core Shell keeps only Gemini platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "gemini",
+            "label": "Gemini Cli",
+            "labelKey": "nav.gemini",
+            "iconKey": "gemini",
+            "page": "gemini"
+          }
+        ],
+        "dataPaths": [
+          "gemini_accounts.json",
+          "gemini_accounts",
+          "gemini_instances.json",
+          "gemini_oauth_pending.json"
+        ],
+        "localStorageKeys": [
+          "agtools.gemini.accounts.cache",
+          "agtools.gemini.current_account_id",
+          "agtools.gemini.flow_notice_collapsed",
+          "agtools.gemini.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/gemini-0.26.7.zip",
+          "downloadSizeBytes": 6207002,
+          "sha256": "c88f54449f381497ef5c4c95f632a7dc9c3135ad2b657da3374efe4742f8b417"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/gemini-0.26.7.zip",
+      "downloadSizeBytes": 6207002,
+      "sha256": "c88f54449f381497ef5c4c95f632a7dc9c3135ad2b657da3374efe4742f8b417"
+    },
+    {
+      "id": "trae",
+      "platformId": "trae",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Trae",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-trae-adapter",
+        "macosEntry": "adapter/macos/cockpit-trae-adapter",
+        "windowsEntry": "adapter/windows/cockpit-trae-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-trae-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.shouldRefreshToken",
+          "accounts.checkLogin",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Trae account overview, multi-instance tabs, OAuth, token import, switching, quota refresh, launch commands, and page interactions are now supplied by the Trae platform package.",
+            "Core Shell keeps only Trae platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "trae",
+            "label": "Trae",
+            "labelKey": "nav.trae",
+            "iconKey": "trae",
+            "page": "trae"
+          }
+        ],
+        "dataPaths": [
+          "trae_accounts.json",
+          "trae_accounts",
+          "trae_instances.json",
+          "trae_oauth_pending.json"
+        ],
+        "localStorageKeys": [
+          "agtools.trae.accounts.cache",
+          "agtools.trae.current_account_id",
+          "agtools.trae.flow_notice_collapsed",
+          "agtools.trae.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/trae-0.26.7.zip",
+          "downloadSizeBytes": 6481717,
+          "sha256": "e56a966ad1ab3e06a35bda28e0131c0810e3c955e4d5f77c690ddf9bbdad0874"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/trae-0.26.7.zip",
+      "downloadSizeBytes": 6481717,
+      "sha256": "e56a966ad1ab3e06a35bda28e0131c0810e3c955e4d5f77c690ddf9bbdad0874"
+    },
+    {
+      "id": "qoder",
+      "platformId": "qoder",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Qoder",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-qoder-adapter",
+        "macosEntry": "adapter/macos/cockpit-qoder-adapter",
+        "windowsEntry": "adapter/windows/cockpit-qoder-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-qoder-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.peek",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/qoder-0.26.7.zip",
+          "downloadSizeBytes": 6099107,
+          "sha256": "01b2f3509f69d756f61a4c2a8cd64e445749f616d12f025088a0dfee3ba06ab5"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/qoder-0.26.7.zip",
+      "downloadSizeBytes": 6099107,
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Qoder account overview, multi-instance tabs, OAuth, switching, quota refresh, launch commands, and page interactions are now supplied by the Qoder platform package.",
+            "Core Shell keeps only Qoder platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "qoder",
+            "label": "Qoder",
+            "labelKey": "nav.qoder",
+            "iconKey": "qoder",
+            "page": "qoder"
+          }
+        ],
+        "dataPaths": [
+          "qoder_accounts.json",
+          "qoder_accounts",
+          "qoder_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.qoder.accounts.cache",
+          "agtools.qoder.current_account_id",
+          "agtools.qoder.flow_notice_collapsed",
+          "agtools.qoder.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "sha256": "01b2f3509f69d756f61a4c2a8cd64e445749f616d12f025088a0dfee3ba06ab5"
+    },
+    {
+      "id": "codebuddy",
+      "platformId": "codebuddy",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "CodeBuddy",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-codebuddy-adapter",
+        "macosEntry": "adapter/macos/cockpit-codebuddy-adapter",
+        "windowsEntry": "adapter/windows/cockpit-codebuddy-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-codebuddy-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "tokenImport",
+        "localImport",
+        "switch",
+        "quota",
+        "runtime",
+        "instances"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "CodeBuddy account overview, multi-instance tabs, OAuth, token import, local import, switching, quota refresh, launch commands, and page interactions are now supplied by the CodeBuddy platform package.",
+            "Core Shell keeps only CodeBuddy platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "codebuddy",
+            "label": "CodeBuddy",
+            "labelKey": "nav.codebuddy",
+            "iconKey": "codebuddy",
+            "page": "codebuddy"
+          }
+        ],
+        "dataPaths": [
+          "codebuddy_accounts.json",
+          "codebuddy_accounts",
+          "codebuddy_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.codebuddy.accounts.cache",
+          "agtools.codebuddy.current_account_id",
+          "agtools.codebuddy.flow_notice_collapsed",
+          "agtools.codebuddy.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codebuddy-0.26.7.zip",
+          "downloadSizeBytes": 6061750,
+          "sha256": "df2e6cd342ad5c2648dd5fb65bdb7bb275d1f19cb0e37e47f5ebcb5e80c1d72b"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codebuddy-0.26.7.zip",
+      "downloadSizeBytes": 6061750,
+      "sha256": "df2e6cd342ad5c2648dd5fb65bdb7bb275d1f19cb0e37e47f5ebcb5e80c1d72b"
+    },
+    {
+      "id": "codebuddy_cn",
+      "platformId": "codebuddy_cn",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "CodeBuddy CN",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-codebuddy-cn-adapter",
+        "macosEntry": "adapter/macos/cockpit-codebuddy-cn-adapter",
+        "windowsEntry": "adapter/windows/cockpit-codebuddy-cn-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-codebuddy-cn-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.syncToWorkbuddy",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "tokenImport",
+        "localImport",
+        "switch",
+        "quota",
+        "runtime",
+        "instances",
+        "sync"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "CodeBuddy CN account overview, multi-instance tabs, OAuth, token import, local import, switching, quota refresh, WorkBuddy sync, launch commands, and page interactions are now supplied by the CodeBuddy CN platform package.",
+            "Core Shell keeps only CodeBuddy CN platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "codebuddy_cn",
+            "label": "CodeBuddy CN",
+            "labelKey": "nav.codebuddyCn",
+            "iconKey": "codebuddy_cn",
+            "page": "codebuddy-cn"
+          }
+        ],
+        "dataPaths": [
+          "codebuddy_cn_accounts.json",
+          "codebuddy_cn_accounts",
+          "codebuddy_cn_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.codebuddycn.accounts.cache",
+          "agtools.codebuddycn.current_account_id",
+          "agtools.codebuddycn.flow_notice_collapsed",
+          "agtools.codebuddycn.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codebuddy_cn-0.26.7.zip",
+          "downloadSizeBytes": 6120648,
+          "sha256": "2496415af6af5c12d39b01dc65ce979ab1d54afec5c033708169e8b78da85c9b"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codebuddy_cn-0.26.7.zip",
+      "downloadSizeBytes": 6120648,
+      "sha256": "2496415af6af5c12d39b01dc65ce979ab1d54afec5c033708169e8b78da85c9b"
+    },
+    {
+      "id": "workbuddy",
+      "platformId": "workbuddy",
+      "version": "0.26.7",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "WorkBuddy",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-workbuddy-adapter",
+        "macosEntry": "adapter/macos/cockpit-workbuddy-adapter",
+        "windowsEntry": "adapter/windows/cockpit-workbuddy-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-workbuddy-adapter",
+        "methods": [
+          "health.check",
+          "accounts.list",
+          "accounts.current",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.importJson",
+          "accounts.importLocal",
+          "accounts.addToken",
+          "accounts.export",
+          "accounts.indexPath",
+          "accounts.refresh",
+          "accounts.refreshAll",
+          "accounts.syncToCodebuddyCn",
+          "accounts.updateTags",
+          "quota.alertPayload",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.restorePendingListener",
+          "switch.inject",
+          "switch.injectDefaultProfile",
+          "checkin.status",
+          "checkin.perform",
+          "instances.store.get",
+          "instances.store.replace",
+          "instance.getDefaults",
+          "instance.list",
+          "instance.create",
+          "instance.update",
+          "instance.delete",
+          "instance.start",
+          "instance.stop",
+          "instance.closeAll",
+          "instance.openWindow",
+          "runtime.status",
+          "runtime.startDefault",
+          "runtime.stopDefault",
+          "runtime.restartDefault",
+          "runtime.focusDefault"
+        ]
+      },
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "tokenImport",
+        "localImport",
+        "switch",
+        "quota",
+        "runtime",
+        "instances",
+        "checkin",
+        "sync"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "WorkBuddy account overview, multi-instance tabs, OAuth, token import, local import, switching, quota refresh, check-in, CodeBuddy CN sync, launch commands, and page interactions are now supplied by the WorkBuddy platform package.",
+            "Core Shell keeps only WorkBuddy platform lifecycle controls, runtime gate, Host API, and adapter runner."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "workbuddy",
+            "label": "WorkBuddy",
+            "labelKey": "nav.workbuddy",
+            "iconKey": "workbuddy",
+            "page": "workbuddy"
+          }
+        ],
+        "dataPaths": [
+          "workbuddy_accounts.json",
+          "workbuddy_accounts",
+          "workbuddy_instances.json"
+        ],
+        "localStorageKeys": [
+          "agtools.workbuddy.accounts.cache",
+          "agtools.workbuddy.current_account_id",
+          "agtools.workbuddy.flow_notice_collapsed",
+          "agtools.workbuddy.instances.cache"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/workbuddy-0.26.7.zip",
+          "downloadSizeBytes": 6116471,
+          "sha256": "ceb3eae41890860133d84211db80b5f3affd0f8991976f7453bee7b0c4126e60"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/workbuddy-0.26.7.zip",
+      "downloadSizeBytes": 6116471,
+      "sha256": "ceb3eae41890860133d84211db80b5f3affd0f8991976f7453bee7b0c4126e60"
+    },
+    {
+      "id": "codex",
+      "platformId": "codex",
+      "version": "0.26.8",
+      "apiVersion": 1,
+      "minCoreVersion": "0.26.5",
+      "displayName": "Codex",
+      "entry": "runtime/index.json",
+      "packageMode": "hotUpdate",
+      "installKind": "sidecarAdapter",
+      "ui": {
+        "protocol": "react-remote-esm-v1",
+        "entry": "ui/remoteEntry.js",
+        "style": "ui/style.css",
+        "exports": [
+          "mount",
+          "unmount"
+        ]
+      },
+      "capabilities": [
+        "accounts",
+        "oauth",
+        "quota",
+        "apiService",
+        "localAccess",
+        "modelProviders",
+        "wakeup",
+        "sessions",
+        "threadSync",
+        "runtime",
+        "instances",
+        "cli"
+      ],
+      "changelog": [
+        {
+          "version": "0.26.8",
+          "date": "2026-06-27",
+          "notes": [
+            "Adds a wakeup entry in the Codex account overview. It opens the existing wakeup test dialog directly with accounts sorted by 5h quota from high to low by default.",
+            "The wakeup test account picker now supports manual sorting by default order, 5h quota, weekly quota, creation time, or email."
+          ],
+          "locales": {
+            "zh-CN": {
+              "notes": [
+                "Codex 账号总览新增“唤醒账号”入口：直接打开现有测试唤醒弹框，账号默认按 5h 额度从高到低排序。",
+                "测试唤醒账号选择器支持手动切换排序：默认顺序、5h 额度、周额度、创建时间或邮箱。"
+              ]
+            },
+            "zh-TW": {
+              "notes": [
+                "Codex 帳號總覽新增「喚醒帳號」入口：直接開啟既有測試喚醒彈框，帳號預設依 5h 額度由高到低排序。",
+                "測試喚醒帳號選擇器支援手動切換排序：預設順序、5h 額度、週額度、建立時間或信箱。"
+              ]
+            }
+          }
+        },
+        {
+          "version": "0.26.7",
+          "date": "2026-06-23",
+          "notes": [
+            "Codex account overview, model providers, API service, local gateway, wakeup tasks, sessions, thread sync, and multi-instance tabs are supplied by the Codex platform package UI runtime and sidecar adapter.",
+            "Codex keeps nativeBoundaries empty; Core Shell only retains package lifecycle, runtime gate, adapter runner, event bridge, and system window/open capabilities."
+          ]
+        }
+      ],
+      "contributions": {
+        "platforms": [
+          {
+            "id": "codex",
+            "label": "Codex",
+            "labelKey": "nav.codex",
+            "iconKey": "codex",
+            "page": "codex"
+          }
+        ],
+        "dataPaths": [
+          "codex_accounts.json",
+          "codex_accounts",
+          "codex_instances.json",
+          "codex_account_groups.json",
+          "codex_model_providers.json",
+          "codex_local_access.json",
+          "codex_local_access_stats.json",
+          "codex_local_access_takeover_backups.json",
+          "codex_provider_gateway_sidecars",
+          "codex_wakeup_tasks.json",
+          "codex_wakeup_history.json",
+          "codex_wakeup_runtime_config.json",
+          "codex_wakeup_managed_homes",
+          "codex_session_trash",
+          ".codex-global-state.json"
+        ],
+        "localStorageKeys": [
+          "agtools.codex.accounts.cache",
+          "agtools.codex.accounts.current",
+          "agtools.codex.accounts_view_mode",
+          "agtools.codex.accounts.overview_layout_mode",
+          "agtools.codex.accounts.custom_sort_order.v1",
+          "agtools.codex.accounts.custom_sort_active.v1",
+          "agtools.codex.accounts.filter.Codex",
+          "agtools.codex.apiKeyUsage.cache.v1",
+          "agtools.codex.local_access_entry_expanded.v1",
+          "agtools.codex.local_access_address_kind.v1",
+          "agtools.codex.api_service.gateway_guide.dismissed.v1",
+          "agtools.codex.modelProviders.usage.cache.v1",
+          "agtools.codex.modelProviders.custom_sort_order.v1",
+          "agtools.codex.modelProviders.custom_sort_active.v1",
+          "agtools.codex.wakeup.model_selection",
+          "agtools.codex.instances.cache",
+          "agtools.codex.instances.sort_field",
+          "agtools.codex.instances.sort_direction"
+        ],
+        "nativeBoundaries": []
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "aarch64",
+          "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codex-0.26.8.zip",
+          "downloadSizeBytes": 21884045,
+          "sha256": "ec0e5e150018a179a9b871177f99f3d81a9c04df7165cebbf044a68a92859fa9"
+        }
+      ],
+      "downloadUrl": "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/platform-packages/dist/codex-0.26.8.zip",
+      "downloadSizeBytes": 21884045,
+      "sha256": "ec0e5e150018a179a9b871177f99f3d81a9c04df7165cebbf044a68a92859fa9",
+      "adapter": {
+        "protocol": "http-json-v1",
+        "entry": "adapter/macos/cockpit-codex-adapter",
+        "macosEntry": "adapter/macos/cockpit-codex-adapter",
+        "windowsEntry": "adapter/windows/cockpit-codex-adapter.exe",
+        "linuxEntry": "adapter/linux/cockpit-codex-adapter",
+        "methods": [
+          "health.check",
+          "adapter.shutdown",
+          "runtime.restore",
+          "runtime.shutdownForAppExit",
+          "accounts.list",
+          "accounts.current",
+          "accounts.keepaliveDue",
+          "accounts.pickAutoSwitchTarget",
+          "switch.account",
+          "accounts.delete",
+          "accounts.deleteMany",
+          "accounts.addToken",
+          "accounts.addApiKey",
+          "accounts.updateName",
+          "accounts.updateApiKeyCredentials",
+          "accounts.updateTags",
+          "accounts.updateNote",
+          "accounts.loadGroups",
+          "accounts.saveGroups",
+          "accounts.importFromLocal",
+          "accounts.importFromJson",
+          "accounts.importFromFiles",
+          "accounts.batchImport.startFromFiles",
+          "accounts.batchImport.cancel",
+          "accounts.batchImport.resume",
+          "accounts.batchImport.preview",
+          "accounts.batchImport.confirm",
+          "accounts.refreshProfile",
+          "accounts.export",
+          "quota.refresh",
+          "quota.refreshCurrent",
+          "quota.refreshAll",
+          "quota.resetCredits",
+          "quota.consumeResetCredit",
+          "quota.referralInviteEligibility",
+          "quota.referralEligibilityRules",
+          "quota.sendReferralInvites",
+          "quota.refreshSubscriptionInfo",
+          "quota.alertPayload",
+          "accounts.updateApiKeyBoundOAuthAccount",
+          "accounts.refreshApiKeyUsage",
+          "oauth.isPortInUse",
+          "oauth.closePortProcess",
+          "oauth.start",
+          "oauth.complete",
+          "oauth.cancel",
+          "oauth.submitCallbackUrl",
+          "oauth.restorePendingListener",
+          "localAccess.updateBoundOAuthAccount",
+          "config.path",
+          "config.quick.get",
+          "config.quick.save",
+          "config.appSpeed.get",
+          "config.appSpeed.save",
+          "config.apiServiceAppSpeed.get",
+          "config.apiServiceAppSpeed.save",
+          "accounts.updateAppSpeed",
+          "modelProviders.load",
+          "modelProviders.save",
+          "modelProviders.chatTestBatch",
+          "localAccess.getState",
+          "localAccess.rotateApiKey",
+          "localAccess.clearStats",
+          "localAccess.prepareRestart",
+          "localAccess.killPort",
+          "localAccess.removeAccount",
+          "localAccess.createApiKey",
+          "localAccess.rotateNamedApiKey",
+          "localAccess.deleteApiKey",
+          "localAccess.setEnabled",
+          "localAccess.activate",
+          "localAccess.saveAccounts",
+          "localAccess.updatePort",
+          "localAccess.updateRoutingStrategy",
+          "localAccess.updateCustomRouting",
+          "localAccess.updateAccountModelRules",
+          "localAccess.updateModelRules",
+          "localAccess.updateModelPricings",
+          "localAccess.updateRoutingOptions",
+          "localAccess.updateTimeouts",
+          "localAccess.updateTimeoutPresets",
+          "localAccess.updateUpstreamProxyConfig",
+          "localAccess.updateGatewayMode",
+          "localAccess.updateDebugLogs",
+          "localAccess.updateAccessScope",
+          "localAccess.updateClientBaseUrlHost",
+          "localAccess.updateImageGenerationMode",
+          "localAccess.updateApiKey",
+          "localAccess.queryRequestLogs",
+          "localAccess.test",
+          "localAccess.chatTest",
+          "localAccess.chatTestStream",
+          "wakeup.fetchAvailableModels",
+          "wakeup.runtime.ensureReady",
+          "wakeup.crontab.validate",
+          "wakeup.sharedHistory.load",
+          "wakeup.sharedHistory.add",
+          "wakeup.sharedHistory.clear",
+          "wakeup.sharedScope.cancel",
+          "wakeup.sharedScope.release",
+          "wakeup.setOfficialLsVersionMode",
+          "wakeup.verification.loadState",
+          "wakeup.verification.loadHistory",
+          "wakeup.verification.deleteHistory",
+          "wakeup.getCliStatus",
+          "wakeup.updateRuntimeConfig",
+          "wakeup.getOverview",
+          "wakeup.getState",
+          "wakeup.saveState",
+          "wakeup.loadHistory",
+          "wakeup.clearHistory",
+          "wakeup.cancelScope",
+          "wakeup.releaseScope",
+          "settings.setLaunchOnSwitch",
+          "settings.setLocalAccessEntryVisible",
+          "modelProviders.testConnection",
+          "modelProviders.listModels",
+          "modelProviders.queryUsage",
+          "sessions.syncThreadsAcrossInstances",
+          "sessions.syncToInstance",
+          "sessions.visibilityRepairProviders.list",
+          "sessions.visibilityRepairInstances.list",
+          "sessions.visibilityRepair.run",
+          "sessions.list",
+          "sessions.tokenStats",
+          "sessions.moveToTrash",
+          "sessions.listTrash",
+          "sessions.restoreFromTrash",
+          "instances.store.get",
+          "instances.store.replace",
+          "instances.defaults",
+          "instances.list",
+          "instances.create",
+          "instances.update",
+          "instances.delete",
+          "instances.stop",
+          "instances.closeAll",
+          "instances.window.open",
+          "instances.quickConfig.get",
+          "instances.quickConfig.save",
+          "instances.configPath",
+          "instances.launchCommand.get",
+          "wakeup.trigger",
+          "wakeup.test",
+          "wakeup.runTask",
+          "wakeup.runEnabledTasks",
+          "wakeup.scheduler.syncState",
+          "wakeup.scheduler.runEnabledTasks",
+          "wakeup.scheduler.confirmTask",
+          "wakeup.scheduler.cancelTask",
+          "wakeup.scheduler.checkTimeouts",
+          "wakeup.verification.runBatch",
+          "instances.start"
+        ]
+      }
+    }
+  ]
+}

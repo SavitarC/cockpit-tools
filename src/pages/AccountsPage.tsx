@@ -93,7 +93,8 @@ import { QuickSettingsPopover } from '../components/QuickSettingsPopover'
 import {
   isPrivacyModeEnabledByDefault,
   maskSensitiveValue,
-  persistPrivacyModeEnabled
+  persistPrivacyModeEnabled,
+  PRIVACY_MODE_CHANGED_EVENT
 } from '../utils/privacy'
 import { useExportJsonModal } from '../hooks/useExportJsonModal'
 import { MultiSelectFilterDropdown, type MultiSelectFilterOption } from '../components/MultiSelectFilterDropdown'
@@ -142,6 +143,7 @@ import { useAntigravityRuntimeTarget } from '../hooks/useAntigravityRuntimeTarge
 
 interface AccountsPageProps {
   onNavigate?: (page: Page) => void
+  hideHeader?: boolean
 }
 
 type AntigravitySwitchHistoryItem = accountService.AntigravitySwitchHistoryItem
@@ -216,7 +218,7 @@ const ANTIGRAVITY_FILTER_FIELD_TAG_FILTER = 'tag_filter'
 const ANTIGRAVITY_FILTER_FIELD_GROUP_BY_TAG = 'group_by_tag'
 const ANTIGRAVITY_FILTER_FIELD_ACTIVE_GROUP_ID = 'active_group_id'
 
-export function AccountsPage({ onNavigate }: AccountsPageProps) {
+export function AccountsPage({ onNavigate, hideHeader = false }: AccountsPageProps) {
   const { t, i18n } = useTranslation()
   const antigravityRuntimeTarget = useAntigravityRuntimeTarget()
   const locale = i18n.language || 'zh-CN'
@@ -287,6 +289,8 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       }
     }
   }, [storeError])
+
+
 
   const initialFilterPersistenceEnabled = readAccountsOverviewFilterPersistenceEnabled(
     ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
@@ -640,7 +644,99 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
     return total.toFixed(2).replace(/\.?0+$/, '')
   }
 
+
+
+  const loadPersistedOverviewFilters = useCallback(() => {
+      const savedViewMode = readAccountsOverviewFilterField<unknown>(
+        ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+        ANTIGRAVITY_FILTER_FIELD_VIEW_MODE,
+        'grid',
+      )
+      if (savedViewMode === 'grid' || savedViewMode === 'list' || savedViewMode === 'compact') {
+        setViewMode(savedViewMode)
+      }
+
+      setFilterTypes(
+        readAccountsOverviewFilterStringArray(
+          ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+          ANTIGRAVITY_FILTER_FIELD_FILTER_TYPES,
+        ) as AccountsFilterType[]
+      )
+
+      setTagFilter(
+        readAccountsOverviewFilterStringArray(
+          ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+          ANTIGRAVITY_FILTER_FIELD_TAG_FILTER,
+        )
+      )
+
+      setGroupByTag(
+        Boolean(
+          readAccountsOverviewFilterField<unknown>(
+            ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+            ANTIGRAVITY_FILTER_FIELD_GROUP_BY_TAG,
+            false,
+          ),
+        )
+      )
+
+      const savedActiveGroupId = readAccountsOverviewFilterField<string | null>(
+        ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+        ANTIGRAVITY_FILTER_FIELD_ACTIVE_GROUP_ID,
+        null,
+      )
+      setActiveGroupId(typeof savedActiveGroupId === 'string' && savedActiveGroupId.trim() ? savedActiveGroupId : null)
+
+      setSortBy(
+        normalizeAntigravitySortBy(
+          readAccountsOverviewFilterField<unknown>(
+            ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+            ANTIGRAVITY_FILTER_FIELD_SORT_BY,
+            DEFAULT_ANTIGRAVITY_SORT_BY,
+          ) as string,
+        )
+      )
+
+      setSortDirection(
+        normalizeAntigravitySortDirection(
+          readAccountsOverviewFilterField<unknown>(
+            ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+            ANTIGRAVITY_FILTER_FIELD_SORT_DIRECTION,
+            'desc',
+          ) as string | null,
+        )
+      )
+  }, [])
+
+  const resetOverviewFilters = useCallback(() => {
+    setViewMode('grid')
+    setFilterTypes([])
+    setTagFilter([])
+    setGroupByTag(false)
+    setActiveGroupId(null)
+    setSortBy(DEFAULT_ANTIGRAVITY_SORT_BY)
+    setSortDirection('desc')
+  }, [])
+
   useEffect(() => {
+    const handleConfigUpdated = () => {
+      const nextFilterPersistenceEnabled = readAccountsOverviewFilterPersistenceEnabled(
+        ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE,
+      )
+      setFilterPersistenceEnabled(nextFilterPersistenceEnabled)
+      if (nextFilterPersistenceEnabled) {
+        loadPersistedOverviewFilters()
+      } else {
+        resetOverviewFilters()
+      }
+      setPrivacyModeEnabled(isPrivacyModeEnabledByDefault())
+    }
+
+    const handlePrivacyModeChanged = (event: Event) => {
+      const isEnabled = (event as CustomEvent<boolean>).detail
+      setPrivacyModeEnabled(isEnabled)
+    }
+
     const handleFilterPersistenceChanged = (event: Event) => {
       const detail = (event as CustomEvent<AccountsOverviewFilterPersistenceChangedDetail>).detail
       if (!detail || detail.scope !== ANTIGRAVITY_FILTER_PERSISTENCE_SCOPE) {
@@ -648,17 +744,23 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       }
       setFilterPersistenceEnabled(Boolean(detail.enabled))
     }
+
+    window.addEventListener('config-updated', handleConfigUpdated)
+    window.addEventListener(PRIVACY_MODE_CHANGED_EVENT, handlePrivacyModeChanged as EventListener)
     window.addEventListener(
       ACCOUNTS_OVERVIEW_FILTER_PERSISTENCE_CHANGED_EVENT,
       handleFilterPersistenceChanged as EventListener,
     )
+
     return () => {
+      window.removeEventListener('config-updated', handleConfigUpdated)
+      window.removeEventListener(PRIVACY_MODE_CHANGED_EVENT, handlePrivacyModeChanged as EventListener)
       window.removeEventListener(
         ACCOUNTS_OVERVIEW_FILTER_PERSISTENCE_CHANGED_EVENT,
         handleFilterPersistenceChanged as EventListener,
       )
     }
-  }, [])
+  }, [loadPersistedOverviewFilters, resetOverviewFilters])
 
   useEffect(() => {
     if (!filterPersistenceEnabled) {
@@ -3199,12 +3301,14 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   return (
     <>
       <main className="main-content accounts-page">
-        <OverviewTabsHeader
-          active="overview"
-          onNavigate={onNavigate}
-          onOpenManual={() => onNavigate?.('manual')}
-          subtitle={t('overview.subtitle')}
-        />
+        {!hideHeader && (
+          <OverviewTabsHeader
+            active="overview"
+            onNavigate={onNavigate}
+            onOpenManual={() => onNavigate?.('manual')}
+            subtitle={t('overview.subtitle')}
+          />
+        )}
 
         {/* 面包屑：进入分组后显示 */}
         {activeGroup && (
@@ -4012,7 +4116,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
               <button
                 className="modal-close"
                 onClick={() => {
-                  if (deleting) return
                   setDeleteConfirm(null)
                   setDeleteConfirmError(null)
                 }}
@@ -4032,7 +4135,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   setDeleteConfirm(null)
                   setDeleteConfirmError(null)
                 }}
-                disabled={deleting}
               >
                 {t('common.cancel')}
               </button>
@@ -4058,7 +4160,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
               <button
                 className="modal-close"
                 onClick={() => {
-                  if (deletingGroup) return
                   setGroupDeleteConfirm(null)
                   setGroupDeleteError(null)
                 }}
@@ -4082,7 +4183,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   setGroupDeleteConfirm(null)
                   setGroupDeleteError(null)
                 }}
-                disabled={deletingGroup}
               >
                 {t('common.cancel')}
               </button>
@@ -4108,7 +4208,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
               <button
                 className="modal-close"
                 onClick={() => {
-                  if (deletingTag) return
                   setTagDeleteConfirm(null)
                   setTagDeleteConfirmError(null)
                 }}
@@ -4134,7 +4233,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   setTagDeleteConfirm(null)
                   setTagDeleteConfirmError(null)
                 }}
-                disabled={deletingTag}
               >
                 {t('common.cancel')}
               </button>

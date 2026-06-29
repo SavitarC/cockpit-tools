@@ -21,6 +21,26 @@ const SERVER_STATUS_FILE: &str = "server.json";
 /// 用户配置文件名
 const USER_CONFIG_FILE: &str = "config.json";
 
+const LOCAL_PROXY_BYPASS_HOSTS: [&str; 5] =
+    ["127.0.0.1", "127.0.0.0/8", "localhost", "::1", "::1/128"];
+
+pub fn merge_local_no_proxy(raw: &str) -> String {
+    let mut values: Vec<String> = raw
+        .split(',')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+        .map(str::to_string)
+        .collect();
+
+    for host in LOCAL_PROXY_BYPASS_HOSTS {
+        if !values.iter().any(|item| item.eq_ignore_ascii_case(host)) {
+            values.push(host.to_string());
+        }
+    }
+
+    values.join(",")
+}
+
 /// 服务状态（写入共享文件供其他客户端读取）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerStatus {
@@ -136,6 +156,12 @@ pub struct UserConfig {
     /// 菜单栏图标样式（macOS）
     #[serde(default = "default_tray_icon_style")]
     pub tray_icon_style: TrayIconStyle,
+    /// 冷启动启动页面：页面 ID 或 last_closed
+    #[serde(default = "default_startup_page")]
+    pub startup_page: String,
+    /// 上次主窗口关闭/隐藏时所在页面
+    #[serde(default = "default_last_closed_page")]
+    pub last_closed_page: String,
     /// 是否在启动后自动显示悬浮卡片
     #[serde(default = "default_floating_card_show_on_startup")]
     pub floating_card_show_on_startup: bool,
@@ -593,6 +619,12 @@ fn default_hide_dock_icon() -> bool {
 fn default_tray_icon_style() -> TrayIconStyle {
     TrayIconStyle::Template
 }
+fn default_startup_page() -> String {
+    "dashboard".to_string()
+}
+fn default_last_closed_page() -> String {
+    "dashboard".to_string()
+}
 fn default_floating_card_show_on_startup() -> bool {
     false
 }
@@ -919,6 +951,8 @@ impl Default for UserConfig {
             minimize_behavior: default_minimize_behavior(),
             hide_dock_icon: default_hide_dock_icon(),
             tray_icon_style: default_tray_icon_style(),
+            startup_page: default_startup_page(),
+            last_closed_page: default_last_closed_page(),
             floating_card_show_on_startup: default_floating_card_show_on_startup(),
             startup_minimized: default_startup_minimized(),
             floating_card_always_on_top: default_floating_card_always_on_top(),
@@ -1084,8 +1118,7 @@ fn managed_proxy_env_pairs(config: &UserConfig) -> Vec<(&'static str, String)> {
         pairs.push((key, proxy_url.to_string()));
     }
 
-    let no_proxy =
-        crate::modules::codex_protocol::merge_local_no_proxy(config.global_proxy_no_proxy.trim());
+    let no_proxy = merge_local_no_proxy(config.global_proxy_no_proxy.trim());
     if !no_proxy.is_empty() {
         for key in MANAGED_PROXY_NO_PROXY_KEYS {
             pairs.push((key, no_proxy.clone()));
@@ -1151,13 +1184,13 @@ pub fn sync_global_proxy_env(config: &UserConfig) {
 
 /// 获取数据目录路径
 pub fn get_data_dir() -> Result<PathBuf, String> {
-    crate::modules::account::get_data_dir()
+    crate::modules::app_data::get_data_dir()
 }
 
 /// 获取共享目录路径（供其他模块使用）
 /// 与 get_data_dir 相同，但不返回 Result
 pub fn get_shared_dir() -> PathBuf {
-    crate::modules::account::resolve_data_dir()
+    crate::modules::app_data::resolve_data_dir()
         .unwrap_or_else(|_| PathBuf::from(".antigravity_cockpit"))
 }
 
@@ -1355,6 +1388,17 @@ pub fn load_user_config() -> Result<UserConfig, String> {
             obj.insert(
                 "tray_icon_style".to_string(),
                 json!(default_tray_icon_style()),
+            );
+        }
+
+        if !obj.contains_key("startup_page") {
+            obj.insert("startup_page".to_string(), json!(default_startup_page()));
+        }
+
+        if !obj.contains_key("last_closed_page") {
+            obj.insert(
+                "last_closed_page".to_string(),
+                json!(default_last_closed_page()),
             );
         }
 
@@ -1991,6 +2035,21 @@ mod tests {
         let cfg: UserConfig =
             serde_json::from_value(serde_json::json!({})).expect("反序列化默认配置应成功");
         assert!(!cfg.openclaw_auth_overwrite_on_switch);
+    }
+
+    #[test]
+    fn startup_page_defaults_to_dashboard() {
+        let cfg = UserConfig::default();
+        assert_eq!(cfg.startup_page, "dashboard");
+        assert_eq!(cfg.last_closed_page, "dashboard");
+    }
+
+    #[test]
+    fn startup_page_missing_fields_fall_back_to_dashboard() {
+        let cfg: UserConfig =
+            serde_json::from_value(serde_json::json!({})).expect("反序列化默认配置应成功");
+        assert_eq!(cfg.startup_page, "dashboard");
+        assert_eq!(cfg.last_closed_page, "dashboard");
     }
 
     #[test]

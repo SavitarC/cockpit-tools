@@ -630,6 +630,7 @@ export interface UseProviderAccountsPageReturn {
   tagDeleteConfirmError: string | null;
   tagDeleteConfirmErrorScrollKey: number;
   setTagDeleteConfirm: (v: { tag: string; count: number } | null) => void;
+  closeTagDeleteConfirm: () => void;
   deletingTag: boolean;
   requestDeleteTag: (tag: string) => void;
   confirmDeleteTag: () => Promise<void>;
@@ -648,6 +649,7 @@ export interface UseProviderAccountsPageReturn {
   deleteConfirmError: string | null;
   deleteConfirmErrorScrollKey: number;
   setDeleteConfirm: (v: { ids: string[]; message: string } | null) => void;
+  closeDeleteConfirm: () => void;
   deleting: boolean;
   confirmDelete: () => Promise<void>;
 
@@ -1005,6 +1007,9 @@ export function useProviderAccountsPage<TAccount extends ProviderAccountBase>(
     setTagDeleteConfirmError(null);
     rawSetTagDeleteConfirm(value);
   }, []);
+  const closeTagDeleteConfirm = useCallback(() => {
+    setTagDeleteConfirm(null);
+  }, [setTagDeleteConfirm]);
   const tagFilterRef = useRef<HTMLDivElement | null>(null);
 
   const normalizeTag = useCallback((tag: string) => tag.trim().toLowerCase(), []);
@@ -1151,6 +1156,9 @@ export function useProviderAccountsPage<TAccount extends ProviderAccountBase>(
     setDeleteConfirmError(null);
     rawSetDeleteConfirm(value);
   }, []);
+  const closeDeleteConfirm = useCallback(() => {
+    setDeleteConfirm(null);
+  }, [setDeleteConfirm]);
 
   useEffect(() => {
     if (!storeError) return;
@@ -1398,6 +1406,8 @@ export function useProviderAccountsPage<TAccount extends ProviderAccountBase>(
   }, [resetAddModalState]);
 
   useEscClose(showAddModal, closeAddModal);
+  useEscClose(Boolean(deleteConfirm), closeDeleteConfirm);
+  useEscClose(Boolean(tagDeleteConfirm), closeTagDeleteConfirm);
 
   const closeExternalImportProgressModal = useCallback(() => {
     setExternalImportProgress((current) => {
@@ -2416,6 +2426,7 @@ export function useProviderAccountsPage<TAccount extends ProviderAccountBase>(
     tagDeleteConfirmError,
     tagDeleteConfirmErrorScrollKey,
     setTagDeleteConfirm,
+    closeTagDeleteConfirm,
     deletingTag,
     requestDeleteTag,
     confirmDeleteTag,
@@ -2432,6 +2443,7 @@ export function useProviderAccountsPage<TAccount extends ProviderAccountBase>(
     deleteConfirmError,
     deleteConfirmErrorScrollKey,
     setDeleteConfirm,
+    closeDeleteConfirm,
     deleting,
     confirmDelete,
     message,

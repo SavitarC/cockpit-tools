@@ -1,0 +1,7 @@
+{
+  "platformId": "gemini",
+  "displayName": "Gemini Cli",
+  "packageMode": "hotUpdate",
+  "installKind": "sidecarAdapter",
+  "version": "0.26.7"
+}

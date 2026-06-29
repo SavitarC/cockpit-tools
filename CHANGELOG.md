@@ -7,6 +7,34 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [1.0.0] - 2026-06-25
+
+### Added
+- **Hot-update platform packages are now the primary platform delivery model**: Cockpit can load platform package metadata, runtime contributions, native-boundary declarations, package actions, and remote React UI bundles for supported platforms while keeping the host shell focused on lifecycle, navigation, and shared APIs.
+- **Antigravity and Antigravity IDE now ship as separate platform packages**: the two clients keep independent package identity, runtime state, adapter artifacts, update metadata, and package lifecycle handling while still sharing the Antigravity suite experience where appropriate.
+- **Platform migration has dedicated smoke and contract checks**: new verification scripts cover platform package contracts, Codex platform behavior, remote UI integration, and adapter smoke coverage.
+
+### Changed
+- **Platform package pages now use a consistent lifecycle toolbar**: installed, update-available, unavailable, repair, uninstall, check-update, changelog, and more-menu actions follow the shared platform package rules and keep lifecycle operations on the platform page instead of sidebar or dashboard entry points.
+- **Codex platform pages now run through the platform package runtime**: API Service, model providers, wakeup tasks, instances, and related dialogs use the remote UI and adapter boundary while preserving the existing page experience.
+- **Platform logs and adapter execution are more clearly separated by platform**: host facade logs and sidecar stderr are routed through platform-specific boundaries so package behavior is easier to audit.
+
+### Fixed
+- **Platform package runtime state no longer loads business pages before the package is ready**: unavailable or not-ready packages stay on the shared unavailable page until `runtimeReady` is restored, preventing account, OAuth, quota, and refresh logic from running through an invalid package.
+- **Remote platform UI switching is less prone to unnecessary remounts**: runtime entry loading, module import, and CSS attachment are reused across compatible package states to reduce visible stalls when moving between installed platforms.
+
+---
+## [0.26.6] - 2026-06-22
+
+### Changed
+- **Codex referral invites now open in their own dialog**: reset-credit confirmation keeps the reset action focused, while invite email entry, consent, success state, current account context, and localized eligibility rules live in a separate modal.
+- **Account transfer now preserves Antigravity overview preferences**: backups include Antigravity view, filter, sort, grouping, active group, and privacy-mode state, and restoring them refreshes the account overview without requiring a restart.
+- **Close confirmation actions now report failures inside the dialog**: window close handling is delegated through the app shell so failed minimize or quit actions keep the dialog open and show the error in place.
+
+### Fixed
+- **Antigravity free-tier quota reset times are clearer**: Claude and Gemini 5-hour rows can fall back to weekly reset data when free-plan usage is capped by the weekly window, avoiding misleading empty reset times.
+
+---
 ## [0.26.5] - 2026-06-20
 
 ### Added

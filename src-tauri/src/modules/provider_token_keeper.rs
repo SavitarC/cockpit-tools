@@ -7,11 +7,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde_json::Value;
 use tauri::AppHandle;
 
-use crate::modules::{
-    codebuddy_account, codebuddy_cn_account, codex_account, cursor_account, gemini_account,
-    github_copilot_account, kiro_account, kiro_instance, logger, process, trae_account,
-    windsurf_account, windsurf_instance, workbuddy_account,
-};
+use crate::modules::{logger, platform_adapter, platform_package};
 
 const TOKEN_KEEPER_TICK_SECONDS: u64 = 60;
 const TOKEN_REFRESH_LEAD_SECONDS: i64 = 5 * 60;
@@ -24,6 +20,14 @@ static NEXT_ALLOWED_ATTEMPT_AT: LazyLock<Mutex<HashMap<String, i64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static NEXT_TRAE_STRICT_CHECK_AT: LazyLock<Mutex<HashMap<String, i64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TraeCheckLoginVerdict {
+    is_valid: bool,
+    error_code: Option<String>,
+    is_login: Option<bool>,
+}
 
 pub fn ensure_started(app_handle: AppHandle) {
     if TOKEN_KEEPER_STARTED.swap(true, Ordering::SeqCst) {
@@ -111,6 +115,21 @@ fn mark_attempt_failure(key: &str) {
     }
 }
 
+async fn call_trae_adapter<T>(
+    method: &'static str,
+    payload: Value,
+    timeout: Duration,
+) -> Result<T, String>
+where
+    T: serde::de::DeserializeOwned + Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(move || {
+        platform_adapter::call_trae_with_timeout::<T>(method, payload, timeout)
+    })
+    .await
+    .map_err(|error| format!("Trae adapter 任务失败: {}", error))?
+}
+
 fn should_run_trae_strict_check(account_id: &str) -> bool {
     let now = now_ts();
     let Ok(state) = NEXT_TRAE_STRICT_CHECK_AT.lock() else {
@@ -132,67 +151,53 @@ fn mark_trae_strict_check_done(account_id: &str) {
 }
 
 async fn refresh_due_codex_accounts() -> bool {
-    let accounts = match codex_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
-            logger::log_warn(&format!(
-                "[TokenKeeper][Codex] 读取账号列表失败，跳过本轮保活: {}",
-                err
-            ));
-            return false;
-        }
-    };
-
-    let mut refreshed_any = false;
-    for account in accounts
-        .into_iter()
-        .filter(|account| !account.is_api_key_auth())
-    {
-        if !account.requires_reauth && !codex_account::is_managed_auth_refresh_due(&account) {
-            continue;
-        }
-
-        let key = format!("codex:{}", account.id);
-        if !allow_attempt(&key) {
-            continue;
-        }
-
-        match codex_account::keepalive_managed_account(&account.id, "TokenKeeper 授权保活").await
-        {
-            Ok(updated) => {
-                clear_attempt_backoff(&key);
-                refreshed_any = true;
-                logger::log_info(&format!(
-                    "[TokenKeeper][Codex] Token 保活成功: account_id={}, email={}",
-                    updated.id, updated.email
-                ));
-            }
-            Err(err) => {
-                mark_attempt_failure(&key);
-                logger::log_warn(&format!(
-                    "[TokenKeeper][Codex] Token 保活失败，进入退避: account_id={}, error={}",
-                    account.id, err
-                ));
-            }
-        }
+    if !platform_package::is_platform_package_runtime_ready("codex") {
+        return false;
     }
 
-    refreshed_any
+    match platform_adapter::call_codex_with_timeout::<i32>(
+        "accounts.keepaliveDue",
+        serde_json::json!({}),
+        Duration::from_secs(180),
+    ) {
+        Ok(count) => count > 0,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][Codex] adapter 保活失败，跳过本轮: {}",
+                err
+            ));
+            false
+        }
+    }
 }
 
 async fn refresh_due_cursor_accounts() -> bool {
-    let accounts = match cursor_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
-            logger::log_warn(&format!(
-                "[TokenKeeper][Cursor] 读取账号列表失败，跳过本轮保活: {}",
-                err
-            ));
-            return false;
-        }
-    };
+    if !platform_package::is_platform_package_installed("cursor") {
+        return false;
+    }
 
-    let current_id = cursor_account::resolve_current_account_id(&accounts);
+    let accounts: Vec<crate::models::cursor::CursorAccount> =
+        match platform_adapter::call_cursor_with_timeout(
+            "accounts.list",
+            serde_json::json!({}),
+            Duration::from_secs(20),
+        ) {
+            Ok(accounts) => accounts,
+            Err(err) => {
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Cursor] 读取账号列表失败，跳过本轮保活: {}",
+                    err
+                ));
+                return false;
+            }
+        };
+
+    let current_id: Option<String> = platform_adapter::call_cursor_with_timeout(
+        "accounts.current",
+        serde_json::json!({}),
+        Duration::from_secs(20),
+    )
+    .unwrap_or(None);
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -205,12 +210,29 @@ async fn refresh_due_cursor_accounts() -> bool {
             continue;
         }
 
-        match cursor_account::refresh_account_async(&account.id).await {
+        let account_id = account.id.clone();
+        let refresh_result = tauri::async_runtime::spawn_blocking(move || {
+            platform_adapter::call_cursor_with_timeout::<crate::models::cursor::CursorAccount>(
+                "accounts.refresh",
+                serde_json::json!({ "accountId": account_id }),
+                Duration::from_secs(180),
+            )
+        })
+        .await
+        .map_err(|error| format!("Cursor adapter 任务失败: {}", error))
+        .and_then(|result| result);
+
+        match refresh_result {
             Ok(updated) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    if let Err(err) = cursor_account::inject_to_cursor(&updated.id) {
+                    let updated_id = updated.id.clone();
+                    if let Err(err) = platform_adapter::call_cursor_with_timeout::<()>(
+                        "switch.injectDefaultProfile",
+                        serde_json::json!({ "accountId": updated_id }),
+                        Duration::from_secs(20),
+                    ) {
                         logger::log_warn(&format!(
                             "[TokenKeeper][Cursor] 当前本地登录回写失败: account_id={}, error={}",
                             updated.id, err
@@ -236,18 +258,32 @@ async fn refresh_due_cursor_accounts() -> bool {
 }
 
 async fn refresh_due_gemini_accounts() -> bool {
-    let accounts = match gemini_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
-            logger::log_warn(&format!(
-                "[TokenKeeper][Gemini] 读取账号列表失败，跳过本轮保活: {}",
-                err
-            ));
-            return false;
-        }
-    };
+    if !platform_package::is_platform_package_installed("gemini") {
+        return false;
+    }
 
-    let current_id = gemini_account::resolve_current_account(&accounts).map(|account| account.id);
+    let accounts: Vec<crate::models::gemini::GeminiAccount> =
+        match platform_adapter::call_gemini_with_timeout(
+            "accounts.list",
+            serde_json::json!({}),
+            Duration::from_secs(20),
+        ) {
+            Ok(accounts) => accounts,
+            Err(err) => {
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Gemini] 读取账号列表失败，跳过本轮保活: {}",
+                    err
+                ));
+                return false;
+            }
+        };
+
+    let current_id: Option<String> = platform_adapter::call_gemini_with_timeout(
+        "accounts.current",
+        serde_json::json!({}),
+        Duration::from_secs(20),
+    )
+    .unwrap_or(None);
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -260,12 +296,29 @@ async fn refresh_due_gemini_accounts() -> bool {
             continue;
         }
 
-        match gemini_account::refresh_account_token(&account.id).await {
+        let account_id = account.id.clone();
+        let refresh_result = tauri::async_runtime::spawn_blocking(move || {
+            platform_adapter::call_gemini_with_timeout::<crate::models::gemini::GeminiAccount>(
+                "accounts.refresh",
+                serde_json::json!({ "accountId": account_id }),
+                Duration::from_secs(180),
+            )
+        })
+        .await
+        .map_err(|error| format!("Gemini adapter 任务失败: {}", error))
+        .and_then(|result| result);
+
+        match refresh_result {
             Ok(updated) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    if let Err(err) = gemini_account::inject_to_gemini(&updated.id) {
+                    let updated_id = updated.id.clone();
+                    if let Err(err) = platform_adapter::call_gemini_with_timeout::<()>(
+                        "switch.injectDefaultProfile",
+                        serde_json::json!({ "accountId": updated_id }),
+                        Duration::from_secs(20),
+                    ) {
                         logger::log_warn(&format!(
                             "[TokenKeeper][Gemini] 当前本地登录回写失败: account_id={}, error={}",
                             updated.id, err
@@ -291,11 +344,32 @@ async fn refresh_due_gemini_accounts() -> bool {
 }
 
 async fn refresh_due_github_copilot_accounts() -> bool {
-    let accounts = match github_copilot_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
+    if !platform_package::is_platform_package_installed("github-copilot") {
+        return false;
+    }
+
+    let accounts = match tauri::async_runtime::spawn_blocking(|| {
+        platform_adapter::call_github_copilot_with_timeout::<
+            Vec<crate::models::github_copilot::GitHubCopilotAccount>,
+        >(
+            "accounts.list",
+            serde_json::json!({}),
+            Duration::from_secs(20),
+        )
+    })
+    .await
+    {
+        Ok(Ok(accounts)) => accounts,
+        Ok(Err(err)) => {
             logger::log_warn(&format!(
                 "[TokenKeeper][GitHubCopilot] 读取账号列表失败，跳过本轮保活: {}",
+                err
+            ));
+            return false;
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][GitHubCopilot] 账号列表任务失败，跳过本轮保活: {}",
                 err
             ));
             return false;
@@ -313,8 +387,19 @@ async fn refresh_due_github_copilot_accounts() -> bool {
             continue;
         }
 
-        match github_copilot_account::refresh_account_token(&account.id).await {
-            Ok(updated) => {
+        let account_id = account.id.clone();
+        match tauri::async_runtime::spawn_blocking(move || {
+            platform_adapter::call_github_copilot_with_timeout::<
+                crate::models::github_copilot::GitHubCopilotAccount,
+            >(
+                "accounts.refresh",
+                serde_json::json!({ "accountId": account_id }),
+                Duration::from_secs(180),
+            )
+        })
+        .await
+        {
+            Ok(Ok(updated)) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 logger::log_info(&format!(
@@ -322,10 +407,17 @@ async fn refresh_due_github_copilot_accounts() -> bool {
                     updated.id, updated.github_login
                 ));
             }
-            Err(err) => {
+            Ok(Err(err)) => {
                 mark_attempt_failure(&key);
                 logger::log_warn(&format!(
                     "[TokenKeeper][GitHubCopilot] Token 保活失败，进入退避: account_id={}, error={}",
+                    account.id, err
+                ));
+            }
+            Err(err) => {
+                mark_attempt_failure(&key);
+                logger::log_warn(&format!(
+                    "[TokenKeeper][GitHubCopilot] Token 保活任务失败，进入退避: account_id={}, error={}",
                     account.id, err
                 ));
             }
@@ -336,18 +428,64 @@ async fn refresh_due_github_copilot_accounts() -> bool {
 }
 
 async fn refresh_due_windsurf_accounts() -> bool {
-    let accounts = match windsurf_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
+    if !platform_package::is_platform_package_installed("windsurf") {
+        return false;
+    }
+
+    let accounts =
+        match tauri::async_runtime::spawn_blocking(|| {
+            platform_adapter::call_windsurf_with_timeout::<
+                Vec<crate::models::windsurf::WindsurfAccount>,
+            >(
+                "accounts.list",
+                serde_json::json!({}),
+                Duration::from_secs(20),
+            )
+        })
+        .await
+        {
+            Ok(Ok(accounts)) => accounts,
+            Ok(Err(err)) => {
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Windsurf] 读取账号列表失败，跳过本轮保活: {}",
+                    err
+                ));
+                return false;
+            }
+            Err(err) => {
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Windsurf] 账号列表任务失败，跳过本轮保活: {}",
+                    err
+                ));
+                return false;
+            }
+        };
+
+    let current_id = match tauri::async_runtime::spawn_blocking(|| {
+        platform_adapter::call_windsurf_with_timeout::<Option<String>>(
+            "accounts.current",
+            serde_json::json!({}),
+            Duration::from_secs(20),
+        )
+    })
+    .await
+    {
+        Ok(Ok(current_id)) => current_id,
+        Ok(Err(err)) => {
             logger::log_warn(&format!(
-                "[TokenKeeper][Windsurf] 读取账号列表失败，跳过本轮保活: {}",
+                "[TokenKeeper][Windsurf] 读取当前账号失败，跳过本地回写: {}",
                 err
             ));
-            return false;
+            None
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][Windsurf] 当前账号任务失败，跳过本地回写: {}",
+                err
+            ));
+            None
         }
     };
-
-    let current_id = windsurf_account::resolve_current_account_id(&accounts);
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -360,29 +498,41 @@ async fn refresh_due_windsurf_accounts() -> bool {
             continue;
         }
 
-        match windsurf_account::refresh_account_token(&account.id).await {
-            Ok(updated) => {
+        let account_id = account.id.clone();
+        match tauri::async_runtime::spawn_blocking(move || {
+            platform_adapter::call_windsurf_with_timeout::<crate::models::windsurf::WindsurfAccount>(
+                "accounts.refresh",
+                serde_json::json!({ "accountId": account_id }),
+                Duration::from_secs(180),
+            )
+        })
+        .await
+        {
+            Ok(Ok(updated)) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    match windsurf_instance::get_default_windsurf_user_data_dir() {
-                        Ok(user_data_dir) => {
-                            if let Err(err) = windsurf_instance::inject_account_to_profile(
-                                user_data_dir.as_path(),
-                                &updated.id,
-                            ) {
-                                logger::log_warn(&format!(
-                                    "[TokenKeeper][Windsurf] 当前本地登录回写失败: account_id={}, error={}",
-                                    updated.id, err
-                                ));
-                            }
-                        }
-                        Err(err) => {
+                    let updated_id = updated.id.clone();
+                    match tauri::async_runtime::spawn_blocking(move || {
+                        platform_adapter::call_windsurf_with_timeout::<Value>(
+                            "switch.injectDefaultProfile",
+                            serde_json::json!({ "accountId": updated_id }),
+                            Duration::from_secs(20),
+                        )
+                    })
+                    .await
+                    {
+                        Ok(Ok(_)) => {}
+                        Ok(Err(err)) => {
                             logger::log_warn(&format!(
-                                "[TokenKeeper][Windsurf] 获取默认用户目录失败，跳过本地回写: {}",
-                                err
+                                "[TokenKeeper][Windsurf] 当前本地登录回写失败: account_id={}, error={}",
+                                updated.id, err
                             ));
                         }
+                        Err(err) => logger::log_warn(&format!(
+                            "[TokenKeeper][Windsurf] 当前本地登录回写任务失败: account_id={}, error={}",
+                            updated.id, err
+                        )),
                     }
                 }
                 logger::log_info(&format!(
@@ -390,10 +540,17 @@ async fn refresh_due_windsurf_accounts() -> bool {
                     updated.id, updated.github_login
                 ));
             }
-            Err(err) => {
+            Ok(Err(err)) => {
                 mark_attempt_failure(&key);
                 logger::log_warn(&format!(
                     "[TokenKeeper][Windsurf] Token 保活失败，进入退避: account_id={}, error={}",
+                    account.id, err
+                ));
+            }
+            Err(err) => {
+                mark_attempt_failure(&key);
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Windsurf] Token 保活任务失败，进入退避: account_id={}, error={}",
                     account.id, err
                 ));
             }
@@ -404,75 +561,35 @@ async fn refresh_due_windsurf_accounts() -> bool {
 }
 
 async fn refresh_due_kiro_accounts() -> bool {
-    let accounts = match kiro_account::list_accounts_checked() {
-        Ok(accounts) => accounts,
-        Err(err) => {
-            logger::log_warn(&format!(
-                "[TokenKeeper][Kiro] 读取账号列表失败，跳过本轮保活: {}",
-                err
-            ));
-            return false;
-        }
-    };
-
-    let current_id = kiro_account::resolve_current_account_id(&accounts);
-    let mut refreshed_any = false;
-
-    for account in accounts {
-        if !expires_at_seconds_due(account.expires_at) {
-            continue;
-        }
-
-        let key = format!("kiro:{}", account.id);
-        if !allow_attempt(&key) {
-            continue;
-        }
-
-        match kiro_account::refresh_account_token(&account.id).await {
-            Ok(updated) => {
-                clear_attempt_backoff(&key);
-                refreshed_any = true;
-                if current_id.as_deref() == Some(updated.id.as_str()) {
-                    match kiro_instance::get_default_kiro_user_data_dir() {
-                        Ok(user_data_dir) => {
-                            if let Err(err) = kiro_instance::inject_account_to_profile(
-                                user_data_dir.as_path(),
-                                &updated.id,
-                            ) {
-                                logger::log_warn(&format!(
-                                    "[TokenKeeper][Kiro] 当前本地登录回写失败: account_id={}, error={}",
-                                    updated.id, err
-                                ));
-                            }
-                        }
-                        Err(err) => {
-                            logger::log_warn(&format!(
-                                "[TokenKeeper][Kiro] 获取默认用户目录失败，跳过本地回写: {}",
-                                err
-                            ));
-                        }
-                    }
-                }
-                logger::log_info(&format!(
-                    "[TokenKeeper][Kiro] Token 保活成功: account_id={}, email={}",
-                    updated.id, updated.email
-                ));
-            }
-            Err(err) => {
-                mark_attempt_failure(&key);
-                logger::log_warn(&format!(
-                    "[TokenKeeper][Kiro] Token 保活失败，进入退避: account_id={}, error={}",
-                    account.id, err
-                ));
-            }
-        }
+    if !platform_package::is_platform_package_runtime_ready("kiro") {
+        return false;
     }
 
-    refreshed_any
+    match platform_adapter::call_kiro_with_timeout::<i32>(
+        "accounts.keepaliveDue",
+        serde_json::json!({}),
+        Duration::from_secs(180),
+    ) {
+        Ok(count) => count > 0,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][Kiro] adapter 保活失败，跳过本轮: {}",
+                err
+            ));
+            false
+        }
+    }
 }
 
 async fn refresh_due_codebuddy_accounts() -> bool {
-    let accounts = match codebuddy_account::list_accounts_checked() {
+    if !platform_package::is_platform_package_installed("codebuddy") {
+        return false;
+    }
+
+    let accounts = match platform_adapter::call_codebuddy::<
+        Vec<crate::models::codebuddy::CodebuddyAccount>,
+    >("accounts.list", serde_json::json!({}))
+    {
         Ok(accounts) => accounts,
         Err(err) => {
             logger::log_warn(&format!(
@@ -483,7 +600,19 @@ async fn refresh_due_codebuddy_accounts() -> bool {
         }
     };
 
-    let current_id = codebuddy_account::resolve_current_account_id(&accounts);
+    let current_id = match platform_adapter::call_codebuddy::<Option<String>>(
+        "accounts.current",
+        serde_json::json!({}),
+    ) {
+        Ok(current_id) => current_id,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][CodeBuddy] 读取当前账号失败，跳过默认登录态回写: {}",
+                err
+            ));
+            None
+        }
+    };
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -496,13 +625,18 @@ async fn refresh_due_codebuddy_accounts() -> bool {
             continue;
         }
 
-        match codebuddy_account::refresh_account_token(&account.id).await {
+        match platform_adapter::call_codebuddy::<crate::models::codebuddy::CodebuddyAccount>(
+            "accounts.refresh",
+            serde_json::json!({ "accountId": account.id }),
+        ) {
             Ok(updated) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    if let Err(err) = codebuddy_account::sync_account_to_default_client(&updated.id)
-                    {
+                    if let Err(err) = platform_adapter::call_codebuddy::<serde_json::Value>(
+                        "switch.injectDefaultProfile",
+                        serde_json::json!({ "accountId": updated.id }),
+                    ) {
                         logger::log_warn(&format!(
                             "[TokenKeeper][CodeBuddy] 当前本地登录回写失败: account_id={}, error={}",
                             updated.id, err
@@ -528,7 +662,14 @@ async fn refresh_due_codebuddy_accounts() -> bool {
 }
 
 async fn refresh_due_codebuddy_cn_accounts() -> bool {
-    let accounts = match codebuddy_cn_account::list_accounts_checked() {
+    if !platform_package::is_platform_package_installed("codebuddy_cn") {
+        return false;
+    }
+
+    let accounts = match platform_adapter::call_codebuddy_cn::<
+        Vec<crate::models::codebuddy::CodebuddyAccount>,
+    >("accounts.list", serde_json::json!({}))
+    {
         Ok(accounts) => accounts,
         Err(err) => {
             logger::log_warn(&format!(
@@ -539,7 +680,19 @@ async fn refresh_due_codebuddy_cn_accounts() -> bool {
         }
     };
 
-    let current_id = codebuddy_cn_account::resolve_current_account_id(&accounts);
+    let current_id = match platform_adapter::call_codebuddy_cn::<Option<String>>(
+        "accounts.current",
+        serde_json::json!({}),
+    ) {
+        Ok(current_id) => current_id,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][CodeBuddyCN] 读取当前账号失败，跳过默认登录态回写: {}",
+                err
+            ));
+            None
+        }
+    };
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -552,14 +705,18 @@ async fn refresh_due_codebuddy_cn_accounts() -> bool {
             continue;
         }
 
-        match codebuddy_cn_account::refresh_account_token(&account.id).await {
+        match platform_adapter::call_codebuddy_cn::<crate::models::codebuddy::CodebuddyAccount>(
+            "accounts.refresh",
+            serde_json::json!({ "accountId": account.id }),
+        ) {
             Ok(updated) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    if let Err(err) =
-                        codebuddy_cn_account::sync_account_to_default_client(&updated.id)
-                    {
+                    if let Err(err) = platform_adapter::call_codebuddy_cn::<serde_json::Value>(
+                        "switch.injectDefaultProfile",
+                        serde_json::json!({ "accountId": updated.id }),
+                    ) {
                         logger::log_warn(&format!(
                             "[TokenKeeper][CodeBuddyCN] 当前本地登录回写失败: account_id={}, error={}",
                             updated.id, err
@@ -585,7 +742,14 @@ async fn refresh_due_codebuddy_cn_accounts() -> bool {
 }
 
 async fn refresh_due_workbuddy_accounts() -> bool {
-    let accounts = match workbuddy_account::list_accounts_checked() {
+    if !platform_package::is_platform_package_runtime_ready("workbuddy") {
+        return false;
+    }
+
+    let accounts = match platform_adapter::call_workbuddy::<
+        Vec<crate::models::workbuddy::WorkbuddyAccount>,
+    >("accounts.list", serde_json::json!({}))
+    {
         Ok(accounts) => accounts,
         Err(err) => {
             logger::log_warn(&format!(
@@ -596,7 +760,19 @@ async fn refresh_due_workbuddy_accounts() -> bool {
         }
     };
 
-    let current_id = workbuddy_account::resolve_current_account_id(&accounts);
+    let current_id = match platform_adapter::call_workbuddy::<Option<String>>(
+        "accounts.current",
+        serde_json::json!({}),
+    ) {
+        Ok(value) => value,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][WorkBuddy] 读取当前账号失败，跳过本轮保活: {}",
+                err
+            ));
+            return false;
+        }
+    };
     let mut refreshed_any = false;
 
     for account in accounts {
@@ -609,13 +785,18 @@ async fn refresh_due_workbuddy_accounts() -> bool {
             continue;
         }
 
-        match workbuddy_account::refresh_account_token(&account.id).await {
+        match platform_adapter::call_workbuddy::<crate::models::workbuddy::WorkbuddyAccount>(
+            "accounts.refresh",
+            serde_json::json!({ "accountId": account.id }),
+        ) {
             Ok(updated) => {
                 clear_attempt_backoff(&key);
                 refreshed_any = true;
                 if current_id.as_deref() == Some(updated.id.as_str()) {
-                    if let Err(err) = workbuddy_account::sync_account_to_default_client(&updated.id)
-                    {
+                    if let Err(err) = platform_adapter::call_workbuddy::<serde_json::Value>(
+                        "switch.injectDefaultProfile",
+                        serde_json::json!({ "accountId": updated.id }),
+                    ) {
                         logger::log_warn(&format!(
                             "[TokenKeeper][WorkBuddy] 当前本地登录回写失败: account_id={}, error={}",
                             updated.id, err
@@ -641,7 +822,17 @@ async fn refresh_due_workbuddy_accounts() -> bool {
 }
 
 async fn refresh_due_trae_accounts() -> bool {
-    let accounts = match trae_account::list_accounts_checked() {
+    if !platform_package::is_platform_package_installed("trae") {
+        return false;
+    }
+
+    let accounts: Vec<crate::models::trae::TraeAccount> = match call_trae_adapter(
+        "accounts.list",
+        serde_json::json!({}),
+        Duration::from_secs(20),
+    )
+    .await
+    {
         Ok(accounts) => accounts,
         Err(err) => {
             logger::log_warn(&format!(
@@ -652,12 +843,43 @@ async fn refresh_due_trae_accounts() -> bool {
         }
     };
 
-    let current_id = trae_account::resolve_current_account_id(&accounts);
-    let protection_map = trae_account::resolve_running_account_refresh_protection_map(&accounts);
+    let current_id: Option<String> = match call_trae_adapter(
+        "accounts.current",
+        serde_json::json!({}),
+        Duration::from_secs(20),
+    )
+    .await
+    {
+        Ok(current_id) => current_id,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[TokenKeeper][Trae] 读取当前账号失败，跳过本地回写: {}",
+                err
+            ));
+            None
+        }
+    };
     let mut refreshed_any = false;
 
     for account in accounts {
-        let refresh_due = trae_account::should_refresh_token_by_official_window(&account);
+        let refresh_due = match call_trae_adapter::<bool>(
+            "accounts.shouldRefreshToken",
+            serde_json::json!({ "accountId": account.id.clone() }),
+            Duration::from_secs(20),
+        )
+        .await
+        {
+            Ok(value) => value,
+            Err(err) => {
+                let key = format!("trae_refresh:{}", account.id);
+                mark_attempt_failure(&key);
+                logger::log_warn(&format!(
+                    "[TokenKeeper][Trae] 判断 Token 保活窗口失败，进入退避: account_id={}, error={}",
+                    account.id, err
+                ));
+                continue;
+            }
+        };
 
         if refresh_due {
             let key = format!("trae_refresh:{}", account.id);
@@ -665,53 +887,27 @@ async fn refresh_due_trae_accounts() -> bool {
                 continue;
             }
 
-            if let Some(storage_path) = protection_map.get(account.id.as_str()) {
-                logger::log_info(&format!(
-                    "[TokenKeeper][Trae] 账号正在运行中的 Trae 客户端实例中使用，改为仅额度刷新: account_id={}, storage_path={}",
-                    account.id,
-                    storage_path
-                        .as_ref()
-                        .map(|path| path.display().to_string())
-                        .unwrap_or_else(|| "-".to_string())
-                ));
-                match trae_account::refresh_account_usage_only_async(
-                    &account.id,
-                    storage_path.as_deref(),
-                )
-                .await
-                {
-                    Ok(updated) => {
-                        clear_attempt_backoff(&key);
-                        mark_trae_strict_check_done(updated.id.as_str());
-                        refreshed_any = true;
-                        logger::log_info(&format!(
-                            "[TokenKeeper][Trae] 仅额度刷新成功: account_id={}, email={}",
-                            updated.id, updated.email
-                        ));
-                    }
-                    Err(err) => {
-                        mark_attempt_failure(&key);
-                        logger::log_warn(&format!(
-                            "[TokenKeeper][Trae] 仅额度刷新失败，进入退避: account_id={}, error={}",
-                            account.id, err
-                        ));
-                    }
-                }
-                continue;
-            }
-
-            match trae_account::refresh_account_async(&account.id).await {
+            let account_id = account.id.clone();
+            match call_trae_adapter::<crate::models::trae::TraeAccount>(
+                "accounts.refresh",
+                serde_json::json!({ "accountId": account_id }),
+                Duration::from_secs(180),
+            )
+            .await
+            {
                 Ok(updated) => {
                     clear_attempt_backoff(&key);
                     mark_trae_strict_check_done(updated.id.as_str());
                     refreshed_any = true;
                     if current_id.as_deref() == Some(updated.id.as_str()) {
-                        if process::is_trae_running() {
-                            logger::log_info(&format!(
-                                "[TokenKeeper][Trae] Trae 运行中，跳过当前账号本地回写: account_id={}",
-                                updated.id
-                            ));
-                        } else if let Err(err) = trae_account::inject_to_trae(&updated.id) {
+                        let updated_id = updated.id.clone();
+                        if let Err(err) = call_trae_adapter::<Value>(
+                            "switch.injectDefaultProfile",
+                            serde_json::json!({ "accountId": updated_id }),
+                            Duration::from_secs(20),
+                        )
+                        .await
+                        {
                             logger::log_warn(&format!(
                                 "[TokenKeeper][Trae] 当前本地登录回写失败: account_id={}, error={}",
                                 updated.id, err
@@ -746,7 +942,13 @@ async fn refresh_due_trae_accounts() -> bool {
             continue;
         }
 
-        match trae_account::check_login_token(&account.id).await {
+        match call_trae_adapter::<TraeCheckLoginVerdict>(
+            "accounts.checkLogin",
+            serde_json::json!({ "accountId": account.id.clone() }),
+            Duration::from_secs(60),
+        )
+        .await
+        {
             Ok(verdict) => {
                 clear_attempt_backoff(&strict_key);
                 mark_trae_strict_check_done(account.id.as_str());
