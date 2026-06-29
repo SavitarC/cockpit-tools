@@ -58,6 +58,12 @@ const CODEX_MANAGED_MODEL_CATALOG_SUFFIX: &str = ".json";
 const CODEX_DEFAULT_MODEL_CONTEXT_WINDOW: i64 = 128_000;
 const CODEX_API_MODELS_TIMEOUT_SECONDS: u64 = 5;
 const CODEX_API_MODELS_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
+const EMBEDDED_CODEX_MODELS_CACHE_JSON: &str = include_str!(
+    "../../../sidecars/cockpit-cliproxy/cdk/CLIProxyAPI/internal/registry/models/models_cache.json"
+);
+const EMBEDDED_CODEX_CLIENT_MODELS_JSON: &str = include_str!(
+    "../../../sidecars/cockpit-cliproxy/cdk/CLIProxyAPI/internal/registry/models/codex_client_models.json"
+);
 #[cfg(target_os = "macos")]
 #[cfg(all(target_os = "macos", not(test)))]
 const CODEX_KEYCHAIN_SERVICE: &str = "Codex Auth";
@@ -957,59 +963,73 @@ struct CodexModelCatalogTemplates {
 fn find_preferred_codex_model_catalog_template(
     models: &[serde_json::Value],
 ) -> Option<serde_json::Value> {
-    for slug in ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"] {
-        if let Some(model) = models.iter().find(|item| {
-            item.as_object().is_some()
-                && item.get("slug").and_then(|value| value.as_str()) == Some(slug)
-        }) {
-            return Some(model.clone());
-        }
-    }
     models
         .iter()
         .find(|item| item.as_object().is_some())
         .cloned()
 }
 
-fn load_codex_model_catalog_templates(base_dir: &Path) -> CodexModelCatalogTemplates {
-    let fallback_template = fallback_codex_model_info_template();
-    let Ok(content) = fs::read_to_string(base_dir.join("models_cache.json")) else {
-        return CodexModelCatalogTemplates {
-            entries_by_slug: HashMap::new(),
-            fallback_template,
-        };
-    };
-    let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) else {
-        return CodexModelCatalogTemplates {
-            entries_by_slug: HashMap::new(),
-            fallback_template,
-        };
+fn merge_codex_model_catalog_template_source(
+    content: &str,
+    entries_by_slug: &mut HashMap<String, serde_json::Value>,
+    fallback_template: &mut Option<serde_json::Value>,
+    allow_fallback_template: bool,
+) {
+    if content.trim().is_empty() {
+        return;
+    }
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(content) else {
+        return;
     };
     let Some(models) = value.get("models").and_then(|item| item.as_array()) else {
-        return CodexModelCatalogTemplates {
-            entries_by_slug: HashMap::new(),
-            fallback_template,
-        };
+        return;
     };
 
-    let entries_by_slug = models
-        .iter()
-        .filter(|item| item.as_object().is_some())
-        .filter_map(|item| {
-            let slug = item.get("slug").and_then(|value| value.as_str())?;
-            if slug.trim().is_empty() {
-                None
-            } else {
-                Some((slug.to_string(), item.clone()))
-            }
-        })
-        .collect::<HashMap<_, _>>();
-    let fallback_template =
-        find_preferred_codex_model_catalog_template(models).unwrap_or(fallback_template);
+    for item in models.iter().filter(|item| item.as_object().is_some()) {
+        let Some(slug) = item.get("slug").and_then(|value| value.as_str()) else {
+            continue;
+        };
+        if slug.trim().is_empty() {
+            continue;
+        }
+        entries_by_slug
+            .entry(slug.to_string())
+            .or_insert_with(|| item.clone());
+    }
+
+    if allow_fallback_template && fallback_template.is_none() {
+        *fallback_template = find_preferred_codex_model_catalog_template(models);
+    }
+}
+
+fn load_codex_model_catalog_templates(base_dir: &Path) -> CodexModelCatalogTemplates {
+    let mut entries_by_slug = HashMap::new();
+    let mut fallback_template = None;
+
+    if let Ok(content) = fs::read_to_string(base_dir.join("models_cache.json")) {
+        merge_codex_model_catalog_template_source(
+            &content,
+            &mut entries_by_slug,
+            &mut fallback_template,
+            true,
+        );
+    }
+    merge_codex_model_catalog_template_source(
+        EMBEDDED_CODEX_MODELS_CACHE_JSON,
+        &mut entries_by_slug,
+        &mut fallback_template,
+        false,
+    );
+    merge_codex_model_catalog_template_source(
+        EMBEDDED_CODEX_CLIENT_MODELS_JSON,
+        &mut entries_by_slug,
+        &mut fallback_template,
+        false,
+    );
 
     CodexModelCatalogTemplates {
         entries_by_slug,
-        fallback_template,
+        fallback_template: fallback_template.unwrap_or_else(fallback_codex_model_info_template),
     }
 }
 
@@ -6785,7 +6805,8 @@ mod tests {
         write_quick_config_to_config_toml, ApiProviderConfig, CodexAccountIndex,
         CodexAccountSummary, CodexAuthFile, CodexAuthTokens, CodexJsonImportCandidate,
         LocalCodexOAuthSnapshot, CODEX_API_MODELS_MAX_BODY_BYTES, CODEX_AUTO_COMPACT_DEFAULT_LIMIT,
-        CODEX_CONTEXT_WINDOW_1M_VALUE,
+        CODEX_CONTEXT_WINDOW_1M_VALUE, EMBEDDED_CODEX_CLIENT_MODELS_JSON,
+        EMBEDDED_CODEX_MODELS_CACHE_JSON,
     };
     use crate::models::codex::{CodexAccount, CodexApiProviderMode, CodexTokens};
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -7395,37 +7416,36 @@ mod tests {
         );
         assert_eq!(
             models[0].get("display_name").and_then(|item| item.as_str()),
-            Some("gpt-5.5")
+            Some("GPT-5.5")
         );
         assert_eq!(
             models[0]
                 .get("context_window")
                 .and_then(|item| item.as_i64()),
-            Some(128000)
+            Some(272000)
         );
         assert_eq!(
             models[0]
                 .get("max_context_window")
                 .and_then(|item| item.as_i64()),
-            Some(128000)
+            Some(272000)
         );
         assert_eq!(
             models[0].get("priority").and_then(|item| item.as_i64()),
-            Some(1000)
+            Some(7)
         );
         let entry = models[0].as_object().expect("model entry object");
         assert_schema_complete_codex_model_entry(entry);
-        assert_default_fallback_reasoning_metadata(entry);
         assert_eq!(
             models[1].get("priority").and_then(|item| item.as_i64()),
-            Some(1001)
+            Some(16)
         );
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
     }
 
     #[test]
-    fn codex_model_catalog_json_clones_preferred_models_cache_template() {
+    fn codex_model_catalog_json_clones_first_models_cache_template() {
         let base_dir = make_temp_dir("codex-model-catalog-json-template-test");
         fs::write(
             base_dir.join("config.toml"),
@@ -7487,7 +7507,7 @@ mod tests {
             .expect("model entry");
         assert_eq!(
             entry.get("template_marker").and_then(|item| item.as_str()),
-            Some("preferred-template")
+            Some("mini-template")
         );
         assert_eq!(
             entry.get("slug").and_then(|item| item.as_str()),
@@ -7788,19 +7808,19 @@ mod tests {
             models[0]
                 .get("template_marker")
                 .and_then(|item| item.as_str()),
-            Some("fallback-template")
+            None
         );
         assert_eq!(
             models[0].get("display_name").and_then(|item| item.as_str()),
-            Some("gpt-5.5")
+            Some("GPT-5.5")
         );
         assert_eq!(
             models[0].get("priority").and_then(|item| item.as_i64()),
-            Some(1000)
+            Some(7)
         );
         assert!(models[0]
             .get("availability_nux")
-            .is_some_and(|item| item.is_null()));
+            .is_some_and(|item| item.is_object()));
         assert!(models[0].get("upgrade").is_some_and(|item| item.is_null()));
         assert_schema_complete_codex_model_entry(
             models[0].as_object().expect("generated entry object"),
@@ -7867,6 +7887,197 @@ mod tests {
         );
         assert_schema_complete_codex_model_entry(entry);
         assert_default_fallback_reasoning_metadata(entry);
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
+    fn codex_model_catalog_json_uses_ordered_template_sources() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-template-source-order-test");
+        fs::write(
+            base_dir.join("models_cache.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "models": [
+                    {
+                        "slug": "gpt-5.5",
+                        "display_name": "User GPT 5.5",
+                        "description": "User cache entry",
+                        "template_marker": "user-cache"
+                    },
+                    {
+                        "slug": "gpt-5.5",
+                        "display_name": "Later duplicate should not win",
+                        "description": "Duplicate cache entry",
+                        "template_marker": "duplicate-cache"
+                    }
+                ]
+            }))
+            .expect("serialize models cache"),
+        )
+        .expect("write models cache");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec![
+                "gpt-5.5".to_string(),
+                "gpt-5.3-codex-spark".to_string(),
+                "gpt-5.4".to_string(),
+                "gpt-5.2".to_string(),
+                "remote-only".to_string(),
+            ],
+        );
+
+        let filename = write_codex_model_catalog_json(
+            &base_dir,
+            &account,
+            &[
+                "gpt-5.5".to_string(),
+                "gpt-5.3-codex-spark".to_string(),
+                "gpt-5.4".to_string(),
+                "gpt-5.2".to_string(),
+                "remote-only".to_string(),
+            ],
+        )
+        .expect("write catalog")
+        .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let models = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .expect("models array");
+        let embedded_cache_spark =
+            embedded_codex_model_entry(EMBEDDED_CODEX_MODELS_CACHE_JSON, "gpt-5.3-codex-spark");
+        let embedded_cache_gpt54 =
+            embedded_codex_model_entry(EMBEDDED_CODEX_MODELS_CACHE_JSON, "gpt-5.4");
+        let embedded_client_gpt52 =
+            embedded_codex_model_entry(EMBEDDED_CODEX_CLIENT_MODELS_JSON, "gpt-5.2");
+        assert_eq!(
+            models[0].get("display_name").and_then(|item| item.as_str()),
+            Some("User GPT 5.5")
+        );
+        assert_eq!(
+            models[0]
+                .get("template_marker")
+                .and_then(|item| item.as_str()),
+            Some("user-cache")
+        );
+        assert_eq!(
+            models[1].get("display_name").and_then(|item| item.as_str()),
+            embedded_cache_spark
+                .get("display_name")
+                .and_then(|item| item.as_str())
+        );
+        assert_eq!(
+            models[1].get("priority").and_then(|item| item.as_i64()),
+            embedded_cache_spark
+                .get("priority")
+                .and_then(|item| item.as_i64())
+        );
+        assert_eq!(
+            models[2].get("display_name").and_then(|item| item.as_str()),
+            embedded_cache_gpt54
+                .get("display_name")
+                .and_then(|item| item.as_str())
+        );
+        assert_eq!(
+            models[2].get("priority").and_then(|item| item.as_i64()),
+            embedded_cache_gpt54
+                .get("priority")
+                .and_then(|item| item.as_i64())
+        );
+        assert_eq!(
+            models[3].get("display_name").and_then(|item| item.as_str()),
+            embedded_client_gpt52
+                .get("display_name")
+                .and_then(|item| item.as_str())
+        );
+        assert_eq!(
+            models[3].get("description").and_then(|item| item.as_str()),
+            embedded_client_gpt52
+                .get("description")
+                .and_then(|item| item.as_str())
+        );
+        assert_eq!(
+            models[3].get("priority").and_then(|item| item.as_i64()),
+            embedded_client_gpt52
+                .get("priority")
+                .and_then(|item| item.as_i64())
+        );
+        assert_eq!(
+            models[4].get("display_name").and_then(|item| item.as_str()),
+            Some("remote-only")
+        );
+        assert_eq!(
+            models[4].get("priority").and_then(|item| item.as_i64()),
+            Some(1004)
+        );
+        let remote_only = models[4].as_object().expect("remote model entry object");
+        assert_default_fallback_reasoning_metadata(remote_only);
+        assert!(remote_only
+            .get("availability_nux")
+            .is_some_and(|item| item.is_null()));
+        assert!(remote_only
+            .get("model_messages")
+            .is_some_and(|item| item.is_null()));
+        assert_schema_complete_codex_model_entry(remote_only);
+
+        fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
+    }
+
+    #[test]
+    fn codex_model_catalog_json_uses_builtin_fallback_without_local_cache() {
+        let base_dir = make_temp_dir("codex-model-catalog-json-embedded-no-fallback-test");
+        let account = CodexAccount::new_api_key(
+            "codex-api-account".to_string(),
+            "api@example.com".to_string(),
+            "sk-secret-not-in-filename".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+            vec!["remote-only".to_string()],
+        );
+
+        let filename =
+            write_codex_model_catalog_json(&base_dir, &account, &["remote-only".to_string()])
+                .expect("write catalog")
+                .expect("filename");
+
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(base_dir.join(filename)).expect("read catalog"),
+        )
+        .expect("parse catalog");
+        let entry = value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .and_then(|items| items.first())
+            .and_then(|item| item.as_object())
+            .expect("model entry");
+        assert_eq!(
+            entry.get("display_name").and_then(|item| item.as_str()),
+            Some("remote-only")
+        );
+        assert_eq!(
+            entry.get("priority").and_then(|item| item.as_i64()),
+            Some(1000)
+        );
+        assert_default_fallback_reasoning_metadata(entry);
+        assert!(entry
+            .get("availability_nux")
+            .is_some_and(|item| item.is_null()));
+        assert!(entry
+            .get("model_messages")
+            .is_some_and(|item| item.is_null()));
+        assert_schema_complete_codex_model_entry(entry);
 
         fs::remove_dir_all(&base_dir).expect("cleanup temp dir");
     }
@@ -8215,6 +8426,21 @@ custom_flag = "keep-me"
                 .collect::<Vec<_>>(),
             vec!["low", "medium", "high", "xhigh"]
         );
+    }
+
+    fn embedded_codex_model_entry(content: &str, slug: &str) -> serde_json::Value {
+        let value: serde_json::Value =
+            serde_json::from_str(content).expect("embedded model catalog parses");
+        value
+            .get("models")
+            .and_then(|item| item.as_array())
+            .and_then(|models| {
+                models
+                    .iter()
+                    .find(|item| item.get("slug").and_then(|value| value.as_str()) == Some(slug))
+            })
+            .cloned()
+            .expect("embedded model entry exists")
     }
 
     fn make_temp_dir(prefix: &str) -> std::path::PathBuf {
