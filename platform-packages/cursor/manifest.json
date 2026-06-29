@@ -1,0 +1,106 @@
+{
+  "id": "cursor",
+  "platformId": "cursor",
+  "version": "0.26.7",
+  "apiVersion": 1,
+  "minCoreVersion": "0.26.5",
+  "displayName": "Cursor",
+  "entry": "runtime/index.json",
+  "packageMode": "hotUpdate",
+  "installKind": "sidecarAdapter",
+  "adapter": {
+    "protocol": "http-json-v1",
+    "entry": "adapter/macos/cockpit-cursor-adapter",
+    "macosEntry": "adapter/macos/cockpit-cursor-adapter",
+    "windowsEntry": "adapter/windows/cockpit-cursor-adapter.exe",
+    "linuxEntry": "adapter/linux/cockpit-cursor-adapter",
+    "methods": [
+      "health.check",
+      "accounts.list",
+      "accounts.current",
+      "accounts.delete",
+      "accounts.deleteMany",
+      "accounts.importJson",
+      "accounts.importLocal",
+      "accounts.addToken",
+      "accounts.export",
+      "accounts.indexPath",
+      "accounts.refresh",
+      "accounts.refreshAll",
+      "accounts.updateTags",
+      "quota.alertPayload",
+      "oauth.start",
+      "oauth.complete",
+      "oauth.cancel",
+      "switch.inject",
+      "switch.injectDefaultProfile",
+      "instances.store.get",
+      "instances.store.replace",
+      "instance.getDefaults",
+      "instance.list",
+      "instance.create",
+      "instance.update",
+      "instance.delete",
+      "instance.start",
+      "instance.stop",
+      "instance.closeAll",
+      "instance.openWindow",
+      "runtime.detectLaunchPath",
+      "runtime.status",
+      "runtime.startDefault",
+      "runtime.stopDefault",
+      "runtime.restartDefault",
+      "runtime.focusDefault"
+    ]
+  },
+  "ui": {
+    "protocol": "react-remote-esm-v1",
+    "entry": "ui/remoteEntry.js",
+    "style": "ui/style.css",
+    "exports": [
+      "mount",
+      "unmount"
+    ]
+  },
+  "capabilities": [
+    "accounts",
+    "oauth",
+    "switch",
+    "quota",
+    "runtime",
+    "instances"
+  ],
+  "changelog": [
+    {
+      "version": "0.26.7",
+      "date": "2026-06-23",
+      "notes": [
+        "Cursor account overview, multi-instance tabs, OAuth, token import, switching, quota refresh, and page interactions are now supplied by the Cursor platform package.",
+        "Core Shell keeps only Cursor platform lifecycle controls, runtime gate, Host API, and adapter runner."
+      ]
+    }
+  ],
+  "contributions": {
+    "platforms": [
+      {
+        "id": "cursor",
+        "label": "Cursor",
+        "labelKey": "nav.cursor",
+        "iconKey": "cursor",
+        "page": "cursor"
+      }
+    ],
+    "dataPaths": [
+      "cursor_accounts.json",
+      "cursor_accounts",
+      "cursor_instances.json"
+    ],
+    "localStorageKeys": [
+      "agtools.cursor.accounts.cache",
+      "agtools.cursor.current_account_id",
+      "agtools.cursor.flow_notice_collapsed",
+      "agtools.cursor.instances.cache"
+    ],
+    "nativeBoundaries": []
+  }
+}

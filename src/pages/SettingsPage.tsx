@@ -17,6 +17,7 @@ import { showFloatingCardWindow } from '../services/floatingCardService';
 import { usePlatformRuntimeSupport } from '../hooks/usePlatformRuntimeSupport';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { SideNavLayoutMode, useSideNavLayoutStore } from '../stores/useSideNavLayoutStore';
+import { useSponsorStore } from '../stores/useSponsorStore';
 import { UnlockFireworksOverlay } from '../components/UnlockFireworksOverlay';
 import {
   AutoSwitchAccountScopeSelector,
@@ -61,6 +62,7 @@ import { useWorkbuddyAccountStore } from '../stores/useWorkbuddyAccountStore';
 import { useQoderAccountStore } from '../stores/useQoderAccountStore';
 import { useTraeAccountStore } from '../stores/useTraeAccountStore';
 import { useZedAccountStore } from '../stores/useZedAccountStore';
+import { usePlatformPackageStore } from '../stores/usePlatformPackageStore';
 import { getGitHubCopilotAccountDisplayEmail } from '../types/githubCopilot';
 import { getWindsurfAccountDisplayEmail } from '../types/windsurf';
 import { getKiroAccountDisplayEmail } from '../types/kiro';
@@ -73,6 +75,13 @@ import { getQoderAccountDisplayEmail } from '../types/qoder';
 import { getTraeAccountDisplayEmail } from '../types/trae';
 import { getZedAccountDisplayEmail } from '../types/zed';
 import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
+import {
+  buildStartupPageOptions,
+  DEFAULT_STARTUP_PAGE,
+  LAST_CLOSED_STARTUP_PAGE,
+  normalizeStartupPageValue,
+  type StartupPageValue,
+} from '../utils/startupPage';
 import { SettingsAccountTransferSection } from '../components/SettingsAccountTransferSection';
 import { SettingsWebdavSyncSection } from '../components/SettingsWebdavSyncSection';
 import { useEscClose } from '../hooks/useEscClose';
@@ -121,6 +130,7 @@ interface GeneralConfig {
   minimize_behavior?: 'dock_and_tray' | 'tray_only';
   hide_dock_icon?: boolean;
   tray_icon_style?: 'template' | 'color';
+  startup_page?: string;
   floating_card_show_on_startup?: boolean;
   startup_minimized?: boolean;
   floating_card_always_on_top?: boolean;
@@ -345,6 +355,10 @@ export function SettingsPage() {
   }, [isMacOS, isWindows, isLinux, availableTerminals, t]);
 
   const orderedPlatformIds = usePlatformLayoutStore((state) => state.orderedPlatformIds);
+  const sidebarEntryIds = usePlatformLayoutStore((state) => state.sidebarEntryIds);
+  const platformGroups = usePlatformLayoutStore((state) => state.platformGroups);
+  const apiRelaySidebarVisible = usePlatformLayoutStore((state) => state.apiRelaySidebarVisible);
+  const sponsorEntryVisible = useSponsorStore((state) => Boolean(state.state.sponsorModule));
   const platformSettingsOrder = useMemo<Record<PlatformId, number>>(() => {
     const next: Record<PlatformId, number> = { ...FALLBACK_PLATFORM_SETTINGS_ORDER };
     let order = 0;
@@ -355,6 +369,23 @@ export function SettingsPage() {
     }
     return next;
   }, [orderedPlatformIds]);
+
+  const startupPageOptions = useMemo(
+    () => buildStartupPageOptions(
+      {
+        sidebarEntryIds,
+        platformGroups,
+        apiRelayVisible: sponsorEntryVisible && apiRelaySidebarVisible,
+      },
+      t,
+    ),
+    [apiRelaySidebarVisible, platformGroups, sidebarEntryIds, sponsorEntryVisible, t],
+  );
+
+  const startupPageOptionValues = useMemo(
+    () => new Set(startupPageOptions.map((option) => option.value)),
+    [startupPageOptions],
+  );
 
   const languageOptions = [
     { value: 'zh-cn', label: '简体中文' },
@@ -396,6 +427,7 @@ export function SettingsPage() {
   const [minimizeBehavior, setMinimizeBehavior] = useState<'dock_and_tray' | 'tray_only'>('dock_and_tray');
   const [hideDockIcon, setHideDockIcon] = useState(false);
   const [trayIconStyle, setTrayIconStyle] = useState<'template' | 'color'>('template');
+  const [startupPage, setStartupPage] = useState<StartupPageValue>(DEFAULT_STARTUP_PAGE);
   const [floatingCardShowOnStartup, setFloatingCardShowOnStartup] = useState(false);
   const [startupMinimized, setStartupMinimized] = useState(false);
   const [floatingCardAlwaysOnTop, setFloatingCardAlwaysOnTop] = useState(false);
@@ -548,6 +580,7 @@ export function SettingsPage() {
   const [antigravityAccountGroups, setAntigravityAccountGroups] = useState<AccountGroup[]>([]);
   const [codexAccounts, setCodexAccounts] = useState<CodexAccount[]>([]);
   const [codexGroups, setCodexGroups] = useState<CodexAccountGroup[]>([]);
+  const codexRuntimeReady = usePlatformPackageStore((state) => state.canOpenPlatform('codex'));
 
   const antigravityScopeTypeOptions = useMemo(
     () => buildAccountTierFilterOptions(t, buildAccountTierCounts(antigravityAccounts, {})),
@@ -575,13 +608,15 @@ export function SettingsPage() {
   );
   const codexScopeAccounts = useMemo<AutoSwitchScopeAccount[]>(
     () =>
-      codexAccounts.map((account) => ({
-        id: account.id,
-        label: account.email,
-        searchableText: account.email,
-        tags: account.tags || [],
-      })),
-    [codexAccounts],
+      codexRuntimeReady
+        ? codexAccounts.map((account) => ({
+            id: account.id,
+            label: account.email,
+            searchableText: account.email,
+            tags: account.tags || [],
+          }))
+        : [],
+    [codexAccounts, codexRuntimeReady],
   );
 
   useEffect(() => {
@@ -592,8 +627,8 @@ export function SettingsPage() {
           await Promise.all([
             accountService.listAccounts(),
             getAccountGroups(),
-            codexService.listCodexAccounts(),
-            getCodexAccountGroups(),
+            codexRuntimeReady ? codexService.listCodexAccounts() : Promise.resolve([]),
+            codexRuntimeReady ? getCodexAccountGroups() : Promise.resolve([]),
           ]);
         if (!mounted) return;
         setAntigravityAccounts(nextAntigravityAccounts || []);
@@ -617,7 +652,7 @@ export function SettingsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeTab]);
+  }, [activeTab, codexRuntimeReady]);
 
   useEffect(() => {
     getVersion().then(ver => setAppVersion(`v${ver}`));
@@ -760,6 +795,15 @@ export function SettingsPage() {
   }, [generalLoaded, uiScale]);
 
   useEffect(() => {
+    if (!generalLoaded || startupPage === LAST_CLOSED_STARTUP_PAGE) {
+      return;
+    }
+    if (!startupPageOptionValues.has(startupPage)) {
+      setStartupPage(DEFAULT_STARTUP_PAGE);
+    }
+  }, [generalLoaded, startupPage, startupPageOptionValues]);
+
+  useEffect(() => {
     if (!generalLoaded) {
       return;
     }
@@ -854,6 +898,7 @@ export function SettingsPage() {
           minimizeBehavior,
           hideDockIcon,
           trayIconStyle: isMacOS ? trayIconStyle : undefined,
+          startupPage,
           floatingCardShowOnStartup,
           startupMinimized,
           floatingCardAlwaysOnTop,
@@ -978,6 +1023,7 @@ export function SettingsPage() {
     minimizeBehavior,
     hideDockIcon,
     trayIconStyle,
+    startupPage,
     isMacOS,
     floatingCardShowOnStartup,
     startupMinimized,
@@ -1278,6 +1324,7 @@ export function SettingsPage() {
       setMinimizeBehavior(config.minimize_behavior || 'dock_and_tray');
       setHideDockIcon(Boolean(config.hide_dock_icon));
       setTrayIconStyle(config.tray_icon_style === 'color' ? 'color' : 'template');
+      setStartupPage(normalizeStartupPageValue(config.startup_page));
       setFloatingCardShowOnStartup(config.floating_card_show_on_startup ?? false);
       setStartupMinimized(config.startup_minimized ?? false);
       setFloatingCardAlwaysOnTop(config.floating_card_always_on_top ?? false);
@@ -1815,8 +1862,10 @@ export function SettingsPage() {
       case 'antigravity':
         return antigravityAccounts.map((a) => ({ id: a.id, email: a.email }));
       case 'codex':
+        if (!codexRuntimeReady) return [];
         return codexAccounts.map((a) => ({ id: a.id, email: a.email }));
       case 'claude':
+        if (!usePlatformPackageStore.getState().canOpenPlatform('claude_manager')) return [];
         return getProviderAccounts(useClaudeAccountStore, getClaudeAccountDisplayEmail);
       case 'ghcp':
         return getProviderAccounts(useGitHubCopilotAccountStore, getGitHubCopilotAccountDisplayEmail);
@@ -1829,10 +1878,13 @@ export function SettingsPage() {
       case 'gemini':
         return getProviderAccounts(useGeminiAccountStore, getGeminiAccountDisplayEmail);
       case 'codebuddy':
+        if (!usePlatformPackageStore.getState().canOpenPlatform('codebuddy')) return [];
         return getProviderAccounts(useCodebuddyAccountStore, getCodebuddyAccountDisplayEmail);
       case 'codebuddy_cn':
+        if (!usePlatformPackageStore.getState().canOpenPlatform('codebuddy_cn')) return [];
         return getProviderAccounts(useCodebuddyCnAccountStore, getCodebuddyAccountDisplayEmail);
       case 'workbuddy':
+        if (!usePlatformPackageStore.getState().canOpenPlatform('workbuddy')) return [];
         return getProviderAccounts(useWorkbuddyAccountStore, getWorkbuddyAccountDisplayEmail);
       case 'qoder':
         return getProviderAccounts(useQoderAccountStore, getQoderAccountDisplayEmail);
@@ -2446,6 +2498,26 @@ export function SettingsPage() {
                   >
                     <option value="original">{t('settings.general.sideNavLayoutOriginal', '原始布局')}</option>
                     <option value="classic">{t('settings.general.sideNavLayoutClassic', '经典布局')}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-label">
+                  <div className="row-title">{t('settings.general.startupPage', '启动页面')}</div>
+                  <div className="row-desc">
+                    {t('settings.general.startupPageDesc', '设置应用冷启动后默认打开的页面')}
+                  </div>
+                </div>
+                <div className="row-control">
+                  <select
+                    className="settings-select"
+                    value={startupPage}
+                    onChange={(e) => setStartupPage(normalizeStartupPageValue(e.target.value))}
+                  >
+                    {startupPageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -112,6 +112,39 @@ export interface CodexResetCreditsSnapshot {
   next_expires_at?: number;
 }
 
+export interface CodexReferralInviteEligibility {
+  should_show: boolean;
+  remaining_referrals?: number | null;
+  ineligible_reason_code?: string | null;
+  grant_action?: string | null;
+  grant_amount?: number | null;
+  referral_key: string;
+  raw_data?: unknown;
+}
+
+export interface CodexReferralTimeFrameRule {
+  type: string;
+  invites_sent: number;
+  invites_total: number;
+}
+
+export interface CodexReferralEligibilityRules {
+  requires_explicit_confirmation?: boolean | null;
+  rules: string[];
+  time_frame_rules: CodexReferralTimeFrameRule[];
+  raw_data?: unknown;
+}
+
+export interface CodexReferralInvite {
+  email: string;
+  raw_data?: unknown;
+}
+
+export interface CodexReferralInviteResponse {
+  invites: CodexReferralInvite[];
+  raw_data?: unknown;
+}
+
 const COCKPIT_API_BASE_URL = "https://chongcodex.cn/v1";
 
 function normalizeCodexApiBaseUrlForMatch(rawValue?: string | null): string {

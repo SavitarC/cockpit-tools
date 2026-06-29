@@ -1,0 +1,113 @@
+{
+  "id": "workbuddy",
+  "platformId": "workbuddy",
+  "version": "0.26.7",
+  "apiVersion": 1,
+  "minCoreVersion": "0.26.5",
+  "displayName": "WorkBuddy",
+  "entry": "runtime/index.json",
+  "packageMode": "hotUpdate",
+  "installKind": "sidecarAdapter",
+  "adapter": {
+    "protocol": "http-json-v1",
+    "entry": "adapter/macos/cockpit-workbuddy-adapter",
+    "macosEntry": "adapter/macos/cockpit-workbuddy-adapter",
+    "windowsEntry": "adapter/windows/cockpit-workbuddy-adapter.exe",
+    "linuxEntry": "adapter/linux/cockpit-workbuddy-adapter",
+    "methods": [
+      "health.check",
+      "accounts.list",
+      "accounts.current",
+      "accounts.delete",
+      "accounts.deleteMany",
+      "accounts.importJson",
+      "accounts.importLocal",
+      "accounts.addToken",
+      "accounts.export",
+      "accounts.indexPath",
+      "accounts.refresh",
+      "accounts.refreshAll",
+      "accounts.syncToCodebuddyCn",
+      "accounts.updateTags",
+      "quota.alertPayload",
+      "oauth.start",
+      "oauth.complete",
+      "oauth.cancel",
+      "oauth.restorePendingListener",
+      "switch.inject",
+      "switch.injectDefaultProfile",
+      "checkin.status",
+      "checkin.perform",
+      "instances.store.get",
+      "instances.store.replace",
+      "instance.getDefaults",
+      "instance.list",
+      "instance.create",
+      "instance.update",
+      "instance.delete",
+      "instance.start",
+      "instance.stop",
+      "instance.closeAll",
+      "instance.openWindow",
+      "runtime.status",
+      "runtime.startDefault",
+      "runtime.stopDefault",
+      "runtime.restartDefault",
+      "runtime.focusDefault"
+    ]
+  },
+  "ui": {
+    "protocol": "react-remote-esm-v1",
+    "entry": "ui/remoteEntry.js",
+    "style": "ui/style.css",
+    "exports": [
+      "mount",
+      "unmount"
+    ]
+  },
+  "capabilities": [
+    "accounts",
+    "oauth",
+    "tokenImport",
+    "localImport",
+    "switch",
+    "quota",
+    "runtime",
+    "instances",
+    "checkin",
+    "sync"
+  ],
+  "changelog": [
+    {
+      "version": "0.26.7",
+      "date": "2026-06-23",
+      "notes": [
+        "WorkBuddy account overview, multi-instance tabs, OAuth, token import, local import, switching, quota refresh, check-in, CodeBuddy CN sync, launch commands, and page interactions are now supplied by the WorkBuddy platform package.",
+        "Core Shell keeps only WorkBuddy platform lifecycle controls, runtime gate, Host API, and adapter runner."
+      ]
+    }
+  ],
+  "contributions": {
+    "platforms": [
+      {
+        "id": "workbuddy",
+        "label": "WorkBuddy",
+        "labelKey": "nav.workbuddy",
+        "iconKey": "workbuddy",
+        "page": "workbuddy"
+      }
+    ],
+    "dataPaths": [
+      "workbuddy_accounts.json",
+      "workbuddy_accounts",
+      "workbuddy_instances.json"
+    ],
+    "localStorageKeys": [
+      "agtools.workbuddy.accounts.cache",
+      "agtools.workbuddy.current_account_id",
+      "agtools.workbuddy.flow_notice_collapsed",
+      "agtools.workbuddy.instances.cache"
+    ],
+    "nativeBoundaries": []
+  }
+}

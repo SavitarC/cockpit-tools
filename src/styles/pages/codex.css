@@ -94,6 +94,16 @@
   border-radius: 12px;
 }
 
+.codex-overview-selection-actions .codex-overview-full-quota-wakeup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
 .codex-overview-selection-actions .codex-overview-clear-error-btn {
   background: #ef4444;
   border-color: rgba(239, 68, 68, 0.42);
@@ -608,6 +618,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.codex-local-access-pool-pill.is-api-key {
+  grid-template-columns: minmax(92px, 1fr) max-content;
+  border-color: rgba(59, 130, 246, 0.16);
+  background: rgba(59, 130, 246, 0.06);
+  color: #1d4ed8;
+}
+
 .codex-local-access-pool-pill strong {
   font-size: 11px;
   letter-spacing: 0.02em;
@@ -877,6 +894,16 @@
   width: 100%;
 }
 
+.codex-local-access-member.is-api-key {
+  grid-template-columns: minmax(0, 1fr) 14px;
+  gap: 5px;
+}
+
+.codex-local-access-member.is-api-key.has-balance {
+  grid-template-columns: minmax(0, 1fr) max-content 14px;
+  gap: 5px;
+}
+
 .codex-local-access-member-email {
   flex: 1;
   min-width: 0;
@@ -913,6 +940,25 @@
   width: 42px;
   font-size: 8px;
   letter-spacing: 0.02em;
+}
+
+.codex-local-access-member-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .codex-local-access-member .folder-preview-remove-btn {
@@ -1378,6 +1424,12 @@
   color: #7dd3fc;
 }
 
+[data-theme="dark"] .codex-local-access-pool-pill.is-api-key {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+}
+
 [data-theme="dark"] .codex-local-access-pool-more {
   border-color: rgba(56, 189, 248, 0.28);
   background: rgba(14, 165, 233, 0.14);
@@ -1432,6 +1484,10 @@
 [data-theme="dark"] .codex-local-access-member-quota {
   background: rgba(51, 65, 85, 0.52);
   color: rgba(226, 232, 240, 0.9);
+}
+
+[data-theme="dark"] .codex-local-access-member-balance {
+  color: #93c5fd;
 }
 
 [data-theme="dark"] .codex-local-access-member-quota.high {
@@ -2385,6 +2441,65 @@
   color: #78350f;
 }
 
+.codex-reset-credit-confirm-invite-trigger {
+  position: absolute;
+  top: 50%;
+  right: 72px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  max-width: calc(100% - 164px);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: rgba(255, 255, 255, 0.78);
+  color: #1d4ed8;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.14);
+  backdrop-filter: blur(10px);
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.codex-reset-credit-confirm-invite-trigger:hover:not(:disabled) {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e40af;
+}
+
+.codex-reset-credit-confirm-invite-trigger[aria-expanded="true"] {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.18) 0%,
+    rgba(99, 102, 241, 0.18) 100%
+  );
+  color: #1e3a8a;
+}
+
+.codex-reset-credit-confirm-invite-trigger:disabled {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.58);
+  color: color-mix(in srgb, var(--text-secondary) 82%, #64748b);
+  box-shadow: none;
+}
+
+.codex-reset-credit-confirm-invite-trigger-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .codex-reset-credit-confirm-icon {
   position: relative;
   z-index: 1;
@@ -2564,7 +2679,107 @@
   font-weight: 700;
 }
 
+.codex-reset-credit-confirm-referral {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  padding: 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
+  text-align: left;
+}
+
+.codex-reset-credit-confirm-referral-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.codex-reset-credit-confirm-referral-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.codex-reset-credit-confirm-referral-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.codex-reset-credit-confirm-referral-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.codex-reset-credit-confirm-referral-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.codex-reset-credit-confirm-referral-actions .btn {
+  min-width: 108px;
+}
+
+.codex-reset-credit-confirm-referral-success {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+}
+
+.codex-reset-credit-confirm-referral-success-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.codex-reset-credit-confirm-referral-success-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.codex-reset-credit-confirm-referral-unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--text-muted) 28%, var(--border-light));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-tertiary) 58%, transparent);
+}
+
+.codex-reset-credit-confirm-referral-unavailable strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.codex-reset-credit-confirm-referral-unavailable p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 @media (max-width: 560px) {
+  .codex-reset-credit-confirm-invite-trigger {
+    top: auto;
+    right: 18px;
+    bottom: 18px;
+    transform: none;
+    max-width: calc(100% - 36px);
+  }
+
   .codex-reset-credit-confirm-detail {
     grid-template-columns: 1fr;
     align-items: flex-start;
@@ -2577,7 +2792,8 @@
 
 .codex-reset-credit-confirm-footer {
   flex: 0 0 auto;
-  padding: 0 32px 32px;
+  align-items: center;
+  padding: 16px 32px;
   border-top: none;
   background: var(--bg-surface);
 }
@@ -2644,6 +2860,35 @@
   color: #f8fafc;
 }
 
+[data-theme="dark"] .codex-reset-credit-confirm-invite-trigger {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(15, 23, 42, 0.66);
+  color: #bfdbfe;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.28);
+}
+
+[data-theme="dark"] .codex-reset-credit-confirm-invite-trigger:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(15, 23, 42, 0.82);
+  color: #dbeafe;
+}
+
+[data-theme="dark"] .codex-reset-credit-confirm-invite-trigger[aria-expanded="true"] {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.28) 0%,
+    rgba(79, 70, 229, 0.28) 100%
+  );
+  color: #eff6ff;
+}
+
+[data-theme="dark"] .codex-reset-credit-confirm-invite-trigger:disabled {
+  border-color: rgba(100, 116, 139, 0.24);
+  background: rgba(15, 23, 42, 0.5);
+  color: rgba(226, 232, 240, 0.6);
+}
+
 [data-theme="dark"] .codex-reset-credit-confirm-icon {
   background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 58%, #4f46e5 100%);
   box-shadow:
@@ -2704,6 +2949,16 @@
   color: #94a3b8;
 }
 
+[data-theme="dark"] .codex-reset-credit-confirm-referral {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.46);
+}
+
+[data-theme="dark"] .codex-reset-credit-confirm-referral-unavailable {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.5);
+}
+
 [data-theme="dark"] .codex-reset-credit-confirm-action {
   background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
   color: #f8fafc;
@@ -2718,6 +2973,432 @@
 [data-theme="dark"] .codex-reset-credit-confirm-action:disabled {
   background: rgba(15, 23, 42, 0.7);
   color: rgba(248, 250, 252, 0.56);
+}
+
+.codex-referral-invite-overlay {
+  z-index: 10010;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.codex-referral-invite-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(540px, calc(100vw - 32px));
+  max-width: 540px;
+  max-height: calc(100vh - 32px);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, #2563eb 14%, var(--border));
+  background: var(--bg-surface);
+  box-shadow: 0 28px 72px rgba(15, 23, 42, 0.24);
+  overflow: hidden;
+}
+
+.codex-referral-invite-header {
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  background:
+    radial-gradient(circle at 16% 20%, rgba(96, 165, 250, 0.18), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, #dbeafe 70%, var(--bg-surface)) 0%, var(--bg-surface) 72%);
+}
+
+.codex-referral-invite-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.codex-referral-invite-header p {
+  max-width: 440px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.codex-referral-invite-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.codex-referral-invite-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.codex-referral-invite-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--bg-tertiary));
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.codex-referral-invite-account strong {
+  max-width: 300px;
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-referral-invite-field-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.codex-referral-invite-email-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.codex-referral-invite-email-box:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--border-light));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.codex-referral-invite-email-box.has-error {
+  border-color: color-mix(in srgb, #ef4444 70%, var(--border-light));
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.codex-referral-invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 4px 0 9px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--bg-tertiary));
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.codex-referral-invite-chip.invalid {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.26);
+}
+
+.codex-referral-invite-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-referral-invite-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.codex-referral-invite-chip button:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.codex-referral-invite-email-input {
+  flex: 1 1 150px;
+  min-width: 120px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.codex-referral-invite-email-input::placeholder {
+  color: var(--text-muted);
+}
+
+.codex-referral-invite-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.codex-referral-invite-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border-light));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 5%, var(--bg-secondary));
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.codex-referral-invite-consent input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.codex-referral-invite-consent input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.codex-referral-invite-limit-card {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+}
+
+.codex-referral-invite-limit-card svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.codex-referral-invite-limit-card strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #78350f;
+  font-size: 13px;
+}
+
+.codex-referral-invite-limit-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.codex-referral-invite-rules {
+  border-top: 1px solid var(--border-light);
+  padding-top: 8px;
+}
+
+.codex-referral-invite-rules-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.codex-referral-invite-rules-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.codex-referral-invite-rules-toggle svg {
+  transition: transform 0.18s ease;
+}
+
+.codex-referral-invite-rules-toggle svg.expanded {
+  transform: rotate(90deg);
+}
+
+.codex-referral-invite-rules-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.codex-referral-invite-rules-body ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.codex-referral-invite-rules-body li + li {
+  margin-top: 5px;
+}
+
+.codex-referral-invite-rules-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.codex-referral-invite-rules-empty.error {
+  color: #dc2626;
+}
+
+.codex-referral-invite-terms-link {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+
+.codex-referral-invite-terms-link:hover {
+  text-decoration: underline;
+}
+
+.codex-referral-invite-footer {
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px 24px;
+  border-top: 0;
+  background: var(--bg-surface);
+}
+
+.codex-referral-invite-footer .btn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.codex-referral-invite-success-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  align-self: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+}
+
+.codex-referral-invite-body h3 {
+  margin: 0;
+  text-align: center;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.codex-referral-invite-body > p {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.codex-referral-invite-success-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.codex-referral-invite-success-list span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--bg-tertiary));
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .codex-referral-invite-overlay {
+  background: rgba(2, 6, 23, 0.66);
+}
+
+[data-theme="dark"] .codex-referral-invite-modal {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: #111827;
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+[data-theme="dark"] .codex-referral-invite-header {
+  background:
+    radial-gradient(circle at 16% 20%, rgba(37, 99, 235, 0.22), transparent 34%),
+    linear-gradient(135deg, #0c1626 0%, #111827 72%);
+}
+
+[data-theme="dark"] .codex-referral-invite-email-box,
+[data-theme="dark"] .codex-referral-invite-details {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.46);
+}
+
+[data-theme="dark"] .codex-referral-invite-chip {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+[data-theme="dark"] .codex-referral-invite-consent {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: rgba(96, 165, 250, 0.08);
+}
+
+[data-theme="dark"] .codex-referral-invite-limit-card {
+  border-color: rgba(245, 158, 11, 0.22);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .codex-referral-invite-limit-card strong {
+  color: #fde68a;
+}
+
+[data-theme="dark"] .codex-referral-invite-rules-empty.error {
+  color: #f87171;
 }
 
 .codex-api-key-usage-progress {
@@ -7315,6 +7996,15 @@
   gap: 20px;
 }
 
+.codex-wakeup-modal-only {
+  display: block;
+  gap: 0;
+}
+
+.codex-wakeup-modal-only > :not(.modal-overlay) {
+  display: none !important;
+}
+
 .codex-wakeup-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
@@ -8012,6 +8702,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.codex-wakeup-account-sort-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codex-wakeup-account-sort-direction {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
 }
 
 .codex-wakeup-account-search {

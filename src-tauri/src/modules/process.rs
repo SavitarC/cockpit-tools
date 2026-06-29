@@ -1,6 +1,6 @@
 use crate::modules::config;
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -38,6 +38,75 @@ const WINDOWS_PROCESS_PROBE_TIMEOUT: Duration = Duration::from_secs(5);
 #[cfg(target_os = "windows")]
 static CODEX_STORE_APP_USER_MODEL_ID_CACHE: std::sync::OnceLock<String> =
     std::sync::OnceLock::new();
+
+fn get_default_codex_home() -> PathBuf {
+    if let Ok(raw) = std::env::var("CODEX_HOME") {
+        let trimmed = raw.trim().trim_matches('\"').trim_matches('\'').trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    dirs::home_dir().expect("无法获取用户主目录").join(".codex")
+}
+
+fn codex_remote_debugging_arg(codex_home: &str) -> String {
+    let digest = md5::compute(codex_home.trim().as_bytes());
+    let value = u16::from_be_bytes([digest.0[0], digest.0[1]]);
+    format!("--remote-debugging-port={}", 47_000 + (value % 10_000))
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn get_default_codex_instances_root_dir() -> Result<PathBuf, String> {
+    Ok(crate::modules::app_data::get_data_dir()?
+        .join("instances")
+        .join("codex"))
+}
+
+#[cfg(target_os = "windows")]
+fn normalize_windows_codex_home_for_hash(path: &Path) -> String {
+    let resolved = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    resolved.to_string_lossy().replace('/', "\\").to_lowercase()
+}
+
+#[cfg(target_os = "windows")]
+fn get_codex_windows_app_user_data_dir(codex_home: &Path) -> Result<PathBuf, String> {
+    let root = get_default_codex_instances_root_dir()?
+        .parent()
+        .ok_or("无法获取 Codex 实例根目录")?
+        .join("codex-app-data");
+    let normalized = normalize_windows_codex_home_for_hash(codex_home);
+    let digest = format!("{:x}", md5::compute(normalized.as_bytes()));
+    Ok(root.join(digest))
+}
+
+#[cfg(target_os = "macos")]
+fn normalize_macos_codex_home_for_hash(path: &Path) -> String {
+    let resolved = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    resolved.to_string_lossy().to_string()
+}
+
+#[cfg(target_os = "macos")]
+fn get_codex_macos_app_user_data_dir(codex_home: &Path) -> Result<PathBuf, String> {
+    let root = get_default_codex_instances_root_dir()?
+        .parent()
+        .ok_or("无法获取 Codex 实例根目录")?
+        .join("codex-app-data");
+    let normalized = normalize_macos_codex_home_for_hash(codex_home);
+    let digest = format!("{:x}", md5::compute(normalized.as_bytes()));
+    Ok(root.join(digest))
+}
+
+#[cfg(target_os = "macos")]
+fn get_default_qoder_user_data_dir() -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("无法获取用户主目录")?;
+    Ok(home.join("Library/Application Support/Qoder"))
+}
+
+#[cfg(target_os = "macos")]
+fn get_default_trae_user_data_dir() -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("无法获取用户主目录")?;
+    Ok(home.join("Library/Application Support/Trae"))
+}
 
 /// On macOS, extract the executable path from a `ps` command line output.
 /// Handles paths with spaces in .app bundles (e.g., "Visual Studio Code.app").
@@ -1014,7 +1083,7 @@ fn managed_proxy_env_pairs() -> Vec<(&'static str, String)> {
     .filter(|value| !value.trim().is_empty())
     .collect::<Vec<_>>()
     .join(",");
-    let no_proxy = crate::modules::codex_protocol::merge_local_no_proxy(&no_proxy_seed);
+    let no_proxy = config::merge_local_no_proxy(&no_proxy_seed);
     if !no_proxy.is_empty() {
         pairs.push(("no_proxy", no_proxy.clone()));
         pairs.push(("NO_PROXY", no_proxy));
@@ -4605,9 +4674,19 @@ fn get_default_antigravity_user_data_dir() -> Option<String> {
 }
 
 fn get_default_antigravity_legacy_user_data_dir() -> Option<String> {
-    crate::modules::antigravity_legacy_instance::get_default_user_data_dir()
+    #[cfg(target_os = "macos")]
+    let path = dirs::home_dir().map(|home| home.join("Library/Application Support/Antigravity"));
+
+    #[cfg(target_os = "windows")]
+    let path = std::env::var("APPDATA")
         .ok()
-        .map(|value| normalize_path_for_compare(&value.to_string_lossy()))
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| PathBuf::from(value).join("Antigravity"));
+
+    #[cfg(target_os = "linux")]
+    let path = dirs::home_dir().map(|home| home.join(".config/Antigravity"));
+
+    path.map(|value| normalize_path_for_compare(&value.to_string_lossy()))
         .filter(|value| !value.is_empty())
 }
 
@@ -4682,7 +4761,7 @@ fn get_managed_codex_windows_app_user_data_dir(codex_home: &str) -> Option<Strin
     if trimmed.is_empty() {
         return None;
     }
-    crate::modules::codex_instance::get_windows_app_user_data_dir(Path::new(trimmed))
+    get_codex_windows_app_user_data_dir(Path::new(trimmed))
         .ok()
         .map(|value| value.to_string_lossy().to_string())
 }
@@ -4886,7 +4965,7 @@ fn collect_trae_process_entries_macos() -> Vec<(u32, Option<String>)> {
 
 #[cfg(target_os = "macos")]
 fn resolve_qoder_pid(last_pid: Option<u32>, user_data_dir: Option<&str>) -> Option<u32> {
-    let default_user_data_dir = crate::modules::qoder_instance::get_default_qoder_user_data_dir()
+    let default_user_data_dir = get_default_qoder_user_data_dir()
         .ok()
         .map(|value| value.to_string_lossy().to_string());
     let (target, allow_none_for_target) = build_user_data_dir_match_target(
@@ -4900,7 +4979,7 @@ fn resolve_qoder_pid(last_pid: Option<u32>, user_data_dir: Option<&str>) -> Opti
 
 #[cfg(target_os = "macos")]
 fn resolve_trae_pid(last_pid: Option<u32>, user_data_dir: Option<&str>) -> Option<u32> {
-    let default_user_data_dir = crate::modules::trae_instance::get_default_trae_user_data_dir()
+    let default_user_data_dir = get_default_trae_user_data_dir()
         .ok()
         .map(|value| value.to_string_lossy().to_string());
     let (target, allow_none_for_target) = build_user_data_dir_match_target(
@@ -7986,9 +8065,7 @@ pub fn start_codex_with_args(codex_home: &str, extra_args: &[String]) -> Result<
         if !codex_home_trimmed.is_empty() {
             if let Ok(launch_path) = resolve_codex_launch_path() {
                 let app_user_data_dir =
-                    crate::modules::codex_instance::get_macos_app_user_data_dir(Path::new(
-                        codex_home_trimmed,
-                    ))?;
+                    get_codex_macos_app_user_data_dir(Path::new(codex_home_trimmed))?;
                 std::fs::create_dir_all(&app_user_data_dir).map_err(|e| {
                     format!(
                         "创建 Codex macOS 实例运行目录失败 ({}): {}",
@@ -8060,9 +8137,7 @@ pub fn start_codex_with_args(codex_home: &str, extra_args: &[String]) -> Result<
         }
 
         let launch_path = resolve_codex_launch_path()?;
-        let app_user_data_dir = crate::modules::codex_instance::get_windows_app_user_data_dir(
-            Path::new(codex_home_trimmed),
-        )?;
+        let app_user_data_dir = get_codex_windows_app_user_data_dir(Path::new(codex_home_trimmed))?;
         std::fs::create_dir_all(&app_user_data_dir).map_err(|e| {
             format!(
                 "创建 Codex Windows 实例运行目录失败 ({}): {}",
@@ -8217,16 +8292,12 @@ fn build_codex_app_launch_args(extra_args: &[String], codex_home: &str) -> Vec<S
         args.push(trimmed.to_string());
         index += 1;
     }
-    args.push(crate::modules::codex_model_injector::remote_debugging_arg(
-        codex_home.trim(),
-    ));
+    args.push(codex_remote_debugging_arg(codex_home.trim()));
     args
 }
 
 fn build_codex_default_launch_args(extra_args: &[String]) -> Vec<String> {
-    let default_home = crate::modules::codex_account::get_codex_home()
-        .to_string_lossy()
-        .to_string();
+    let default_home = get_default_codex_home().to_string_lossy().to_string();
     build_codex_app_launch_args(extra_args, &default_home)
 }
 
@@ -8501,17 +8572,13 @@ pub fn close_codex_default_fast_by_pid(
 pub fn close_codex_default(timeout_secs: u64) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
-        let default_home = crate::modules::codex_account::get_codex_home()
-            .to_string_lossy()
-            .to_string();
+        let default_home = get_default_codex_home().to_string_lossy().to_string();
         return close_codex_instances(&[default_home], timeout_secs);
     }
 
     #[cfg(target_os = "windows")]
     {
-        let default_home = crate::modules::codex_account::get_codex_home()
-            .to_string_lossy()
-            .to_string();
+        let default_home = get_default_codex_home().to_string_lossy().to_string();
         return close_codex_instances(&[default_home], timeout_secs);
     }
 
@@ -8641,11 +8708,8 @@ pub fn close_codex_instances(codex_homes: &[String], timeout_secs: u64) -> Resul
             return Ok(());
         }
 
-        let default_home = normalize_path_for_compare(
-            &crate::modules::codex_account::get_codex_home()
-                .to_string_lossy()
-                .to_string(),
-        );
+        let default_home =
+            normalize_path_for_compare(&get_default_codex_home().to_string_lossy().to_string());
         let entries = collect_codex_process_entries();
         let mut pids: Vec<u32> = entries
             .iter()
@@ -8727,11 +8791,8 @@ pub fn close_codex_instances(codex_homes: &[String], timeout_secs: u64) -> Resul
     {
         crate::modules::logger::log_info("正在关闭受管 Codex 实例...");
 
-        let default_home = normalize_path_for_compare(
-            &crate::modules::codex_account::get_codex_home()
-                .to_string_lossy()
-                .to_string(),
-        );
+        let default_home =
+            normalize_path_for_compare(&get_default_codex_home().to_string_lossy().to_string());
         let mut target_app_dirs: HashSet<String> = HashSet::new();
         let mut includes_default = false;
 
@@ -8759,9 +8820,7 @@ pub fn close_codex_instances(codex_homes: &[String], timeout_secs: u64) -> Resul
 
         let current_default_app_dirs = if includes_default {
             get_default_codex_windows_app_user_data_dirs(
-                crate::modules::codex_account::get_codex_home()
-                    .to_string_lossy()
-                    .as_ref(),
+                get_default_codex_home().to_string_lossy().as_ref(),
             )
         } else {
             HashSet::new()

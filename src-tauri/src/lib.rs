@@ -7,6 +7,7 @@ mod utils;
 use modules::config::CloseWindowBehavior;
 use modules::logger;
 use std::sync::OnceLock;
+use std::time::Instant;
 #[cfg(target_os = "macos")]
 use tauri::ActivationPolicy;
 use tauri::RunEvent;
@@ -17,10 +18,119 @@ use tracing::info;
 
 /// 全局 AppHandle 存储
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+const SKIP_PLATFORM_ADAPTER_STARTUP_RESTORE_ENV: &str =
+    "COCKPIT_SKIP_PLATFORM_ADAPTER_STARTUP_RESTORE";
 
 /// 获取全局 AppHandle
 pub fn get_app_handle() -> Option<&'static tauri::AppHandle> {
     APP_HANDLE.get()
+}
+
+fn env_flag(name: &str) -> bool {
+    std::env::var(name)
+        .ok()
+        .map(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            normalized == "1" || normalized == "true" || normalized == "yes"
+        })
+        .unwrap_or(false)
+}
+
+fn skip_platform_adapter_startup_restore() -> bool {
+    env_flag(SKIP_PLATFORM_ADAPTER_STARTUP_RESTORE_ENV)
+}
+
+fn restore_startup_platform_adapter_if_installed(
+    platform_id: &str,
+    restore: fn(),
+    restored: &mut Vec<String>,
+) {
+    let installed_check_started_at = Instant::now();
+    let installed = modules::platform_package::is_platform_package_installed(platform_id);
+    let installed_check_elapsed_ms = installed_check_started_at.elapsed().as_millis();
+    if !installed {
+        if installed_check_elapsed_ms >= 100 {
+            logger::log_info(&format!(
+                "[Startup][Perf] 平台 adapter 启动恢复跳过: platform={}, installed=false, installedCheck={}ms",
+                platform_id, installed_check_elapsed_ms
+            ));
+        }
+        return;
+    }
+
+    let restore_started_at = Instant::now();
+    restore();
+    let restore_elapsed_ms = restore_started_at.elapsed().as_millis();
+    logger::log_info(&format!(
+        "[Startup][Perf] 平台 adapter 启动恢复完成: platform={}, installedCheck={}ms, restore={}ms",
+        platform_id, installed_check_elapsed_ms, restore_elapsed_ms
+    ));
+    restored.push(platform_id.to_string());
+}
+
+fn restore_platform_adapters_on_startup() {
+    if skip_platform_adapter_startup_restore() {
+        logger::log_info(&format!(
+            "[Startup][Perf] 已跳过启动期平台 adapter 批量恢复: {}=1",
+            SKIP_PLATFORM_ADAPTER_STARTUP_RESTORE_ENV
+        ));
+        return;
+    }
+
+    let started_at = Instant::now();
+    let mut restored = Vec::new();
+    let restore_items: [(&str, fn()); 14] = [
+        ("codex", modules::platform_adapter::restore_codex_runtime),
+        ("zed", modules::platform_adapter::restore_zed_runtime),
+        ("kiro", modules::platform_adapter::restore_kiro_runtime),
+        (
+            "github-copilot",
+            modules::platform_adapter::restore_github_copilot_runtime,
+        ),
+        (
+            "windsurf",
+            modules::platform_adapter::restore_windsurf_runtime,
+        ),
+        ("cursor", modules::platform_adapter::restore_cursor_runtime),
+        ("gemini", modules::platform_adapter::restore_gemini_runtime),
+        ("trae", modules::platform_adapter::restore_trae_runtime),
+        ("qoder", modules::platform_adapter::restore_qoder_runtime),
+        (
+            "codebuddy",
+            modules::platform_adapter::restore_codebuddy_runtime,
+        ),
+        (
+            "codebuddy_cn",
+            modules::platform_adapter::restore_codebuddy_cn_runtime,
+        ),
+        (
+            "workbuddy",
+            modules::platform_adapter::restore_workbuddy_runtime,
+        ),
+        (
+            "antigravity",
+            modules::platform_adapter::restore_antigravity_runtime,
+        ),
+        (
+            "antigravity_ide",
+            modules::platform_adapter::restore_antigravity_ide_runtime,
+        ),
+    ];
+
+    for (platform_id, restore) in restore_items {
+        restore_startup_platform_adapter_if_installed(platform_id, restore, &mut restored);
+    }
+
+    logger::log_info(&format!(
+        "[Startup][Perf] 平台 adapter 启动恢复汇总: restored={}, platforms={}, elapsed={}ms",
+        restored.len(),
+        if restored.is_empty() {
+            "-".to_string()
+        } else {
+            restored.join(",")
+        },
+        started_at.elapsed().as_millis()
+    ));
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -227,27 +337,43 @@ pub fn run() {
                 modules::web_report::start_server().await;
             });
 
-            tauri::async_runtime::spawn(async {
-                modules::codex_local_access::restore_local_access_gateway().await;
-            });
-
             {
                 let app_handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    modules::codex_oauth::restore_pending_oauth_listener(app_handle);
-                    modules::windsurf_oauth::restore_pending_oauth_listener();
-                    modules::kiro_oauth::restore_pending_oauth_listener();
-                    modules::trae_oauth::restore_pending_oauth_listener();
-                    modules::gemini_oauth::restore_pending_oauth_state();
-                    modules::zed_oauth::restore_pending_oauth_listener();
+                std::thread::spawn(move || {
+                    let startup_package_started_at = Instant::now();
+                    let bootstrap_started_at = Instant::now();
+                    match modules::platform_package::bootstrap_platform_packages_from_resources(
+                        &app_handle,
+                    ) {
+                        Ok(installed) if !installed.is_empty() => {
+                            logger::log_info(&format!(
+                                "[PlatformPackage] 启动 bootstrap 导入完成: platforms={}, elapsed={}ms",
+                                installed.join(","),
+                                bootstrap_started_at.elapsed().as_millis()
+                            ));
+                            let _ = modules::tray::update_tray_menu(&app_handle);
+                        }
+                        Ok(_) => {
+                            logger::log_info(&format!(
+                                "[PlatformPackage][Perf] 启动 bootstrap 无需导入: elapsed={}ms",
+                                bootstrap_started_at.elapsed().as_millis()
+                            ));
+                        }
+                        Err(error) => logger::log_warn(&format!(
+                            "[PlatformPackage] 启动 bootstrap 导入失败: elapsed={}ms, error={}",
+                            bootstrap_started_at.elapsed().as_millis(),
+                            error
+                        )),
+                    }
+                    restore_platform_adapters_on_startup();
+                    logger::log_info(&format!(
+                        "[Startup][Perf] 平台包启动后台任务完成: elapsed={}ms",
+                        startup_package_started_at.elapsed().as_millis()
+                    ));
                 });
             }
 
             modules::provider_token_keeper::ensure_started(app.handle().clone());
-            modules::wakeup_scheduler::restore_state_from_disk();
-            modules::wakeup_scheduler::ensure_started(app.handle().clone());
-            modules::codex_wakeup_scheduler::ensure_started(app.handle().clone());
-            modules::codex_wakeup_scheduler::trigger_startup_tasks_if_needed(app.handle().clone());
 
             #[cfg(target_os = "macos")]
             apply_macos_activation_policy(&app.handle());
@@ -592,6 +718,9 @@ pub fn run() {
             commands::codex::refresh_codex_quota,
             commands::codex::get_codex_reset_credits,
             commands::codex::consume_codex_reset_credit,
+            commands::codex::get_codex_referral_invite_eligibility,
+            commands::codex::get_codex_referral_eligibility_rules,
+            commands::codex::send_codex_referral_invites,
             commands::codex::refresh_codex_subscription_info,
             commands::codex::refresh_all_codex_quotas,
             commands::codex::refresh_current_codex_quota,
@@ -843,6 +972,16 @@ pub fn run() {
             commands::zed::zed_stop_default_session,
             commands::zed::zed_restart_default_session,
             commands::zed::zed_focus_default_session,
+            // Platform Package Commands
+            commands::platform_package::list_platform_packages,
+            commands::platform_package::check_platform_package_update,
+            commands::platform_package::prepare_platform_package_updates,
+            commands::platform_package::install_platform_package,
+            commands::platform_package::update_platform_package,
+            commands::platform_package::reload_platform_package,
+            commands::platform_package::uninstall_platform_package,
+            commands::platform_package::get_platform_package_ui_entry,
+            commands::platform_package::get_platform_ui_dev_config,
             // Qoder Instance Commands
             commands::qoder_instance::qoder_get_instance_defaults,
             commands::qoder_instance::qoder_list_instances,
@@ -1006,9 +1145,7 @@ pub fn run() {
     app.run(|app_handle, event| {
         match &event {
             RunEvent::ExitRequested { .. } | RunEvent::Exit => {
-                tauri::async_runtime::block_on(async {
-                    modules::codex_local_access::shutdown_local_access_gateway_for_app_exit().await;
-                });
+                modules::platform_adapter::shutdown_codex_runtime_for_app_exit();
             }
             _ => {}
         }

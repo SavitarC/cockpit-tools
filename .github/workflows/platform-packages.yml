@@ -11,6 +11,7 @@ on:
         options:
           - "ci"
           - "test"
+          - "main"
       test_branch:
         description: "Branch used by the test platform-package index"
         required: false
@@ -22,7 +23,12 @@ on:
         default: ""
         type: string
       publish_test_branch:
-        description: "Commit platform-packages/test artifacts to test_branch"
+        description: "Commit unified platform package artifacts and index.test.json to test_branch"
+        required: false
+        default: false
+        type: boolean
+      publish_main_branch:
+        description: "Commit unified platform package artifacts, index.json, and index.seed.json to main"
         required: false
         default: false
         type: boolean
@@ -129,7 +135,7 @@ jobs:
         if: startsWith(matrix.runner, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential curl file libssl-dev pkg-config zip unzip
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libsoup-3.0-dev javascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev libnm-dev xdg-utils zip unzip
 
       - name: Rust setup
         if: matrix.rust_targets == ''
@@ -140,6 +146,12 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_targets }}
+
+      - name: Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
 
       - name: Node.js setup
         uses: actions/setup-node@v4
@@ -174,11 +186,74 @@ jobs:
           const fs = require('node:fs');
           const cargoArgs = (process.env.CARGO_ARGS || '').split(/\s+/).filter(Boolean);
           const index = JSON.parse(fs.readFileSync('platform-packages/index.json', 'utf8'));
+          const crateNameByPlatformId = new Map([
+            ['claude_manager', 'cockpit-claude-adapter'],
+          ]);
           for (const pkg of index.packages || []) {
             if (pkg.installKind !== 'sidecarAdapter') continue;
-            const crate = `cockpit-${pkg.id.replace(/_/g, '-')}-adapter`;
+            const crate = crateNameByPlatformId.get(pkg.id) || `cockpit-${pkg.id.replace(/_/g, '-')}-adapter`;
             execFileSync('cargo', ['build', '--release', '-p', crate, ...cargoArgs], { stdio: 'inherit' });
           }
+          NODE
+
+      - name: Build Codex helper sidecar
+        shell: bash
+        env:
+          PACKAGE_OS: ${{ matrix.package_os }}
+          PACKAGE_ARCH: ${{ matrix.package_arch }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const os = process.env.PACKAGE_OS;
+          const arch = process.env.PACKAGE_ARCH;
+          const goOsByPackageOs = new Map([
+            ['macos', 'darwin'],
+            ['windows', 'windows'],
+            ['linux', 'linux'],
+          ]);
+          const goArchByPackageArch = new Map([
+            ['x86_64', 'amd64'],
+            ['aarch64', 'arm64'],
+          ]);
+          const rustTargetByPackageOs = new Map([
+            ['macos', `${arch}-apple-darwin`],
+            ['windows', `${arch}-pc-windows-msvc`],
+            ['linux', `${arch}-unknown-linux-gnu`],
+          ]);
+          const goos = goOsByPackageOs.get(os);
+          const goarch = goArchByPackageArch.get(arch);
+          const rustTarget = rustTargetByPackageOs.get(os);
+          if (!goos || !goarch || !rustTarget) {
+            throw new Error(`Unsupported Codex helper target: ${os}/${arch}`);
+          }
+
+          const sidecarDir = path.resolve('sidecars/cockpit-cliproxy');
+          const outputDir = path.join(sidecarDir, 'bin');
+          const output = path.join(outputDir, `cockpit-cliproxy-${rustTarget}${os === 'windows' ? '.exe' : ''}`);
+          fs.mkdirSync(outputDir, { recursive: true });
+          execFileSync('go', [
+            'build',
+            '-trimpath',
+            '-ldflags',
+            '-s -w',
+            '-o',
+            output,
+            '.',
+          ], {
+            cwd: sidecarDir,
+            env: {
+              ...process.env,
+              GOOS: goos,
+              GOARCH: goarch,
+              CGO_ENABLED: '0',
+            },
+            stdio: 'inherit',
+          });
+          console.log(`Built ${path.relative(process.cwd(), output)}`);
           NODE
 
       - name: Package platform artifacts
@@ -262,9 +337,11 @@ jobs:
           if [ "${CHANNEL}" = "test" ]; then
             base_url="${DOWNLOAD_BASE_URL}"
             if [ -z "${base_url}" ]; then
-              base_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${TEST_BRANCH}/platform-packages/test/dist"
+              base_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${TEST_BRANCH}/platform-packages/dist"
             fi
             args+=(--download-base-url "${base_url}")
+          elif [ "${CHANNEL}" = "main" ]; then
+            args+=(--download-base-url "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/platform-packages/dist")
           fi
           npm run package:platform-index -- "${args[@]}"
 
@@ -287,14 +364,20 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -C "${TEST_BRANCH}"
+          if git ls-remote --exit-code --heads origin "${TEST_BRANCH}" >/dev/null 2>&1; then
+            git fetch --depth=1 origin "${TEST_BRANCH}:refs/remotes/origin/${TEST_BRANCH}"
+            git switch -C "${TEST_BRANCH}" "origin/${TEST_BRANCH}"
+          else
+            git switch -C "${TEST_BRANCH}"
+          fi
 
-          mkdir -p platform-packages/test/dist
-          rm -f platform-packages/test/dist/*.zip
-          cp "${tmp_dir}"/*.zip platform-packages/test/dist/
-          cp "${tmp_dir}/index.json" platform-packages/test/index.json
+          mkdir -p platform-packages/dist
+          cp "${tmp_dir}"/*.zip platform-packages/dist/
+          cp "${tmp_dir}/index.json" platform-packages/index.test.json
+          echo "Publishing $(find "${tmp_dir}" -maxdepth 1 -type f -name '*.zip' | wc -l | tr -d ' ') test platform package zip files to unified dist."
 
-          git add platform-packages/test
+          git add platform-packages/index.test.json
+          git add -f platform-packages/dist/*.zip
           if git diff --cached --quiet; then
             echo "No test platform package changes to publish."
             exit 0
@@ -302,3 +385,33 @@ jobs:
 
           git commit -m "chore: publish test platform packages [skip ci]"
           git push origin "HEAD:${TEST_BRANCH}"
+
+      - name: Publish main platform package branch
+        if: github.event_name == 'workflow_dispatch' && inputs.channel == 'main' && inputs.publish_main_branch == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          cp platform-packages/dist-ci/*.zip "${tmp_dir}/"
+          cp platform-packages/dist-ci/index.json "${tmp_dir}/index.json"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --depth=1 origin main:refs/remotes/origin/main
+          git switch -C main origin/main
+
+          mkdir -p platform-packages/dist
+          cp "${tmp_dir}"/*.zip platform-packages/dist/
+          cp "${tmp_dir}/index.json" platform-packages/index.json
+          cp "${tmp_dir}/index.json" platform-packages/index.seed.json
+          echo "Publishing $(find "${tmp_dir}" -maxdepth 1 -type f -name '*.zip' | wc -l | tr -d ' ') platform package zip files to main unified dist."
+
+          git add platform-packages/index.json platform-packages/index.seed.json
+          git add -f platform-packages/dist/*.zip
+          if git diff --cached --quiet; then
+            echo "No main platform package changes to publish."
+            exit 0
+          fi
+
+          git commit -m "chore: publish platform packages [skip ci]"
+          git push origin HEAD:main

@@ -24,6 +24,12 @@ import { getPlatformLabel, renderPlatformIcon } from '../../utils/platformMeta';
 import { useAntigravityRuntimeTarget } from '../../hooks/useAntigravityRuntimeTarget';
 import { setAntigravityRuntimeTargetFromPlatform } from '../../utils/antigravityRuntimeTarget';
 import { useRemoteConfigStore } from '../../stores/useRemoteConfigStore';
+import {
+  canShowPlatformEntryFromPackages,
+  getPlatformPackageFromPackages,
+  usePlatformPackageStore,
+} from '../../stores/usePlatformPackageStore';
+import { getPlatformPackageShortStatus } from '../PlatformPackageToolbar';
 
 interface SideNavProps {
   page: Page;
@@ -35,7 +41,6 @@ interface SideNavProps {
   updateActionState: 'hidden' | 'available' | 'downloading' | 'installing' | 'ready';
   updateProgress: number;
   onUpdateActionClick: () => void;
-  versionJumpAvailable: boolean;
   updateRemindersEnabled: boolean;
   sponsorEntryVisible: boolean;
   onOpenLogViewer: () => void;
@@ -60,6 +65,9 @@ interface SideNavEntry {
 
 const PAGE_PLATFORM_MAP: Partial<Record<Page, PlatformId>> = {
   overview: 'antigravity',
+  instances: 'antigravity',
+  wakeup: 'antigravity',
+  verification: 'antigravity',
   codex: 'codex',
   'codex-api-service': 'codex',
   claude: 'claude_manager',
@@ -77,8 +85,13 @@ const PAGE_PLATFORM_MAP: Partial<Record<Page, PlatformId>> = {
   workbuddy: 'workbuddy',
 };
 
+const APP_PROFILE = String(import.meta.env.VITE_COCKPIT_TOOLS_PROFILE || '').trim();
 const APP_DISPLAY_NAME =
-  import.meta.env.VITE_COCKPIT_TOOLS_PROFILE === 'dev' ? 'Cockpit Tools Dev' : 'Cockpit Tools';
+  APP_PROFILE === 'dev'
+    ? 'Cockpit Tools Dev'
+    : APP_PROFILE === 'test'
+      ? 'Cockpit Tools Test'
+      : 'Cockpit Tools';
 
 const CLASSIC_NAV_MIN_SCALE = 0.5;
 const CLASSIC_NAV_SCALE_EPSILON = 0.004;
@@ -122,6 +135,10 @@ function isAntigravitySuitePlatformIds(platformIds: PlatformId[]): boolean {
   return platformIds.includes('antigravity') && platformIds.includes('antigravity_ide');
 }
 
+function isAntigravitySuitePage(page: Page): boolean {
+  return page === 'overview' || page === 'instances' || page === 'wakeup' || page === 'verification';
+}
+
 export function SideNav({
   page,
   setPage,
@@ -132,7 +149,6 @@ export function SideNav({
   updateActionState,
   updateProgress,
   onUpdateActionClick,
-  versionJumpAvailable,
   updateRemindersEnabled,
   sponsorEntryVisible,
   onOpenLogViewer,
@@ -178,9 +194,26 @@ export function SideNav({
     apiRelayEntryOrder,
   } = usePlatformLayoutStore();
   const remoteHiddenPlatformIds = useRemoteConfigStore((state) => state.hiddenPlatformIds);
+  const platformPackages = usePlatformPackageStore((state) => state.packages);
+  const platformPackagesInitialized = usePlatformPackageStore((state) => state.initialized);
+  const canShowPackagePlatform = useCallback(
+    (platformId: PlatformId) => canShowPlatformEntryFromPackages(
+      platformPackages,
+      platformPackagesInitialized,
+      platformId,
+    ),
+    [platformPackages, platformPackagesInitialized],
+  );
+  const getPackageEntryStatus = useCallback(
+    (platformId: PlatformId) => getPlatformPackageShortStatus(
+      getPlatformPackageFromPackages(platformPackages, platformId),
+      t,
+    ),
+    [platformPackages, t],
+  );
 
   const antigravityRuntimeTarget = useAntigravityRuntimeTarget();
-  const currentPlatformId = page === 'overview'
+  const currentPlatformId = isAntigravitySuitePage(page)
     ? antigravityRuntimeTarget
     : PAGE_PLATFORM_MAP[page] ?? null;
   const currentEntryId = useMemo<SideNavEntryId | null>(
@@ -199,10 +232,12 @@ export function SideNav({
     () => new Set(remoteHiddenPlatformIds),
     [remoteHiddenPlatformIds],
   );
-  const isPlatformAvailable = useCallback(
+  const isPlatformEntryVisible = useCallback(
     (platformId: PlatformId) =>
-      isMenuVisiblePlatform(platformId) && !remoteHiddenPlatformSet.has(platformId),
-    [remoteHiddenPlatformSet],
+      isMenuVisiblePlatform(platformId)
+      && !remoteHiddenPlatformSet.has(platformId)
+      && canShowPackagePlatform(platformId),
+    [canShowPackagePlatform, remoteHiddenPlatformSet],
   );
   const apiRelayEntryVisible = sponsorEntryVisible && apiRelaySidebarVisible;
 
@@ -211,7 +246,7 @@ export function SideNav({
       .map<SideNavEntry | null>((entryId) => {
         const platformId = parsePlatformEntryId(entryId);
         if (platformId) {
-          if (!isPlatformAvailable(platformId)) {
+          if (!isPlatformEntryVisible(platformId)) {
             return null;
           }
           return {
@@ -234,7 +269,7 @@ export function SideNav({
           return null;
         }
 
-        const visiblePlatformIds = group.platformIds.filter(isPlatformAvailable);
+        const visiblePlatformIds = group.platformIds.filter(isPlatformEntryVisible);
         if (visiblePlatformIds.length === 0) {
           return null;
         }
@@ -285,7 +320,7 @@ export function SideNav({
     orderedEntryIds,
     platformGroups,
     hiddenSet,
-    isPlatformAvailable,
+    isPlatformEntryVisible,
     antigravityRuntimeTarget,
     t,
   ]);
@@ -376,15 +411,13 @@ export function SideNav({
   const isMoreActive = !!currentEntryId && !sidebarMenuEntryIdSet.has(currentEntryId);
   const shouldLockActiveOnMore = showMore;
 
-  const shouldShowUpdateActionEntry = updateActionState !== 'hidden'
+  const shouldShowUpdateEntry = updateActionState !== 'hidden'
     && (
       updateRemindersEnabled
       || updateActionState === 'downloading'
       || updateActionState === 'installing'
       || updateActionState === 'ready'
     );
-  const isVersionJumpEntry = !shouldShowUpdateActionEntry && versionJumpAvailable;
-  const shouldShowUpdateEntry = shouldShowUpdateActionEntry || isVersionJumpEntry;
 
   const recalculateClassicAdaptiveScale = useCallback(() => {
     if (!isClassicLayout || typeof window === 'undefined') {
@@ -733,27 +766,11 @@ export function SideNav({
   }, [showMore, isClassicLayout]);
 
   const clampedUpdateProgress = Math.max(0, Math.min(100, Math.round(updateProgress)));
-  const updateVisualState = isVersionJumpEntry
-    ? 'updated'
-    : updateActionState === 'ready'
-      ? 'restart'
-      : updateActionState === 'downloading' || updateActionState === 'installing'
-        ? 'progress'
-        : 'update';
-  const updateEntryTitle = updateActionState === 'downloading'
-    ? t('update_notification.downloading', '下载中...')
-    : updateActionState === 'installing'
-      ? t('nav.quickUpdate.installing', '安装中')
-      : updateActionState === 'ready'
-        ? t('nav.quickUpdate.restart', '重启')
-        : isVersionJumpEntry
-          ? t('update_notification.versionJumpTitle', '更新成功！')
-          : t('nav.quickUpdate.update', '更新');
-  const updateEntryText = isVersionJumpEntry
-    ? t('nav.quickUpdate.update', '更新')
-    : updateActionState === 'ready'
-      ? t('nav.quickUpdate.restart', '重启')
-      : t('nav.quickUpdate.update', '更新');
+  const updateVisualState = updateActionState === 'ready'
+    ? 'restart'
+    : updateActionState === 'downloading' || updateActionState === 'installing'
+      ? 'progress'
+      : 'update';
 
   const morePopoverContent = showMore ? (
     <div
@@ -778,20 +795,31 @@ export function SideNav({
             : isClassicLayout
               ? currentEntryId === entry.id
               : !!currentPlatformId && entry.platformIds.includes(currentPlatformId);
+          const entryPackageStatus = entry.targetPlatformId
+            ? getPackageEntryStatus(entry.targetPlatformId)
+            : null;
           const showGroupParent =
             !entry.group || !sidebarMenuEntryIdSet.has(entry.id);
           return (
             <div className="side-nav-more-group" key={entry.id}>
               {(isClassicLayout || showGroupParent) && (
                 <button
-                  className={`side-nav-more-item ${active ? 'active' : ''}`}
+                  className={`side-nav-more-item ${active ? 'active' : ''} ${entryPackageStatus ? `is-package-install-required is-package-status-${entryPackageStatus.tone}` : ''}`}
                   onClick={() => {
                     navigateToEntry(entry);
                     setShowMore(false);
                   }}
+                  title={entryPackageStatus
+                    ? `${entry.label} · ${entryPackageStatus.label}`
+                    : entry.label}
                 >
                   <span className="side-nav-more-item-icon">{renderEntryIcon(entry, 16)}</span>
                   <span className="side-nav-more-item-label">{entry.label}</span>
+                  {entryPackageStatus && (
+                    <span className="side-nav-more-item-badge">
+                      {entryPackageStatus.label}
+                    </span>
+                  )}
                   {entry.hidden && (
                     <span className="side-nav-more-item-badge">
                       {t('platformLayout.hiddenBadge', '已隐藏')}
@@ -809,16 +837,20 @@ export function SideNav({
                       platformId,
                       getPlatformLabel(platformId, t),
                     );
+                    const childPackageStatus = getPackageEntryStatus(platformId);
                     return (
                       <button
                         key={`${entry.id}:${platformId}`}
                         className={`${
                           showGroupParent ? 'side-nav-more-sub-item' : 'side-nav-more-item'
-                        } ${currentPlatformId === platformId ? 'active' : ''}`}
+                        } ${currentPlatformId === platformId ? 'active' : ''} ${childPackageStatus ? `is-package-install-required is-package-status-${childPackageStatus.tone}` : ''}`}
                         onClick={() => {
                           navigateToPlatform(platformId);
                           setShowMore(false);
                         }}
+                        title={childPackageStatus
+                          ? `${label} · ${childPackageStatus.label}`
+                          : label}
                       >
                         <span className={showGroupParent ? 'side-nav-more-sub-item-icon' : 'side-nav-more-item-icon'}>
                           {icon.iconKind === 'custom' && icon.iconCustomDataUrl ? (
@@ -835,6 +867,11 @@ export function SideNav({
                         <span className={showGroupParent ? 'side-nav-more-sub-item-label' : 'side-nav-more-item-label'}>
                           {label}
                         </span>
+                        {childPackageStatus && !showGroupParent && (
+                          <span className="side-nav-more-item-badge">
+                            {childPackageStatus.label}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -870,7 +907,15 @@ export function SideNav({
             type="button"
             className={`side-nav-update-btn is-${updateVisualState}`}
             onClick={onUpdateActionClick}
-            title={updateEntryTitle}
+            title={
+              updateActionState === 'downloading'
+                ? t('update_notification.downloading', '下载中...')
+                : updateActionState === 'installing'
+                  ? t('nav.quickUpdate.installing', '安装中')
+                  : updateActionState === 'ready'
+                    ? t('nav.quickUpdate.restart', '重启')
+                    : t('nav.quickUpdate.update', '更新')
+            }
             disabled={updateActionState === 'installing'}
           >
             {updateActionState === 'downloading' ? (
@@ -888,7 +933,9 @@ export function SideNav({
               <span className="side-nav-update-text">{t('nav.quickUpdate.installing', '安装中')}</span>
             ) : (
               <span className="side-nav-update-text">
-                {updateEntryText}
+                {updateActionState === 'ready'
+                  ? t('nav.quickUpdate.restart', '重启')
+                  : t('nav.quickUpdate.update', '更新')}
               </span>
             )}
           </button>
@@ -957,18 +1004,38 @@ export function SideNav({
 
         {sidebarMenuEntries.map((entry) => {
           const active = currentEntryId === entry.id && !shouldLockActiveOnMore;
+          const entryPackageStatus = entry.targetPlatformId
+            ? getPackageEntryStatus(entry.targetPlatformId)
+            : null;
           return (
             <button
               key={entry.id}
-              className={`nav-item ${active ? 'active' : ''}`}
+              className={`nav-item ${active ? 'active' : ''} ${entryPackageStatus ? `is-package-install-required is-package-status-${entryPackageStatus.tone}` : ''}`}
               onClick={() => navigateToEntry(entry)}
-              title={entry.label}
+              title={entryPackageStatus
+                ? `${entry.label} · ${entryPackageStatus.label}`
+                : entry.label}
             >
               {renderEntryIcon(entry, isClassicLayout ? classicMainIconSize : 20)}
               {showClassicLabels ? (
-                <span className="nav-item-text">{entry.label}</span>
-              ) : !isClassicLayout ? (
-                <span className="tooltip">{entry.label}</span>
+                <span className="nav-item-text">
+                  <span className="nav-item-label-text">{entry.label}</span>
+                  {entryPackageStatus && (
+                    <span className="nav-item-status-text">
+                      {entryPackageStatus.label}
+                    </span>
+                  )}
+                </span>
+              ) : null}
+              {entryPackageStatus && !showClassicLabels && (
+                <span className="nav-item-status-dot" aria-hidden="true" />
+              )}
+              {!isClassicLayout ? (
+                <span className="tooltip">
+                  {entryPackageStatus
+                    ? `${entry.label} · ${entryPackageStatus.label}`
+                    : entry.label}
+                </span>
               ) : null}
             </button>
           );

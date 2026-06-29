@@ -1,0 +1,7 @@
+{
+  "platformId": "workbuddy",
+  "displayName": "WorkBuddy",
+  "packageMode": "hotUpdate",
+  "installKind": "sidecarAdapter",
+  "version": "0.26.7"
+}

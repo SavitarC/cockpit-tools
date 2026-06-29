@@ -13,6 +13,7 @@ use crate::modules::{account, logger};
 
 const ACCOUNTS_INDEX_FILE: &str = "zed_accounts.json";
 const ACCOUNTS_DIR: &str = "zed_accounts";
+const ACCOUNT_STORE_PLATFORM: &str = "zed";
 const ZED_SERVER_URL: &str = "https://zed.dev";
 const ZED_CLOUD_BASE_URL: &str = "https://cloud.zed.dev";
 const ZED_QUOTA_ALERT_COOLDOWN_SECONDS: i64 = 10 * 60;
@@ -106,12 +107,58 @@ fn get_accounts_index_path() -> Result<PathBuf, String> {
     Ok(get_data_dir()?.join(ACCOUNTS_INDEX_FILE))
 }
 
+fn ensure_package_installed() -> Result<(), String> {
+    Ok(())
+}
+
+fn is_package_installed() -> bool {
+    true
+}
+
+fn ensure_account_store_migrated() -> Result<(), String> {
+    crate::modules::account_store::ensure_platform_migrated_from_json(
+        ACCOUNT_STORE_PLATFORM,
+        &get_accounts_index_path()?,
+        &get_accounts_dir()?,
+    )
+}
+
+fn account_index_from_store() -> Result<ZedAccountIndex, String> {
+    ensure_account_store_migrated()?;
+    let accounts =
+        crate::modules::account_store::list_accounts::<ZedStoredAccount>(ACCOUNT_STORE_PLATFORM)?;
+    let current_account_id = crate::modules::account_store::get_current_account_id(
+        ACCOUNT_STORE_PLATFORM,
+    )?
+    .filter(|current_id| {
+        accounts
+            .iter()
+            .any(|account| account.public_account.id == *current_id)
+    });
+    let mut index = ZedAccountIndex::new();
+    index.accounts = accounts.iter().map(|account| account.summary()).collect();
+    index.current_account_id = current_account_id;
+    Ok(index)
+}
+
 fn resolve_account_file_path(account_id: &str) -> Result<PathBuf, String> {
     let normalized = normalize_account_id(account_id)?;
     Ok(get_accounts_dir()?.join(format!("{}.json", normalized)))
 }
 
 pub fn load_stored_account(account_id: &str) -> Option<ZedStoredAccount> {
+    if let Err(err) = ensure_account_store_migrated() {
+        logger::log_warn(&format!(
+            "[Zed Account][Store] 账号数据库迁移检查失败，回退文件读取: account_id={}, error={}",
+            account_id, err
+        ));
+    } else if let Ok(Some(account)) = crate::modules::account_store::load_account::<ZedStoredAccount>(
+        ACCOUNT_STORE_PLATFORM,
+        account_id,
+    ) {
+        return Some(account);
+    }
+
     let account_path = resolve_account_file_path(account_id).ok()?;
     if !account_path.exists() {
         return None;
@@ -121,6 +168,12 @@ pub fn load_stored_account(account_id: &str) -> Option<ZedStoredAccount> {
 }
 
 fn save_stored_account_file(account: &ZedStoredAccount) -> Result<(), String> {
+    ensure_account_store_migrated()?;
+    crate::modules::account_store::save_account(
+        ACCOUNT_STORE_PLATFORM,
+        account.public_account.id.as_str(),
+        account,
+    )?;
     let path = resolve_account_file_path(account.public_account.id.as_str())?;
     let content =
         serde_json::to_string_pretty(account).map_err(|e| format!("序列化账号失败: {}", e))?;
@@ -129,6 +182,7 @@ fn save_stored_account_file(account: &ZedStoredAccount) -> Result<(), String> {
 }
 
 fn delete_account_file(account_id: &str) -> Result<(), String> {
+    crate::modules::account_store::delete_account(ACCOUNT_STORE_PLATFORM, account_id)?;
     let path = resolve_account_file_path(account_id)?;
     if path.exists() {
         fs::remove_file(path).map_err(|e| format!("删除账号文件失败: {}", e))?;
@@ -137,6 +191,14 @@ fn delete_account_file(account_id: &str) -> Result<(), String> {
 }
 
 fn load_account_index() -> ZedAccountIndex {
+    match account_index_from_store() {
+        Ok(index) => return index,
+        Err(error) => logger::log_warn(&format!(
+            "[Zed Account][Store] 从 SQLite 读取账号索引失败，回退 JSON: {}",
+            error
+        )),
+    }
+
     let path = match get_accounts_index_path() {
         Ok(p) => p,
         Err(_) => return ZedAccountIndex::new(),
@@ -171,6 +233,14 @@ fn load_account_index() -> ZedAccountIndex {
 }
 
 fn load_account_index_checked() -> Result<ZedAccountIndex, String> {
+    match account_index_from_store() {
+        Ok(index) => return Ok(index),
+        Err(error) => logger::log_warn(&format!(
+            "[Zed Account][Store] 从 SQLite 读取账号索引失败，继续检查 JSON: {}",
+            error
+        )),
+    }
+
     let path = get_accounts_index_path()?;
     if !path.exists() {
         if let Some(index) = repair_account_index_from_details("索引文件不存在") {
@@ -220,6 +290,16 @@ fn load_account_index_checked() -> Result<ZedAccountIndex, String> {
 }
 
 fn save_account_index(index: &ZedAccountIndex) -> Result<(), String> {
+    crate::modules::account_store::set_current_account_id(
+        ACCOUNT_STORE_PLATFORM,
+        index.current_account_id.as_deref(),
+    )?;
+    let ordered_ids = index
+        .accounts
+        .iter()
+        .map(|summary| summary.id.clone())
+        .collect::<Vec<_>>();
+    crate::modules::account_store::save_account_order(ACCOUNT_STORE_PLATFORM, &ordered_ids)?;
     let path = get_accounts_index_path()?;
     let content =
         serde_json::to_string_pretty(index).map_err(|e| format!("序列化账号索引失败: {}", e))?;
@@ -249,9 +329,7 @@ fn repair_account_index_from_details(reason: &str) -> Option<ZedAccountIndex> {
 
     let mut index = ZedAccountIndex::new();
     index.accounts = accounts.iter().map(|account| account.summary()).collect();
-    index.current_account_id = accounts
-        .first()
-        .map(|account| account.public_account.id.clone());
+    index.current_account_id = None;
 
     let backup_path = crate::modules::account_index_repair::backup_existing_index(&index_path)
         .unwrap_or_else(|err| {
@@ -334,6 +412,9 @@ fn list_stored_accounts_from_index(index: &ZedAccountIndex) -> Vec<ZedStoredAcco
 }
 
 pub fn list_accounts() -> Vec<ZedAccount> {
+    if !is_package_installed() {
+        return Vec::new();
+    }
     let index = load_account_index();
     list_stored_accounts_from_index(&index)
         .into_iter()
@@ -342,6 +423,7 @@ pub fn list_accounts() -> Vec<ZedAccount> {
 }
 
 pub fn list_accounts_checked() -> Result<Vec<ZedAccount>, String> {
+    ensure_package_installed()?;
     let index = load_account_index_checked()?;
     Ok(list_stored_accounts_from_index(&index)
         .into_iter()
@@ -355,36 +437,24 @@ fn load_all_stored_accounts() -> Vec<ZedStoredAccount> {
 }
 
 pub fn resolve_current_account_id() -> Option<String> {
+    if !is_package_installed() {
+        return None;
+    }
     let index = load_account_index();
     let accounts = list_stored_accounts_from_index(&index);
     if accounts.is_empty() {
         return None;
     }
 
-    if let Ok(Some(credentials)) = read_credentials_from_keychain() {
-        if let Some(account) = accounts
-            .iter()
-            .find(|item| item.public_account.user_id == credentials.user_id)
-        {
-            return Some(account.public_account.id.clone());
-        }
-    }
-
-    if let Some(current_id) = index.current_account_id {
-        if accounts
-            .iter()
-            .any(|account| account.public_account.id == current_id)
-        {
-            return Some(current_id);
-        }
-    }
-
+    let current_id = index.current_account_id?;
     accounts
-        .first()
-        .map(|account| account.public_account.id.clone())
+        .iter()
+        .any(|account| account.public_account.id == current_id)
+        .then_some(current_id)
 }
 
 pub fn set_current_account_id(account_id: Option<&str>) -> Result<(), String> {
+    ensure_package_installed()?;
     let _lock = ZED_ACCOUNT_INDEX_LOCK
         .lock()
         .map_err(|_| "获取 Zed 账号锁失败".to_string())?;
@@ -395,7 +465,7 @@ pub fn set_current_account_id(account_id: Option<&str>) -> Result<(), String> {
 
 fn upsert_account_record(
     mut account: ZedStoredAccount,
-    set_current_if_missing: bool,
+    _set_current_if_missing: bool,
     force_current: bool,
 ) -> Result<ZedAccount, String> {
     let _lock = ZED_ACCOUNT_INDEX_LOCK
@@ -414,8 +484,6 @@ fn upsert_account_record(
     refresh_summary(&mut index, &account);
 
     if force_current {
-        index.current_account_id = Some(account.public_account.id.clone());
-    } else if set_current_if_missing && index.current_account_id.is_none() {
         index.current_account_id = Some(account.public_account.id.clone());
     }
 
@@ -447,7 +515,7 @@ pub fn remove_account(account_id: &str) -> Result<(), String> {
     let mut index = load_account_index();
     index.accounts.retain(|item| item.id != account_id);
     if index.current_account_id.as_deref() == Some(account_id) {
-        index.current_account_id = index.accounts.first().map(|item| item.id.clone());
+        index.current_account_id = None;
     }
     save_account_index(&index)?;
     delete_account_file(account_id)?;
@@ -471,7 +539,7 @@ pub fn remove_accounts(account_ids: &[String]) -> Result<(), String> {
     index.accounts.retain(|item| !targets.contains(&item.id));
     if let Some(current_id) = index.current_account_id.clone() {
         if targets.contains(&current_id) {
-            index.current_account_id = index.accounts.first().map(|item| item.id.clone());
+            index.current_account_id = None;
         }
     }
     save_account_index(&index)?;
@@ -820,6 +888,7 @@ pub async fn upsert_account_from_credentials(
     user_id: &str,
     access_token: &str,
 ) -> Result<ZedAccount, String> {
+    ensure_package_installed()?;
     let existing = load_all_stored_accounts()
         .into_iter()
         .find(|account| account.public_account.user_id == user_id.trim());
@@ -830,6 +899,7 @@ pub async fn upsert_account_from_credentials(
 }
 
 pub async fn refresh_account(account_id: &str) -> Result<ZedAccount, String> {
+    ensure_package_installed()?;
     let stored =
         load_stored_account(account_id).ok_or_else(|| format!("Zed 账号不存在: {}", account_id))?;
     let bundle =
@@ -852,6 +922,9 @@ pub async fn refresh_account(account_id: &str) -> Result<ZedAccount, String> {
 }
 
 pub async fn refresh_all_accounts() -> Result<Vec<ZedAccount>, String> {
+    if !is_package_installed() {
+        return Ok(Vec::new());
+    }
     let mut refreshed = Vec::new();
     for account in load_all_stored_accounts() {
         match refresh_account(&account.public_account.id).await {
@@ -868,12 +941,14 @@ pub async fn refresh_all_accounts() -> Result<Vec<ZedAccount>, String> {
 }
 
 pub async fn import_from_local() -> Result<ZedAccount, String> {
+    ensure_package_installed()?;
     let credentials = read_credentials_from_keychain()?
         .ok_or_else(|| "未在本机 Zed 客户端登录态中找到可导入的账号信息".to_string())?;
     upsert_account_from_credentials(&credentials.user_id, &credentials.access_token).await
 }
 
 pub fn import_from_json(json_content: &str) -> Result<Vec<ZedAccount>, String> {
+    ensure_package_installed()?;
     let trimmed = json_content.trim();
     if trimmed.is_empty() {
         return Err("导入内容不能为空".to_string());
@@ -910,6 +985,7 @@ pub fn import_from_json(json_content: &str) -> Result<Vec<ZedAccount>, String> {
 }
 
 pub fn export_accounts(account_ids: &[String]) -> Result<String, String> {
+    ensure_package_installed()?;
     let targets: Option<HashSet<String>> = if account_ids.is_empty() {
         None
     } else {
@@ -943,6 +1019,7 @@ pub fn export_accounts(account_ids: &[String]) -> Result<String, String> {
 }
 
 pub fn update_account_tags(account_id: &str, tags: Vec<String>) -> Result<ZedAccount, String> {
+    ensure_package_installed()?;
     let mut stored =
         load_stored_account(account_id).ok_or_else(|| format!("Zed 账号不存在: {}", account_id))?;
     stored.public_account.tags = normalize_tags(tags);
@@ -950,6 +1027,7 @@ pub fn update_account_tags(account_id: &str, tags: Vec<String>) -> Result<ZedAcc
 }
 
 pub fn inject_account(account_id: &str) -> Result<ZedAccount, String> {
+    ensure_package_installed()?;
     let stored =
         load_stored_account(account_id).ok_or_else(|| format!("Zed 账号不存在: {}", account_id))?;
     write_credentials_to_keychain(&stored.public_account.user_id, &stored.access_token)?;
@@ -958,6 +1036,7 @@ pub fn inject_account(account_id: &str) -> Result<ZedAccount, String> {
 }
 
 pub fn clear_current_runtime_account() -> Result<(), String> {
+    ensure_package_installed()?;
     clear_credentials_from_keychain()?;
     set_current_account_id(None)
 }
@@ -1228,8 +1307,11 @@ fn pick_quota_alert_recommendation(
     candidates.into_iter().next()
 }
 
-pub fn run_quota_alert_if_needed(
+pub fn build_quota_alert_payload_if_needed(
 ) -> Result<Option<crate::modules::account::QuotaAlertPayload>, String> {
+    if !is_package_installed() {
+        return Ok(None);
+    }
     let config = crate::modules::config::get_user_config();
     if !config.zed_quota_alert_enabled {
         return Ok(None);
@@ -1278,6 +1360,14 @@ pub fn run_quota_alert_if_needed(
         triggered_at: now,
     };
 
-    crate::modules::account::dispatch_quota_alert(&payload);
     Ok(Some(payload))
+}
+
+pub fn run_quota_alert_if_needed(
+) -> Result<Option<crate::modules::account::QuotaAlertPayload>, String> {
+    let payload = build_quota_alert_payload_if_needed()?;
+    if let Some(payload) = payload.as_ref() {
+        crate::modules::account::dispatch_quota_alert(payload);
+    }
+    Ok(payload)
 }
